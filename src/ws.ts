@@ -1,13 +1,14 @@
-import WebSocket,{Server} from 'ws';
+import WebSocket from 'ws';
 import {IncomingMessage} from 'http'
 import {MaybeArray,remove} from '@/utils';
 import { pathToRegexp } from 'path-to-regexp'
 import parseUrl = require('parseurl')
+import {Router} from "@/router";
 export type WsCallback = (socket: WebSocket, request: IncomingMessage) => void
 export class WsServer{
     clients = new Set<WebSocket>()
     regexp: RegExp
-    constructor(private router,path:MaybeArray<string | RegExp>,public callback?:WsCallback) {
+    constructor(private router:Router,path:MaybeArray<string | RegExp>,public callback?:WsCallback) {
         this.regexp=pathToRegexp(path)
     }
     accept(socket: WebSocket, request: IncomingMessage) {
