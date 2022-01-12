@@ -91,7 +91,6 @@ export class App extends Koa{
                 }
             })
             bot.on('message',(data)=>{
-                console.log(wsServer.clients)
                 for(const socket of wsServer.clients[bot.uin]||new Set<WebSocket>()){
                     socket.send(JSON.stringify(data))
                 }
