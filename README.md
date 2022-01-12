@@ -98,8 +98,19 @@ app.listen(8080)
 type LoginType='qrcode'|'password'
 type Path=string|RegExp
 interface App extends Koa{
+    constructor(options?:AppOptions):App
     addBot(options:BotOptions):Bot
     removeBot(uin:number):void
+}
+interface AppOptions{
+    env?: string | undefined,
+    keys?: string[] | undefined,
+    proxy?: boolean | undefined,
+    subdomainOffset?: number | undefined,
+    proxyIpHeader?: string | undefined,
+    maxIpsCount?: number | undefined
+    path?:string
+    bots?:BotOptions[]
 }
 interface BotOptions{
     uin:number

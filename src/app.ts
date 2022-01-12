@@ -16,6 +16,7 @@ export interface AppOptions{
     bots?:BotOptions[]
 }
 export interface App extends Koa{
+    constructor(options?:AppOptions):App
     addBot(options:BotOptions):Bot
     removeBot(uin:number):void
 }
