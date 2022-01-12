@@ -78,7 +78,7 @@ app.listen(8080)
 |Method|Description|args|
 |:---|:---|:---|
 |constructor|构造函数|router:Router,path:Path或Path[],callback?:(socket:Websocket,request)=>void|
-|accept|收到wsMessage时调用|socket:Websocket,request|
+|accept|收到wsMessage时调用|uin:number,socket:Websocket,request|
 |close|关闭socket服务||
 
 |property|Description|type|

@@ -1,5 +1,6 @@
 import Koa from 'koa'
 import {Server,createServer} from 'http'
+import parseUrl = require('parseurl')
 import {Router} from "./router";
 import {Bot, BotList, BotOptions} from "./bot";
 import {success,error,sleep,merge} from "./utils";
@@ -28,7 +29,7 @@ export class App extends Koa{
     public bots:BotList=new BotList()
     public router:Router=new Router()
     private wsServer:Socket.Server
-    private httpServer:Server
+    private readonly httpServer:Server
     private options:AppOptions
     constructor(options:AppOptions={}) {
         super();
@@ -60,8 +61,9 @@ export class App extends Koa{
             server: this.httpServer,
         })
         this.wsServer.on('connection',((socket, request) => {
+            const uin:number=Number(parseUrl(request).pathname.substring(1))
             for (const manager of this.router.wsStack) {
-                manager.accept(socket, request)
+                manager.accept(uin,socket, request)
             }
         }))
     }
@@ -69,7 +71,7 @@ export class App extends Koa{
         this.options.bots.push(options)
         const bot=this.bots.create(options)
         if(options.use_ws){
-            this.router.ws(`${this.options.path}/${options.uin}`,((socket, request) => {
+            const wsServer=this.router.ws(`${this.options.path}/${options.uin}`,((socket, request) => {
                 if(options.enable_heartbeat){
                     setInterval(()=>{
                         const json = JSON.stringify({
@@ -83,6 +85,32 @@ export class App extends Koa{
                     }, options.heartbeat_interval||3000);
                 }
             }))
+            bot.on('sync',(data)=>{
+                for(const socket of wsServer.clients[bot.uin]){
+                    socket.send(JSON.stringify(data))
+                }
+            })
+            bot.on('message',(data)=>{
+                console.log(wsServer.clients)
+                for(const socket of wsServer.clients[bot.uin]||new Set<WebSocket>()){
+                    socket.send(JSON.stringify(data))
+                }
+            })
+            bot.on('notice',(data)=>{
+                for(const socket of wsServer.clients[bot.uin]||new Set<WebSocket>()){
+                    socket.send(JSON.stringify(data))
+                }
+            })
+            bot.on('request',(data)=>{
+                for(const socket of wsServer.clients[bot.uin]||new Set<WebSocket>()){
+                    socket.send(JSON.stringify(data))
+                }
+            })
+            bot.on('system',(data)=>{
+                for(const socket of wsServer.clients[bot.uin]||new Set<WebSocket>()){
+                    socket.send(JSON.stringify(data))
+                }
+            })
         }
         this.addRoute(`${this.options.path}/${options.uin}/:method`,async (ctx)=>{
             const {method}=ctx.params
@@ -98,31 +126,6 @@ export class App extends Koa{
                 ctx.body=success(await bot[method](...params.args||[]))
             }catch (e){
                 ctx.body=error(e.message)
-            }
-        })
-        bot.on('sync',(data)=>{
-            for(const socket of this.wsServer.clients){
-                socket.send(JSON.stringify(data))
-            }
-        })
-        bot.on('message',(data)=>{
-            for(const socket of this.wsServer.clients){
-                socket.send(JSON.stringify(data))
-            }
-        })
-        bot.on('notice',(data)=>{
-            for(const socket of this.wsServer.clients){
-                socket.send(JSON.stringify(data))
-            }
-        })
-        bot.on('request',(data)=>{
-            for(const socket of this.wsServer.clients){
-                socket.send(JSON.stringify(data))
-            }
-        })
-        bot.on('system',(data)=>{
-            for(const socket of this.wsServer.clients){
-                socket.send(JSON.stringify(data))
             }
         })
         return bot

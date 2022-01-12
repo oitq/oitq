@@ -6,22 +6,26 @@ import parseUrl = require('parseurl')
 import {Router} from "@/router";
 export type WsCallback = (socket: WebSocket, request: IncomingMessage) => void
 export class WsServer{
-    clients = new Set<WebSocket>()
+    clients:Record<number, Set<WebSocket>>
     regexp: RegExp
     constructor(private router:Router,path:MaybeArray<string | RegExp>,public callback?:WsCallback) {
         this.regexp=pathToRegexp(path)
+        this.clients={}
     }
-    accept(socket: WebSocket, request: IncomingMessage) {
+    accept(uin:number,socket: WebSocket, request: IncomingMessage) {
+        const botClient=this.clients[uin]||=new Set<WebSocket>()
         if (!this.regexp.test(parseUrl(request).pathname)) return
-        this.clients.add(socket)
+        botClient.add(socket)
         socket.on('close', () => {
-            this.clients.delete(socket)
+            botClient.delete(socket)
         })
+        this.clients[uin]=botClient
         this.callback?.(socket, request)
     }
-    close() {
+    close(uin:number) {
+        const botClient=this.clients[uin]||new Set<WebSocket>()
         remove(this.router.wsStack, this)
-        for (const socket of this.clients) {
+        for (const socket of botClient) {
             socket.close()
         }
     }
