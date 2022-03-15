@@ -1,18 +1,26 @@
 import {Client,Config} from 'oicq'
 import {OneBotConfig} from "@/onebot/config";
 import {OneBot} from "@/onebot";
+import {merge} from "@/utils";
 export type LoginType='qrcode'|'password'
 export interface BotOptions{
-    uin:number
+    uin?:number
     config:Config,
     type:LoginType
     password?:string
     oneBot?:OneBotConfig|boolean
 }
+export const defaultBotOptions:BotOptions={
+    type:'qrcode',
+    config:{
+        platform:5,
+        log_level:'debug'
+    }
+}
 export class Bot extends Client{
     public oneBot:OneBot
     constructor(private options:BotOptions) {
-        super(options.uin,options.config);
+        super(options.uin,merge(defaultBotOptions.config,options.config));
         const listener=(event)=>{
             this.oneBot?.dispatch(event)
         }

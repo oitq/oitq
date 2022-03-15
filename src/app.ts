@@ -3,16 +3,19 @@ import {Server,createServer} from 'http'
 import {Router} from "./router";
 import {Bot, BotList, BotOptions} from "./bot";
 import {success,error,sleep,merge} from "./utils";
-import {Middleware} from "@koa/router";
 import {defaultOneBotConfig} from "@/oneBot/config";
 import {OneBot} from "@/oneBot";
-export interface AppOptions{
-    env?: string | undefined,
-    keys?: string[] | undefined,
-    proxy?: boolean | undefined,
-    subdomainOffset?: number | undefined,
-    proxyIpHeader?: string | undefined,
-    maxIpsCount?: number | undefined
+interface KoaOptions{
+    start?:boolean,
+    port?:number,
+    env?: string
+    keys?: string[]
+    proxy?: boolean
+    subdomainOffset?: number
+    proxyIpHeader?: string
+    maxIpsCount?: number
+}
+export interface AppOptions extends KoaOptions{
     path?:string
     bots?:BotOptions[]
 }
@@ -22,6 +25,7 @@ export interface App extends Koa{
     removeBot(uin:number):void
 }
 export const defaultAppOptions={
+    port:8080,
     path:'',
     bots:[],
 }
@@ -32,7 +36,7 @@ export class App extends Koa{
     readonly httpServer:Server
     private options:AppOptions
     constructor(options:AppOptions={}) {
-        super();
+        super(options);
         this.options=merge(defaultAppOptions,options)
         this.use(require('koa-bodyparser')())
         this.use(this.router.routes())
@@ -81,7 +85,10 @@ export class App extends Koa{
         }
         return await this.bots.remove(uin)
     }
-    private async start(){
+    async start(port=this.options.port){
+        this.listen(port,()=>{
+            console.log('app is listen at http://127.0.0.1:'+port)
+        })
         for(const bot of this.bots){
             const botOptions=this.options.bots||=[]
             const option:BotOptions=botOptions.find(botOption=>botOption.uin===bot.uin) ||{} as any
@@ -92,12 +99,7 @@ export class App extends Koa{
 
     }
     listen(...args){
-        this.start()
-        const server=this.httpServer.listen(...args,()=>{
-            this.status=true
-            console.log('app is listen at http://127.0.0.1:'+args[0])
-
-        });
+        const server=this.httpServer.listen(...args);
         this.emit('listen',...args)
         return server
     }
