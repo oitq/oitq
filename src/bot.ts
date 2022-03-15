@@ -1,19 +1,24 @@
 import {Client,Config} from 'oicq'
+import {OneBotConfig} from "@/onebot/config";
+import {OneBot} from "@/onebot";
 export type LoginType='qrcode'|'password'
 export interface BotOptions{
     uin:number
     config:Config,
     type:LoginType
     password?:string
-    access_token?:string
-    secret?:string
-    enable_heartbeat?:boolean
-    heartbeat_interval?:number
-    use_ws?:boolean
+    oneBot?:OneBotConfig|boolean
 }
 export class Bot extends Client{
+    public oneBot:OneBot
     constructor(private options:BotOptions) {
         super(options.uin,options.config);
+        const listener=(event)=>{
+            this.oneBot?.dispatch(event)
+        }
+        this.on("message", listener)
+        this.on("notice", listener)
+        this.on("request", listener)
     }
 }
 

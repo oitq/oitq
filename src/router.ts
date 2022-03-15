@@ -1,9 +1,9 @@
 import KoaRouter = require('@koa/router');
-import {MaybeArray} from "@/utils";
-import {WsServer,WsCallback} from "./ws";
+import * as http from "http";
+import * as WebSocket from 'ws'
 type Path=string|RegExp
 export class Router extends KoaRouter {
-    wsStack: WsServer[] = []
+    wsStack: WebSocket.Server[] = []
     whiteList:Path[]=[]//用于historyApi排除
 
     register(...args: Parameters<KoaRouter['register']>) {
@@ -11,8 +11,8 @@ export class Router extends KoaRouter {
         this.whiteList.push(path)
        return super.register(...args)
     }
-    ws(path: MaybeArray<string | RegExp>, callback?: WsCallback) {
-        const wsServer = new WsServer(this, path, callback)
+    ws(path:string, server:http.Server) {
+        const wsServer = new WebSocket.Server({server,path})
         this.wsStack.push(wsServer)
         return wsServer
     }
