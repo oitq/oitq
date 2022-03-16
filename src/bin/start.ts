@@ -4,8 +4,9 @@ import {readConfig,getAppConfigPath,writeConfig} from "@/utils";
 import {addBot} from "@/bin/addBot";
 import {removeBot} from "@/bin/removeBot";
 import {dir} from "@/bin/index";
+import {createDeflateRaw} from "zlib";
 const prompts=require('prompts')
-const appOptions:AppOptions=readConfig(getAppConfigPath(dir))
+let appOptions:AppOptions=readConfig(getAppConfigPath(dir))
 function loop(app:App){
     process.stdin.on("data",async (buf:Buffer)=>{
         if(typeof buf==='boolean')return
@@ -15,7 +16,7 @@ function loop(app:App){
         const param = input.replace(cmd, "").trim();
         switch (input){
             case 'add':
-                addBot();
+                addBot()
                 break;
             case 'remove':
                 removeBot();
@@ -71,11 +72,24 @@ function loop(app:App){
 }
 export default function registerStartCommand(cli:CAC){
     cli.command('start')
-        .action(()=>{
+        .action(async ()=>{
+            if(appOptions.bots.length==0){
+                console.log('首次启动，请配置一个账号')
+                try {
+                    await addBot()
+                }catch (e){
+                    console.log(e.message)
+                }
+                appOptions=await readConfig(getAppConfigPath(dir))
+            }
             const app=new App(appOptions)
-            app.start()
+            await app.start()
             appOptions.start=true
             writeConfig(getAppConfigPath(dir),appOptions)
-            loop(app)
+            try{
+                loop(app)
+            }catch (e){
+                console.log(e)
+            }
         })
 }
