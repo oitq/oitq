@@ -1,9 +1,9 @@
 import KoaRouter = require('@koa/router');
 import * as http from "http";
-import * as WebSocket from 'ws'
+import {Server} from 'ws'
 type Path=string|RegExp
 export class Router extends KoaRouter {
-    wsStack: WebSocket.Server[] = []
+    wsStack: Server[] = []
     whiteList:Path[]=[]//用于historyApi排除
 
     register(...args: Parameters<KoaRouter['register']>) {
@@ -12,7 +12,7 @@ export class Router extends KoaRouter {
        return super.register(...args)
     }
     ws(path:string, server:http.Server) {
-        const wsServer = new WebSocket.Server({server,path})
+        const wsServer = new Server({server,path})
         this.wsStack.push(wsServer)
         return wsServer
     }

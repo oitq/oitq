@@ -9,36 +9,26 @@ yarn add @lc-cn/oicq-bots
 ## 样例
 1.javascript
 ```javascript
-const {App} = require('@lc-cn/oicq-bots')
-const app=new App()
-// addBot
-app.addBot({
-    uin:123456789,
-    password:'11111111',
-    config:{
-        platform:5
-    },
-    oneBot:true,//是否启用OneBot
-})
-app.listen(8080)//start webserver
+const {App} =require('@lc-cn/oicq-bots')
+const fs = require('fs')
+const path = require('path')
+const configPath=path.join(process.cwd(),'oicq.config.json')
+const appOption=JSON.parse(fs.readFileSync(configPath,{encoding:"utf-8"}))
+const app=new App(appOption)
+app.start(8086)
+
 ```
 2.typescript
 
 ```typescript
-import {App, AppOptions,BotOptions} from "@lc-cn/oicq-bots";
-const app:App=new App({
-    bots:[
-        {
-            uin:123456789,
-            password:'11111111',
-            config:{
-                platform:5
-            },
-            oneBot:true,//是否启用OneBot
-        }
-    ]
-})
-app.listen(8080)
+import {App,AppOptions} from '../src'
+import * as fs from 'fs'
+import * as path from "path";
+const configPath=path.join(process.cwd(),'oicq.config.json')
+const appOption:AppOptions=JSON.parse(fs.readFileSync(configPath,{encoding:"utf-8"}))
+const app=new App(appOption)
+app.start(8086)
+
 ```
 ## Class:App
 > 继承自Koa类，拥有Koa上所有方法和属性
@@ -68,7 +58,7 @@ app.listen(8080)
 
 |property|Description|type|
 |:---|:---|:---|
-|wsStack|ws监听存放容器|HttpServer[]|
+|wsStack|ws监听存放容器|WebsocketServer[]|
 |whiteList|每生成一个route，会往里面存入一个Path，可用于historyApi的whitelist|Path|
 ## Class BotList
 > 继承自原生Array类，拥有Array类的所有方法和属性
@@ -87,13 +77,15 @@ interface App extends Koa{
     addBot(options:BotOptions):Bot
     removeBot(uin:number):void
 }
-interface AppOptions{
+interface KoaOptions{
     env?: string | undefined,
     keys?: string[] | undefined,
     proxy?: boolean | undefined,
     subdomainOffset?: number | undefined,
     proxyIpHeader?: string | undefined,
     maxIpsCount?: number | undefined
+}
+interface AppOptions extends KoaOptions{
     path?:string
     bots?:BotOptions[]
 }
@@ -138,4 +130,24 @@ export const defaultOneBotConfig={
     ws_reverse_url: [],
     ws_reverse_reconnect_interval: 3000,
 }
+```
+## cli
+项目增加了cli指令，用于增加/删除和启动项目
+### usage
+此处提供两种用法：
+
+1.全局安装`@lc-cn/oicq-bots`
+```shell
+npm install -g @lc-cn/oicq-bots
+oitq add //开启一个添加账号流程
+oitq remove // 开启一个移除账号流程
+oitq start // 启动项目 
+```
+2.如果不想全局安装，可使用软连接激活cli指令
+```shell
+npm install @lc-cn/oicq-bots
+npm link @lc-cn/oicq-bots
+oitq add //开启一个添加账号流程
+oitq remove // 开启一个移除账号流程
+oitq start // 启动项目 
 ```

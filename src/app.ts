@@ -32,30 +32,33 @@ export const defaultAppOptions={
 export class App extends Koa{
     status:boolean=false
     public bots:BotList=new BotList()
-    public router:Router=new Router()
+    public router:Router
     readonly httpServer:Server
-    private options:AppOptions
+    options:AppOptions
     constructor(options:AppOptions={}) {
         super(options);
         this.options=merge(defaultAppOptions,options)
+        this.router=new Router({prefix:this.options.path})
         this.use(require('koa-bodyparser')())
         this.use(this.router.routes())
         this.use(this.router.allowedMethods())
         this.httpServer=createServer(this.callback())
-        this.router.get(options.path||'',(ctx)=>{
+        this.router.get('',(ctx)=>{
             ctx.body='this is oicq-bots api\n' +
                 'use post request to visit `/${uin}/method` to apply bot method,post data will used by method params\n' +
                 'use websocket to connect `/uin` to listen bot request/notice'
         })
-        this.router.post('/add',async (ctx)=>{
+        this.router.post('/add',async (ctx,next)=>{
             if(!ctx.body || Object.keys(ctx.body).length==0) return ctx.body=error('请输入完整bot配置，具体配置见github（BotOptions）')
             // await this.addBot(ctx.body)
             ctx.body=success('添加成功')
+            await next()
         })
-        this.router.get('/remove',async (ctx)=>{
+        this.router.get('/remove',async (ctx,next)=>{
             const {uin}=ctx.query
             if(!uin) ctx.body=error('请输入uin')
             await this.removeBot(Number(uin))
+            await next()
             return success('移除成功')
         })
         if(options.bots){
@@ -71,10 +74,10 @@ export class App extends Koa{
             bot.oneBot=new OneBot(this,bot,typeof options.oneBot==='boolean'?defaultOneBotConfig:options.oneBot)
         }
         if(this.status) {
-            bot.login(options.password)
             bot.once('system.online',()=>{
                 bot?.oneBot.start()
             })
+            bot.login(options.password)
         }
         return bot
     }
@@ -96,7 +99,7 @@ export class App extends Koa{
             await bot?.oneBot.start()
             await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
         }
-
+        this.status=true
     }
     listen(...args){
         const server=this.httpServer.listen(...args);

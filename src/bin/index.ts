@@ -1,5 +1,7 @@
 import {CAC} from "cac";
 import registerAddBotCommand from "@/bin/addBot";
+import registerStartCommand from "@/bin/start";
+import registerRemoveCommand from "@/bin/removeBot";
 export const cli= new CAC('oitq')
 /**
  * 定义异常处理公共函数
@@ -15,5 +17,7 @@ process.on('uncaughtException', onError)
 process.on('unhandledRejection', onError)
 cli.version('1.0.1')
 registerAddBotCommand(cli)
+registerStartCommand(cli)
+registerRemoveCommand(cli)
 cli.help()
 cli.parse()

@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import http from "http"
 import https from "https"
 import { URL } from "url"
-import * as WebSocket from "ws"
+import {WebSocketServer,WebSocket}from "ws"
 import * as querystring from "querystring"
 import  * as rfdc from "rfdc"
 import {App} from "@/app";
@@ -13,6 +13,7 @@ import { assert } from "./filter"
 import { toHump, transNotice, APIS, ARGS, toBool, BOOLS, genMetaEvent } from "./static"
 import { OneBotConfig, defaultOneBotConfig, createIfNotExists } from "./config"
 import {cwd} from "@/index";
+import {Context} from "koa";
 interface OneBotProtocol {
     action: string,
     params: any
@@ -32,12 +33,12 @@ export class OneBot{
         method: keyof Client,
         args: any[]
     }> = []
-    protected wss?:WebSocket.Server //ws服务器
+    protected wss?:WebSocketServer //ws服务器
     protected wsr = new Set<WebSocket>() //反向ws连接
     protected queue_running = false
     protected filter: any
     protected timestamp = Date.now()
-    constructor(private app:App,protected bot:Bot,protected config:OneBotConfig=defaultOneBotConfig) {
+    constructor(private app:App,protected bot:Bot,protected config:OneBotConfig=defaultOneBotConfig,private port=app.options.port) {
     }
     /**
      * 上报事件
@@ -45,12 +46,7 @@ export class OneBot{
     protected _dispatch(unserialized: any) {
         const serialized = JSON.stringify(unserialized)
         for (const ws of this.wsr) {
-            ws.send(serialized, (err) => {
-                if (err)
-                    this.bot.logger.error(`OneBot - 反向WS(${ws.url})上报事件失败: ` + err.message)
-                else
-                    this.bot.logger.debug(`OneBot - 反向WS(${ws.url})上报事件成功: ` + serialized)
-            })
+            ws.send(serialized)
         }
         if (this.wss) {
             for (const ws of this.wss.clients) {
@@ -135,66 +131,65 @@ export class OneBot{
     /**
      * 处理http请求
      */
-    protected async _httpRequestHandler(req: http.IncomingMessage, res: http.ServerResponse) {
-        if (!this.config.use_http) return res.writeHead(404).end()
-        if (req.method === 'OPTIONS' && this.config.enable_cors) {
-            return res.writeHead(200, {
+    protected async _httpRequestHandler(ctx) {
+        if (ctx.method === 'OPTIONS' && this.config.enable_cors) {
+            return ctx.writeHead(200, {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, authorization'
             }).end()
         }
-        const url = new URL(req.url as string, `http://127.0.0.1`)
+        const url = new URL(ctx.url as string, `http://127.0.0.1`)
         if (this.config.access_token) {
-            if (req.headers["authorization"]) {
-                if (!req.headers["authorization"].includes(this.config.access_token))
-                    return res.writeHead(403).end()
+            if (ctx.headers["authorization"]) {
+                if (!ctx.headers["authorization"].includes(this.config.access_token))
+                    return ctx.writeHead(403).end()
             } else {
                 const access_token = url.searchParams.get("access_token")
                 if (!access_token)
-                    return res.writeHead(401).end()
+                    return ctx.writeHead(401).end()
                 else if (!access_token.includes(this.config.access_token))
-                    return res.writeHead(403).end()
+                    return ctx.writeHead(403).end()
             }
         }
-        res.setHeader("Content-Type", "application/json; charset=utf-8")
+        ctx.res.setHeader("Content-Type", "application/json; charset=utf-8")
         if (this.config.enable_cors)
-            res.setHeader("Access-Control-Allow-Origin", "*")
+            ctx.res.setHeader("Access-Control-Allow-Origin", "*")
         const action = url.pathname.replace(`/${this.bot.uin}`,'').slice(1)
-        if (req.method === "GET") {
-            this.bot.logger.debug(`插件OneBot - 收到GET请求: ` + req.url)
+        if (ctx.method === "GET") {
+            this.bot.logger.debug(`OneBot - 收到GET请求: ` + ctx.url)
             const params = querystring.parse(url.search.slice(1))
             try {
                 const ret = await this.apply({ action, params })
-                res.end(ret)
+                ctx.res.end(ret)
             } catch (e) {
-                res.end(e.message)
+                ctx.res.writeHead(500).end(e.message)
             }
-        } else if (req.method === "POST") {
+        } else if (ctx.method === "POST") {
             let data = ""
-            req.setEncoding("utf-8")
-            req.on("data", (chunk) => data += chunk)
-            req.on("end", async () => {
+            ctx.req.setEncoding("utf-8")
+            ctx.req.on("data", (chunk) => data += chunk)
+            ctx.req.on("end", async () => {
                 try {
                     this.bot.logger.debug(`OneBot - 收到POST请求: ` + data)
-                    let params, ct = req.headers["content-type"]
+                    let params, ct = ctx.req.headers["content-type"]
                     if (!ct || ct.includes("json"))
                         params = data ? JSON.parse(data) : {}
                     else if (ct && ct.includes("x-www-form-urlencoded"))
                         params = querystring.parse(data)
                     else
-                        return res.writeHead(406).end()
+                        return ctx.res.writeHead(406).end()
                     const ret = await this.apply({ action, params })
-                    res.end(ret)
+                    ctx.res.end(ret)
                 } catch (e) {
                     if (e instanceof NotFoundError)
-                        res.writeHead(404).end(e.message)
+                        ctx.res.writeHead(404).end(e.message)
                     else
-                        res.writeHead(400).end(e.message)
+                        ctx.res.writeHead(400).end(e.message)
                 }
             })
         } else {
-            res.writeHead(405).end()
+            ctx.res.writeHead(405).end()
         }
     }
 
@@ -441,12 +436,12 @@ export class OneBot{
         }
         if (!this.config.use_http && !this.config.use_ws)
             return
-        this.app.use(async (ctx,next)=>{
-            if(!ctx.path.startsWith(`/${this.bot.uin}`))return await next()
-            await this._httpRequestHandler(ctx.req,ctx.res)
-            await next()
-        })
+        if(this.config.use_http){
+            this.bot.logger.info(`OneBot - 开启http服务器成功，监听:http://127.0.0.1:${this.port}/${this.bot.uin}`)
+            this.app.router.all(new RegExp(`^/${this.bot.uin}/(.*)$`),this._httpRequestHandler.bind(this))
+        }
         if (this.config.use_ws) {
+            this.bot.logger.info(`OneBot - 开启ws服务器成功，监听:ws://127.0.0.1:${this.port}/${this.bot.uin}`)
             this.wss = this.app.router.ws(`/${this.bot.uin}`,this.app.httpServer)
             this.wss.on("error", (err) => {
                 this.bot.logger.error(err.message)
@@ -469,12 +464,6 @@ export class OneBot{
                 this._webSocketHandler(ws)
             })
         }
-        this.app.on('listen',(port,host)=>{
-            this.bot.logger.info(`OneBot - 开启http服务器成功，监听:${host}${port}/${this.bot.uin}`)
-        })
-        this.app.on('listen.error',(port,host,e)=>{
-            this.bot.logger.error(`OneBot - 开启http服务器失败，在${host}:${port}/${this.bot.uin}`)
-        })
     }
     /**
      * 实例停止
