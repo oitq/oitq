@@ -12,8 +12,8 @@ import {Bot} from "@/bot";
 import { assert } from "./filter"
 import { toHump, transNotice, APIS, ARGS, toBool, BOOLS, genMetaEvent } from "./static"
 import { OneBotConfig, defaultOneBotConfig, createIfNotExists } from "./config"
-import {cwd} from "@/index";
-import {Context} from "koa";
+import {getAppConfigPath} from "@/utils";
+import {dir} from "@/bin";
 interface OneBotProtocol {
     action: string,
     params: any
@@ -488,5 +488,5 @@ async function readConfig(uin: number) {
     return Object.assign({}, defaultOneBotConfig, global_config.general, global_config[uin])
 }
 
-const filepath = path.join(cwd, "data/OneBot/config.json")
+const filepath = path.join(getAppConfigPath(dir))
 createIfNotExists(filepath)

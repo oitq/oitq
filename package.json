@@ -1,10 +1,11 @@
 {
-  "name": "@lc-cn/oicq-bots",
-  "version": "1.0.2-alpha",
+  "name": "oitq",
+  "version": "1.0.8-beta",
   "description": "oicq生产环境部署程序",
   "main": "lib/index.js",
-  "bin": {
-    "oitq": "lib/bin/index.js"
+  "bin": "bin/oitq",
+  "engines": {
+    "node": ">= v14"
   },
   "scripts": {
     "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",

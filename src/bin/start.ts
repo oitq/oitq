@@ -1,19 +1,81 @@
 import {CAC} from "cac";
-import * as fs from "fs";
-import * as path from "path";
 import {App, AppOptions} from "@/app";
-const appConfigPath=path.join(process.cwd(),'oicq.config.json')
-
-const appOptions:AppOptions=JSON.parse(fs.readFileSync(appConfigPath,{encoding:"utf-8"}))
+import {readConfig,getAppConfigPath,writeConfig} from "@/utils";
+import {addBot} from "@/bin/addBot";
+import {removeBot} from "@/bin/removeBot";
+import {dir} from "@/bin/index";
+const prompts=require('prompts')
+const appOptions:AppOptions=readConfig(getAppConfigPath(dir))
+function loop(app:App){
+    process.stdin.on("data",async (buf:Buffer)=>{
+        if(typeof buf==='boolean')return
+        const input=buf?.toString().trim()
+        if (!input) return;
+        const cmd = input.split(" ")[0];
+        const param = input.replace(cmd, "").trim();
+        switch (input){
+            case 'add':
+                addBot();
+                break;
+            case 'remove':
+                removeBot();
+                break;
+            case 'quit':
+                process.exit(1)
+                break;
+            case 'eval':
+                try {
+                    let res = await eval(param);
+                    console.log("Result:", res);
+                } catch (e) {
+                    throw e
+                }
+                break;
+            case 'send':
+                const {uin,method,id,message}=await prompts([
+                    {
+                        type:'select',
+                        name:'uin',
+                        message:'请指定发送的bot',
+                        choices:app.bots.map(bot=>({title:`${bot.nickname}(${bot.uin})`,value:bot.uin}))
+                    },
+                    {
+                        type:'select',
+                        name:'method',
+                        message:'请选择发送的消息类型',
+                        choices:[
+                            {
+                                title:'群消息',
+                                value:'sendGroupMsg'
+                            },
+                            {
+                                title:'私聊消息',
+                                value:'sendPrivateMsg'
+                            }
+                        ],
+                        initial:1
+                    },{
+                        type:'number',
+                        name:'id',
+                        message:prev => prev==='sendGroupMsg'?'请输入群id':'请输入用户id'
+                    },
+                    {
+                        type:'text',
+                        name:'message',
+                        message:'请输入消息内容'
+                    }
+                ])
+                app.bots.get(uin)[method](id,message)
+        }
+    })
+}
 export default function registerStartCommand(cli:CAC){
     cli.command('start')
         .action(()=>{
-            new App(appOptions).start()
+            const app=new App(appOptions)
+            app.start()
             appOptions.start=true
-            fs.writeFileSync(appConfigPath,JSON.stringify(appOptions),{encoding:"utf-8"})
+            writeConfig(getAppConfigPath(dir),appOptions)
+            loop(app)
         })
 }
-process.on('exit',()=>{
-    appOptions.start=false
-    fs.writeFileSync(appConfigPath,JSON.stringify(appOptions),{encoding:"utf-8"})
-})
