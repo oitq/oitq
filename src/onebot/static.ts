@@ -1,67 +1,17 @@
 import {Client} from "oicq"
-
-export const APIS: Array<keyof Client> = [
-    "sendPrivateMsg",
-    "sendGroupMsg",
-    "sendDiscussMsg",
-    // "sendMsg", //非机器人api
-    "deleteMsg",
-    "getMsg",
-    "getForwardMsg",
-    "sendLike",
-    "setGroupKick",
-    "setGroupBan",
-    "setGroupAnonymousBan",
-    "setGroupWholeBan",
-    "setGroupAdmin",
-    "setGroupAnonymous",
-    "setGroupCard",
-    "setGroupName",
-    "setGroupLeave",
-    "sendGroupNotice",
-    "setGroupSpecialTitle",
-    "setFriendAddRequest",
-    "setGroupAddRequest",
-    "getStrangerInfo",
-    "getFriendList",
-    "getStrangerList",
-    "getGroupInfo",
-    "getGroupList",
-    "getGroupMemberInfo",
-    "getGroupMemberList",
-    "getCookies",
-    "getCsrfToken",
-    "cleanCache",
-
-    "setOnlineStatus",
-    "sendGroupPoke",
-    "addFriend",
-    "deleteFriend",
-    "inviteFriend",
-    "sendLike",
-    "setNickname",
-    "setDescription",
-    "setGender",
-    "setBirthday",
-    "setSignature",
-    "setPortrait",
-    "setGroupPortrait",
-
-    "getSystemMsg",
-    "getChatHistory",
-    "sendTempMsg",
-]
-
-export const ARGS: {[k: string|symbol]: string[]} = {}
-for (let fn of APIS) {
-    if (fn in Client.prototype) {
-        ARGS[fn] = String(Reflect.get(Client.prototype, fn)).match(/\(.*\)/)?.[0].replace("(","").replace(")","").split(",") as string[]
-        ARGS[fn].forEach((v, i, arr)=>{
-            arr[i] = v.replace(/=.+/, "").trim()
-        })
-    }
+const besides=['constructor','online_status','log_level','bkn','stat','login','logout','em']
+type Args={
+    [P in keyof Client]:Client[P] extends (...args:any)=>any?Parameters<Client[P]>:unknown
 }
-
+export const APIS=Reflect.ownKeys(Client.prototype).filter(key=>typeof key==='string' && !besides.includes(key)&& !key.startsWith('_')) as Array<keyof Client>
+export const ARGS: { [key:string|symbol]:string[] }=Object.fromEntries(APIS.map(key=>{
+    return [key,String(Reflect.get(Client.prototype,key))
+        .match(/\(.*\)/)?.[0]
+        .replace("(","")
+        .replace(")","")
+        .split(",")
+        .filter(Boolean).map(v=>v.replace(/=.+/, "").trim())]
+}))
 export function toHump(action: string) {
     return action.replace(/_[\w]/g, (s)=>{
         return s[1].toUpperCase()

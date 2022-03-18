@@ -1,5 +1,5 @@
 export const cwd=process.cwd()
-export * from './utils'
-export * from './bot'
-export * from './app'
-export * from './bin'
+export * from '@/utils/functions'
+export * from '@/core/bot'
+export * from '@/core/app'
+export * from '@/bin'

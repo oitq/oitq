@@ -1,6 +1,6 @@
 {
   "name": "oitq",
-  "version": "1.0.8-beta",
+  "version": "1.1.1",
   "description": "oicq生产环境部署程序",
   "main": "lib/index.js",
   "bin": "bin/oitq",
@@ -31,6 +31,7 @@
   "devDependencies": {
     "@types/koa": "^2.13.4",
     "@types/koa__router": "^8.0.11",
+    "@types/koa-bodyparser": "^4.3.6",
     "@types/node": "^17.0.8",
     "@types/prompts": "^2.0.14",
     "@types/ws": "^8.2.2",
@@ -51,7 +52,7 @@
     "cac": "^6.7.12",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
-    "oicq": "^2.1.9",
+    "oicq": "^2.2.1",
     "parseurl": "^1.3.3",
     "path-to-regexp": "^6.2.0",
     "prompts": "^2.4.2",

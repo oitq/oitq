@@ -1,5 +1,4 @@
 import {Client, Message} from 'oicq'
-import * as path from "path";
 import * as fs from 'fs'
 import http from "http"
 import https from "https"
@@ -7,13 +6,11 @@ import { URL } from "url"
 import {WebSocketServer,WebSocket}from "ws"
 import * as querystring from "querystring"
 import  * as rfdc from "rfdc"
-import {App} from "@/app";
-import {Bot} from "@/bot";
+import {App} from "@/core/app";
+import {Bot} from "@/core/bot";
 import { assert } from "./filter"
 import { toHump, transNotice, APIS, ARGS, toBool, BOOLS, genMetaEvent } from "./static"
-import { OneBotConfig, defaultOneBotConfig, createIfNotExists } from "./config"
-import {getAppConfigPath} from "@/utils";
-import {dir} from "@/bin";
+import { OneBotConfig, defaultOneBotConfig } from "./config"
 interface OneBotProtocol {
     action: string,
     params: any
@@ -21,11 +18,6 @@ interface OneBotProtocol {
 }
 
 const clone = rfdc()
-interface GlobalConfig {
-    general: OneBotConfig,
-    [k: number]: OneBotConfig
-}
-
 class NotFoundError extends Error { }
 export class OneBot{
     protected heartbeat?: NodeJS.Timeout
@@ -265,21 +257,19 @@ export class OneBot{
 
         if (action === "set_restart") {
             this.stop().then(this.start.bind(this))
-            const ret: any = {
+            const result: any = {
                 retcode: 1,
                 status: "async",
                 data: null,
                 error: null
             }
             if (echo) {
-                ret.echo = echo
+                result.echo = echo
             }
-            return JSON.stringify(ret)
+            return JSON.stringify(result)
         }
-
         const method = toHump(action) as keyof Client
         if (APIS.includes(method)) {
-
             const args = []
             for (let k of ARGS[method]) {
                 if (Reflect.has(params, k)) {
@@ -310,14 +300,18 @@ export class OneBot{
                             error: null
                         }
                     else
-                        ret = await ret
+                        result={
+                            retcode: 1,
+                            status: "success",
+                            data: await ret,
+                            error: null
+                        }
                 }
             }
-            if (ret instanceof Map)
-                ret = [...ret.values()]
+            if (result.ret instanceof Map)
+                result.ret = [...result.ret.values()]
 
             if (echo) {
-                //@ts-ignore
                 result.echo = echo
             }
             return JSON.stringify({...result,data:ret})
@@ -349,7 +343,7 @@ export class OneBot{
         }
         if (event.post_type === "request" && "approve" in res) {
             const action = event.request_type === "friend" ? "setFriendAddRequest" : "setGroupAddRequest"
-            this.bot[action](event.flag, res.approve, res.reason ? res.reason : "", res.block ? true : false)
+            this.bot[action](event.flag, res.approve, res.reason ? res.reason : "", !!res.block)
         }
     }
 
@@ -382,17 +376,14 @@ export class OneBot{
         if (this.config.access_token)
             headers.Authorization = "Bearer " + this.config.access_token
         const ws = new WebSocket(url, { headers })
-        // @ts-ignore
         ws.on("error", (err) => {
             this.bot.logger.error(err.message)
         })
-        // @ts-ignore
         ws.on("open", ()=>{
             this.bot.logger.info(`OneBot - 反向ws(${url})连接成功。`)
             this.wsr.add(ws)
             this._webSocketHandler(ws)
         })
-        // @ts-ignore
         ws.on("close", (code) => {
             this.wsr.delete(ws)
             if (timestmap < this.timestamp)
@@ -410,7 +401,6 @@ export class OneBot{
      * 实例启动
      */
     async start() {
-        this.config = Object.assign(this.config,await readConfig(this.bot.uin))
         for (const url of this.config.ws_reverse_url||[])
             this._createWsr(url)
         this._dispatch(genMetaEvent(this.bot.uin, "enable"))
@@ -483,10 +473,3 @@ export class OneBot{
         }
     }
 }
-async function readConfig(uin: number) {
-    const global_config = JSON.parse(await fs.promises.readFile(filepath, { encoding: "utf-8" })) as GlobalConfig
-    return Object.assign({}, defaultOneBotConfig, global_config.general, global_config[uin])
-}
-
-const filepath = path.join(getAppConfigPath(dir))
-createIfNotExists(filepath)

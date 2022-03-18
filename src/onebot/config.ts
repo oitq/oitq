@@ -36,16 +36,3 @@ export const defaultOneBotConfig: OneBotConfig = {
     ws_reverse_url: [],
     ws_reverse_reconnect_interval: 3000,
 }
-
-export function createIfNotExists(filepath: string) {
-    const dirname = path.dirname(filepath)
-    if (!fs.existsSync(dirname)) {
-        fs.mkdirSync(dirname, { recursive: true})
-    }
-    if (!fs.existsSync(filepath)) {
-        fs.writeFileSync(filepath, JSON.stringify({
-            general: defaultOneBotConfig,
-            123456789: { }
-        }, null, 4))
-    }
-}

@@ -1,7 +1,7 @@
 import {CAC} from "cac";
-import {AppOptions} from "@/app";
+import {AppOptions} from "@/core/app";
 import axios from "axios";
-import {getAppConfigPath, readConfig, writeConfig} from "@/utils";
+import {getAppConfigPath, readConfig, writeConfig} from "@/utils/functions";
 import {dir} from "@/bin/index";
 const prompts=require('prompts')
 const appOptions:AppOptions=readConfig(getAppConfigPath(dir))
@@ -15,9 +15,16 @@ export async function removeBot(){
     }
     appOptions.bots.splice(index,1)
     if(appOptions.start){
-        await request.get('/remove',{params:{uin}})
+        const {removeNow}=await prompts({
+            name:'removeNow',
+            type:'confirm',
+            message:'是否立即移除？',
+            initial:true
+        })
+        if(removeNow)await request.get('/remove',{params:{uin}})
     }
     writeConfig(getAppConfigPath(dir),appOptions)
+    console.log('配置已保存，下次启动时将不再登录该账号')
 }
 export default function registerRemoveCommand(cli:CAC){
     cli.command('remove','移除bot')

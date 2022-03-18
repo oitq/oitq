@@ -1,12 +1,13 @@
 import Koa from 'koa'
 import {Server,createServer} from 'http'
 import {Router} from "./router";
-import {Bot, BotList, BotOptions} from "./bot";
-import {success,error,sleep,merge} from "./utils";
-import {defaultOneBotConfig} from "@/oneBot/config";
-import {OneBot} from "@/oneBot";
+import * as KoaBodyParser from 'koa-bodyparser'
+import {Bot, BotEventMap, BotList, BotOptions} from "./bot";
+import {success,error,sleep,merge} from "@/utils/functions";
+import {defaultOneBotConfig} from "@/onebot/config";
+import {OneBot} from "@/onebot";
+import {Dict} from "@/utils/types";
 interface KoaOptions{
-    start?:boolean,
     port?:number,
     env?: string
     keys?: string[]
@@ -15,23 +16,46 @@ interface KoaOptions{
     proxyIpHeader?: string
     maxIpsCount?: number
 }
+
+export const defaultAppOptions={
+    port:8080,
+    path:'',
+    bots:[],
+    admins:[],
+    token:'',
+    delay:{
+        prompt:60000
+    }
+}
 export interface AppOptions extends KoaOptions{
+    start?:boolean,
     path?:string
     bots?:BotOptions[]
+    delay?:Dict<number>
+    admins?:number[]
+    token?:string
+}
+export interface AppEventMap extends BotEventMap{
+    'ready'():void
+    'dispose'():void
+
 }
 export interface App extends Koa{
     constructor(options?:AppOptions):App
     addBot(options:BotOptions):Bot
     removeBot(uin:number):void
-}
-export const defaultAppOptions={
-    port:8080,
-    path:'',
-    bots:[],
+    on<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E]):this;
+    on<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void):this;
+    once<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E]):this;
+    once<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void):this;
+    addEventListener<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E]):this;
+    addEventListener<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void):this;
+    emit<E extends keyof AppEventMap>(name:E,...args:Parameters<AppEventMap[E]>):boolean
+    emit<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,...args:any[]):boolean
 }
 export class App extends Koa{
     status:boolean=false
-    public bots:BotList=new BotList()
+    public bots:BotList=new BotList(this)
     public router:Router
     readonly httpServer:Server
     options:AppOptions
@@ -39,7 +63,7 @@ export class App extends Koa{
         super(options);
         this.options=merge(defaultAppOptions,options)
         this.router=new Router({prefix:this.options.path})
-        this.use(require('koa-bodyparser')())
+        this.use(KoaBodyParser())
         this.use(this.router.routes())
         this.use(this.router.allowedMethods())
         this.httpServer=createServer(this.callback())
@@ -99,6 +123,9 @@ export class App extends Koa{
             await bot?.oneBot.start()
             await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
         }
+        this.on('message',()=>{
+
+        })
         this.status=true
     }
     listen(...args){

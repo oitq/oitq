@@ -2,9 +2,9 @@ import axios from "axios";
 import {Choice, PromptObject} from 'prompts'
 import {CAC} from "cac";
 import {defaultOneBotConfig, OneBotConfig} from "@/onebot";
-import {BotOptions, defaultBotOptions} from "@/bot";
-import {AppOptions} from "@/app";
-import {getAppConfigPath, getOneBotConfigPath, readConfig, writeConfig} from "@/utils";
+import {BotOptions, defaultBotOptions} from "@/core/bot";
+import {AppOptions} from "@/core/app";
+import {getAppConfigPath, getOneBotConfigPath, readConfig, writeConfig} from "@/utils/functions";
 import {dir} from "@/bin/index";
 
 const prompts = require('prompts')
@@ -155,12 +155,19 @@ export async function addBot() {
     }
     appOptions.bots.push(botOptions)
     if (appOptions.start) {
-        await request.post('/add', result)
+        const {loginNow} = await prompts({
+            type:'confirm',
+            name:'loginNow',
+            message:'是否立即登录？',
+            initial:true
+        })
+        if(loginNow)await request.post('/add', result)
     }
     writeConfig(getAppConfigPath(dir), appOptions)
+    console.log('配置已保存，下次启动时将自动登录该账号')
 }
 
 export default function registerAddBotCommand(cli: CAC) {
-    cli.command('add', '新增一个机器人')
+    cli.command('add', '新增bot')
         .action(addBot)
 }
