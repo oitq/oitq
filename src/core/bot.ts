@@ -139,13 +139,77 @@ export class Bot extends Client{
     bindChildListen(){
         this.app.on('bot.system.login.qrcode',async (session)=>{
             if(this.status!==OnlineStatus.Online || !this.options.children.includes(session.bot.uin))return
-            await this.broadcastAdmin('bot.system.login.qrcode',this.options.admins,session)
+            await this.broadcastAdmin('bot.system.login.qrcode',this.options.admins,session.bot)
         })
     }
-    async broadcastAdmin<E extends keyof EventMap>(event:`bot.${E}`,admins:number[],session:NSession<E>){
+    async broadcastAdmin<E extends keyof EventMap>(event:`bot.${E}`,admins:number[],bot:Bot){
+        const _this=this
         for(const admin of admins){
-            await this.sendPrivateMsg(admin,template(event,session.bot.uin,template('bot.prompt.cancel')))
+            await this.sendPrivateMsg(admin,template(event,bot.uin,template('bot.prompt.cancel')))
+            this.on('bot.message.private',function getSession(session){
+                if(session.user_id===admin){
+                    if(session.raw_message==='辅助登录'){
+                        _this.startBotLogin(session,bot)
+                        this.off('bot.message.private',getSession)
+                    }
+                }
+            })
         }
+    }
+    startBotLogin(session:Session,bot:Bot){
+        const botDeviceLogin=async ({url})=>{
+            const confirm=await session.prompt({
+                type:'confirm',
+                name:`请复制下面的url在浏览器打开，完成设备验证后继续，\n${url}`
+            })
+            if(confirm)bot.login()
+        }
+        const botQrcodeLogin=async ()=>{
+            const confirm=await session.prompt({
+                type:'confirm',
+                name:`请使用手机qq扫描控制台中的二维码，完成扫码登录后继续`
+            })
+            if(confirm)bot.qrcodeLogin()
+        }
+        const botSliderLogin=async ({url})=>{
+            const input=await session.prompt({
+                type:'text',
+                name:`请复制下面的url在浏览器打开，完成扫码登录后继续\n${url}`
+            }) as string
+            if(input)bot.submitSlider(input)
+        }
+        const botPasswordLogin=async (message)=>{
+            const input=await session.prompt({
+                type:'text',
+                name:message
+            }) as string
+            if(input)bot.login(input)
+        }
+        const botSmsLogin=async (message)=>{
+            this.sendSmsCode()
+            const input=await session.prompt({
+                type:'text',
+                name:`${message},正在尝试进行手机验证登录，请输入账号绑定手机收到的验证码以继续`
+            }) as string
+            if(input)bot.submitSmsCode(input)
+        }
+        const botLoginErrorHandler=({message})=>{
+            if(message.includes('密码错误')){
+                botPasswordLogin('密码错误，请重新输入密码')
+            }else if(message.includes('二维码')){
+                botSmsLogin('二维码登录失败')
+            }
+        }
+        this.on('system.login.device',botDeviceLogin)
+        this.on('system.login.qrcode',botQrcodeLogin)
+        this.on('system.login.slider',botSliderLogin)
+        this.on('system.login.error',botLoginErrorHandler)
+        this.on('system.online',()=>{
+            this.removeListener('system.login.device',botDeviceLogin)
+            this.removeListener('system.login.qrcode',botQrcodeLogin)
+            this.removeListener('system.login.slider',botSliderLogin)
+            this.removeListener('system.login.error',botLoginErrorHandler)
+        })
     }
     async handleMessage(session:NSession<'message'>){
         for(const middleware of this.middlewares){
@@ -166,7 +230,7 @@ export class Bot extends Client{
         }else{
             this.app.emit(`bot.${name}`,session)
         }
-        this?.oneBot.dispatch(session)
+        this.oneBot?.dispatch(session)
         return super.emit(name,...args)
     }
     createSession<E extends keyof EventMap>(name:E,...args:Parameters<EventMap[E]>){

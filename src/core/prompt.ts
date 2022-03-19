@@ -1,8 +1,9 @@
 import {NSession} from "@/core/bot";
-import {FaceElem, ImageElem, MessageElem, Sendable, VideoElem} from "oicq";
+import {FaceElem, ImageElem, Sendable, VideoElem} from "oicq";
+import {Dict} from "@/utils";
 export namespace Prompt{
     export interface Options<T extends keyof TypeKV>{
-        type:T,
+        type:T | Falsy | PrevCaller<T>,
         name?:string
         label?:Sendable
         prefix?:string
@@ -15,6 +16,12 @@ export namespace Prompt{
         timeout?:number
         format?(value:ValueType<T>):ValueType<T>
     }
+    type Falsy = false | null | undefined;
+    type PrevCaller<T extends keyof TypeKV> = (
+        prev: any,
+        result: Dict,
+        options: Options<T>
+    ) => T|Falsy;
     export interface ChoiceItem{
         title:string
         value:any
@@ -124,9 +131,9 @@ export namespace Prompt{
         let result:Sendable=[]
         if(!options.name && !options.prefix) throw new Error('name/prefix is required')
         const titleArr=[
-            `${getPrefix(options.type)}${options.action||''}${options.label||options.name||''}`,
-            `${options.initial !==undefined && !['select','multipleSelect'].includes(options.type)?`默认：${options.initial}`:''}`,
-            `${['list','multipleSelect'].includes(options.type)?`多项使用'${options.separator}'分隔`:''}`
+            `${getPrefix(options.type as keyof TypeKV)}${options.action||''}${options.label||options.name||''}`,
+            `${options.initial !==undefined && !['select','multipleSelect'].includes(options.type as keyof TypeKV)?`默认：${options.initial}`:''}`,
+            `${['list','multipleSelect'].includes(options.type as keyof TypeKV)?`多项使用'${options.separator}'分隔`:''}`
         ].filter(Boolean)
         if(options.prefix){titleArr.shift()}
         result=result.concat(titleArr.join(','),'\n')

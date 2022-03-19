@@ -99,7 +99,7 @@ export class App extends Koa{
         }
         if(this.status) {
             bot.once('system.online',()=>{
-                bot?.oneBot.start()
+                bot.oneBot?.start()
             })
             bot.login(options.password)
         }
@@ -120,7 +120,7 @@ export class App extends Koa{
             const botOptions=this.options.bots||=[]
             const option:BotOptions=botOptions.find(botOption=>botOption.uin===bot.uin) ||{} as any
             await bot.login(option.password)
-            await bot?.oneBot.start()
+            await bot.oneBot?.start()
             await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
         }
         this.on('message',()=>{

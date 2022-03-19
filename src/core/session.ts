@@ -1,11 +1,10 @@
 import {App} from "@/core/app";
 import {Bot} from "@/core/bot";
 import {Dict} from "@/utils/types";
-import {EventMap, Sendable} from "oicq";
+import {MessageElem, Sendable} from "oicq";
 import {Middleware} from "@/core/middleware";
 import {MessageRet} from "oicq/lib/events";
 import {Prompt} from "@/core/prompt";
-
 export interface Session{
     message_type?:string
     post_type?:string
@@ -30,13 +29,15 @@ export class Session{
             return true
         },true)
     }
-    private promptReal<T extends keyof Prompt.TypeKV>(options:Prompt.Options<T>):Promise<Prompt.ValueType<T>|void>{
-        if(['select','multipleSelect'].includes(options.type) && !options.choices) throw new Error('choices is required')
+    private promptReal<T extends keyof Prompt.TypeKV>(prev:any,result:Dict,options:Prompt.Options<T>):Promise<Prompt.ValueType<T>|void>{
+        if(typeof options.type==='function')options.type=options.type(prev,result,options)
+        if(!options.type)return
+        if(['select','multipleSelect'].includes(options.type as keyof Prompt.TypeKV) && !options.choices) throw new Error('choices is required')
         return new Promise<Prompt.ValueType<T>|void>(resolve => {
             this.reply(Prompt.formatOutput(options))
             const dispose=this.middleware((session)=>{
                 if(!options.validate || options.validate(session.message)){
-                    let result=Prompt.formatValue(session,options.type,options)
+                    let result=Prompt.formatValue(session,options.type as keyof Prompt.TypeKV,options)
                     dispose()
                     resolve(result)
                     clearTimeout(timer)
@@ -52,12 +53,20 @@ export class Session{
     }
     async prompt<T extends keyof Prompt.TypeKV>(options:Prompt.Options<T>|Array<Prompt.Options<T>>){
         options=[].concat(options)
-        let result:Dict={}
-        if(options.length===0) return
-        if(options.length===1)return await this.promptReal(options[0])
-        for(const option of options){
-            if(!option.name) throw new Error('name is required')
-            result[option.name]=await this.promptReal(option)
+        let result:Dict={},prev:any=undefined
+        try{
+            if(options.length===0) return
+            if(options.length===1)return await this.promptReal(prev,result,options[0])
+            for(const option of options){
+                if(typeof option.type==='function')option.type=option.type(prev,result,option)
+                if(!option.type)continue
+                if(!option.name) throw new Error('name is required')
+                prev=await this.promptReal(prev,result,option)
+                result[option.name]=prev
+            }
+        }catch (e){
+            this.reply(e.message)
+            return
         }
         return result
     }
@@ -78,11 +87,5 @@ export class Session{
         return Object.fromEntries(Object.entries(this).filter(([key,value])=>{
             return !['app','bot'].includes(key) && !key.startsWith('_')
         }))
-    }
-}
-export namespace Session{
-    export interface Payload<E extends keyof EventMap>{
-        event:E
-        data:Parameters<EventMap[E]>
     }
 }
