@@ -59,8 +59,11 @@ export class Bot extends Client{
         super(options.uin,merge(defaultBotOptions.config,options.config));
         this.options=merge(defaultBotOptions,options)
         this.bindChildListen()
-        console.log(template('bot.system.login.qrcode','aaa',template('bot.prompt.cancel')))
+        if(!options.parent){
+            this.startProcessLogin()
+        }
     }
+    // message处理中间件，受拦截的message不会上报到'bot.message'
     middleware(middleware:Middleware,prepend?:boolean){
         const method:'unshift'|'push'=prepend?'unshift':'push'
         this.middlewares[method](middleware)
@@ -73,6 +76,66 @@ export class Bot extends Client{
             return false
         }
     }
+    startProcessLogin(){
+        const processDeviceLogin=({url})=>{
+            console.log(`请复制下面的url在浏览器打开，完成设备验证后输入任意内容继续，${template('bot.prompt.cancel')}\n${url}`)
+            process.stdin.once('data',(buf)=>{
+                const input=buf.toString().trim()
+                if(input==='cancel')return
+                this.login()
+            })
+        }
+        const processQrcodeLogin=()=>{
+            console.log(`请使用手机qq扫描控制台中的二维码，完成扫码登录后输入任意内容继续，${template('bot.prompt.cancel')}\n`)
+            process.stdin.once('data',(buf)=>{
+                const input=buf.toString().trim()
+                if(input==='cancel')return
+                this.qrcodeLogin()
+            })
+        }
+        const processSliderLogin=({url})=>{
+            console.log(`请复制下面的url在浏览器打开，完成扫码登录后输入任意内容继续，${template('bot.prompt.cancel')}\n${url}`)
+            process.stdin.once('data',(buf)=>{
+                const input=buf.toString().trim()
+                if(input==='cancel')return
+                this.submitSlider(input)
+            })
+        }
+        const processPasswordLogin=(message)=>{
+            console.log(`${message},${template('bot.prompt.cancel')}`)
+            process.stdin.once('data',(buf)=>{
+                const input=buf.toString().trim()
+                if(input==='cancel')return
+                this.login(input)
+            })
+        }
+        const processSmsLogin=(message)=>{
+            this.sendSmsCode()
+            console.log(`${message},正在尝试进行手机验证登录，请输入账号绑定手机收到的验证码以继续登录，${template('bot.prompt.cancel')}`)
+            process.stdin.once('data',(buf)=>{
+                const input=buf.toString().trim()
+                if(input==='cancel')return
+                this.submitSmsCode(input)
+            })
+        }
+        const processLoginErrorHandler=({message})=>{
+            if(message.includes('密码错误')){
+                processPasswordLogin('密码错误，请重新输入密码')
+            }else if(message.includes('二维码')){
+                processSmsLogin('二维码登录失败')
+            }
+        }
+        this.on('system.login.device',processDeviceLogin)
+        this.on('system.login.qrcode',processQrcodeLogin)
+        this.on('system.login.slider',processSliderLogin)
+        this.on('system.login.error',processLoginErrorHandler)
+        this.on('system.online',()=>{
+            this.removeListener('system.login.device',processDeviceLogin)
+            this.removeListener('system.login.qrcode',processQrcodeLogin)
+            this.removeListener('system.login.slider',processSliderLogin)
+            this.removeListener('system.login.error',processLoginErrorHandler)
+        })
+    }
     bindChildListen(){
         this.app.on('bot.system.login.qrcode',async (session)=>{
             if(this.status!==OnlineStatus.Online || !this.options.children.includes(session.bot.uin))return
@@ -81,7 +144,7 @@ export class Bot extends Client{
     }
     async broadcastAdmin<E extends keyof EventMap>(event:`bot.${E}`,admins:number[],session:NSession<E>){
         for(const admin of admins){
-            await this.sendPrivateMsg(admin,template(event,session.bot.uin))
+            await this.sendPrivateMsg(admin,template(event,session.bot.uin,template('bot.prompt.cancel')))
         }
     }
     async handleMessage(session:NSession<'message'>){
@@ -90,6 +153,7 @@ export class Bot extends Client{
             if(result) return result
         }
     }
+    // 重写emit，将event data封装成session，上报到app
     emit<E extends keyof EventMap>(name:E,...args:Parameters<EventMap[E]>){
         const session=this.createSession(name,...args)
         if(name==='message'){
@@ -109,7 +173,7 @@ export class Bot extends Client{
         let data:any=typeof args[0]==="object"?args.shift():{}
         if(!data)data={}
         data.args=args
-        return new Session(this.app,this,data) as NSession<E>
+        return new Session(this.app, this, data) as unknown as NSession<E>
     }
 
 }
