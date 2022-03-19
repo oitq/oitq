@@ -1,5 +1,5 @@
 import {NSession} from "@/core/bot";
-import {Sendable} from "oicq";
+import {FaceElem, ImageElem, MessageElem, Sendable, VideoElem} from "oicq";
 export namespace Prompt{
     export interface Options<T extends keyof TypeKV>{
         type:T,
@@ -21,6 +21,10 @@ export namespace Prompt{
     }
     export interface TypeKV{
         text:string,
+        any:any
+        video:VideoElem
+        image:ImageElem
+        face:FaceElem
         number:number,
         list:any[]
         confirm:boolean
@@ -32,10 +36,27 @@ export namespace Prompt{
     export function formatValue<T extends keyof TypeKV>(session:NSession<'message'>,type:T,option:Options<T>):ValueType<T>{
         let  result
         switch (type){
+            case 'any':
+                result=session.message
             case "text":
                 if(session.message.length===1&& session.message[0].type==='text'){
                     result=session.message[0].text;
                 }else result=option.initial||''
+                break;
+            case 'face':
+                if(session.message.length===1&&['face','sface','bface'].includes(session.message[0].type)){
+                    result=session.message[0]
+                }
+                break;
+            case 'video':
+                if(session.message.length===1&&session.message[0].type==='video'){
+                    result=session.message[0]
+                }
+                break;
+            case 'image':
+                if(session.message.length===1&&session.message[0].type==='image'){
+                    result=session.message[0]
+                }
                 break;
             case "number":
                 if(session.message.length===1&& session.message[0].type==='text' && /^\d+$/.test(session.message[0].text)){
@@ -69,7 +90,7 @@ export namespace Prompt{
                 }else option.initial
                 break;
             case 'multipleSelect':
-                const reg=new RegExp(`^(.*)(${option.separator}.*)?$`)
+                const reg=new RegExp(`^(\d+)(${option.separator}\d+)?$`)
                 console.log(reg)
                 if(session.message.length===1&& session.message[0].type==='text' && reg.test(session.message[0].text)){
                     result=session.message[0].text
@@ -92,6 +113,9 @@ export namespace Prompt{
                 return '请选择'
             case 'confirm':
                 return '是否确认'
+            case 'video':
+            case 'image':
+                return '上传'
             default :
                 return '请输入'
         }
