@@ -29,15 +29,15 @@ export class Session{
             return true
         },true)
     }
-    private promptReal<T extends keyof Prompt.TypeKV>(prev:any,result:Dict,options:Prompt.Options<T>):Promise<Prompt.ValueType<T>|void>{
-        if(typeof options.type==='function')options.type=options.type(prev,result,options)
+    private promptReal<T extends keyof Prompt.TypeKV>(prev:any,answer:Dict,options:Prompt.Options<T>):Promise<Prompt.ValueType<T>|void>{
+        if(typeof options.type==='function')options.type=options.type(prev,answer,options)
         if(!options.type)return
         if(['select','multipleSelect'].includes(options.type as keyof Prompt.TypeKV) && !options.choices) throw new Error('choices is required')
         return new Promise<Prompt.ValueType<T>|void>(resolve => {
-            this.reply(Prompt.formatOutput(options))
+            this.reply(Prompt.formatOutput(prev,answer,options))
             const dispose=this.middleware((session)=>{
                 if(!options.validate || options.validate(session.message)){
-                    let result=Prompt.formatValue(session,options.type as keyof Prompt.TypeKV,options)
+                    let result=Prompt.formatValue(prev,answer,options,session.message)
                     dispose()
                     resolve(result)
                     clearTimeout(timer)
@@ -53,22 +53,22 @@ export class Session{
     }
     async prompt<T extends keyof Prompt.TypeKV>(options:Prompt.Options<T>|Array<Prompt.Options<T>>){
         options=[].concat(options)
-        let result:Dict={},prev:any=undefined
+        let answer:Dict={},prev:any=undefined
         try{
             if(options.length===0) return
-            if(options.length===1)return await this.promptReal(prev,result,options[0])
+            if(options.length===1)return await this.promptReal(prev,answer,options[0])
             for(const option of options){
-                if(typeof option.type==='function')option.type=option.type(prev,result,option)
+                if(typeof option.type==='function')option.type=option.type(prev,answer,option)
                 if(!option.type)continue
                 if(!option.name) throw new Error('name is required')
-                prev=await this.promptReal(prev,result,option)
-                result[option.name]=prev
+                prev=await this.promptReal(prev,answer,option)
+                answer[option.name]=prev
             }
         }catch (e){
             this.reply(e.message)
             return
         }
-        return result
+        return answer
     }
     getChannelId(){
         return [

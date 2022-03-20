@@ -1,27 +1,26 @@
-import {NSession} from "@/core/bot";
-import {FaceElem, ImageElem, Sendable, VideoElem} from "oicq";
+import {FaceElem, ImageElem, MessageElem, Sendable, VideoElem} from "oicq";
 import {Dict} from "@/utils";
 export namespace Prompt{
     export interface Options<T extends keyof TypeKV>{
-        type:T | Falsy | PrevCaller<T>,
+        type:T | Falsy | PrevCaller<T,T|Falsy>,
         name?:string
         label?:Sendable
         prefix?:string
         action?:string
-        validate?(message:Sendable):boolean
+        validate?:(message:Sendable)=>boolean
         errorMsg?:string
-        separator?:string
-        choices?:ChoiceItem[]
-        initial?:ValueType<T>
+        separator?:string|PrevCaller<T, string>
+        choices?:ChoiceItem[]|PrevCaller<T,ChoiceItem[]>
+        initial?:ValueType<T>|PrevCaller<T, ValueType<T>>
         timeout?:number
-        format?(value:ValueType<T>):ValueType<T>
+        format?:(value:ValueType<T>)=>ValueType<T>
     }
     type Falsy = false | null | undefined;
-    type PrevCaller<T extends keyof TypeKV> = (
+    type PrevCaller<T extends keyof TypeKV,R=T> = (
         prev: any,
-        result: Dict,
+        answer: Dict,
         options: Options<T>
-    ) => T|Falsy;
+    ) => R;
     export interface ChoiceItem{
         title:string
         value:any
@@ -40,71 +39,75 @@ export namespace Prompt{
         multipleSelect:any[]
     }
     export type ValueType<T extends keyof TypeKV>= T extends keyof TypeKV?TypeKV[T]:any
-    export function formatValue<T extends keyof TypeKV>(session:NSession<'message'>,type:T,option:Options<T>):ValueType<T>{
+    export function formatValue<T extends keyof TypeKV>(prev:any,answer:Dict,option:Options<T>,message:MessageElem[]):ValueType<T>{
+        const type=typeof option.type==="function"?option.type(prev,answer,option):option.type
+        const separator=typeof option.separator==='function'?option.separator(prev,answer,option):option.separator
+        // @ts-ignore
+        const initial:ValueType<T>=typeof option.initial==='function'?option.initial(prev,answer,option):option.initial
         let  result
         switch (type){
             case 'any':
-                result=session.message
+                result=message
+                break;
             case "text":
-                if(session.message.length===1&& session.message[0].type==='text'){
-                    result=session.message[0].text;
-                }else result=option.initial||''
+                if(message.length===1&& message[0].type==='text'){
+                    result=message[0].text;
+                }else result=initial||''
                 break;
             case 'face':
-                if(session.message.length===1&&['face','sface','bface'].includes(session.message[0].type)){
-                    result=session.message[0]
+                if(message.length===1&&['face','sface','bface'].includes(message[0].type)){
+                    result=message[0]
                 }
                 break;
             case 'video':
-                if(session.message.length===1&&session.message[0].type==='video'){
-                    result=session.message[0]
+                if(message.length===1&&message[0].type==='video'){
+                    result=message[0]
                 }
                 break;
             case 'image':
-                if(session.message.length===1&&session.message[0].type==='image'){
-                    result=session.message[0]
+                if(message.length===1&&message[0].type==='image'){
+                    result=message[0]
                 }
                 break;
             case "number":
-                if(session.message.length===1&& session.message[0].type==='text' && /^\d+$/.test(session.message[0].text)){
-                    result=Number(session.message[0].text)
-                }else result=option.initial
+                if(message.length===1&& message[0].type==='text' && /^\d+$/.test(message[0].text)){
+                    result=Number(message[0].text)
+                }else result=initial
                 break;
             case "list":
-                if(session.message.length===1&& session.message[0].type==='text' && new RegExp(`^(.*)(${option.separator}.*)?$`).test(session.message[0].text)){
-                    result=session.message[0].text.split(option.separator)
+                if(message.length===1&& message[0].type==='text' && new RegExp(`^(.*)(${option.separator}.*)?$`).test(message[0].text)){
+                    result=message[0].text.split(separator)
                 }else{
-                    result=option.initial||[]
+                    result=initial||[]
                 }
                 break;
             case "date":
-                if(session.message.length===1&& session.message[0].type==='text' && new Date(session.message[0].text).toString()!=='Invalid Date'){
-                    result=new Date(session.message[0].text)
+                if(message.length===1&& message[0].type==='text' && new Date(message[0].text).toString()!=='Invalid Date'){
+                    result=new Date(message[0].text)
                 }else{
-                    result=option.initial||new Date()
+                    result=initial||new Date()
                 }
                 break;
             case "confirm":
-                if(session.message.length===1&& session.message[0].type==='text' && ['y','yes','.','。'].includes(session.message[0].text.toLowerCase())){
+                if(message.length===1&& message[0].type==='text' && ['y','yes','.','。'].includes(message[0].text.toLowerCase())){
                     result=true
                 }else{
-                    result=option.initial||false
+                    result=initial||false
                 }
                 break;
             case 'select':
-                if(session.message.length===1&& session.message[0].type==='text' && /^\d+$/.test(session.message[0].text)){
-                    result=option.choices[Number(session.message[0].text)-1].value
-                }else option.initial
+                if(message.length===1&& message[0].type==='text' && /^\d+$/.test(message[0].text)){
+                    result=option.choices[Number(message[0].text)-1].value
+                }else initial
                 break;
             case 'multipleSelect':
                 const reg=new RegExp(`^(\d+)(${option.separator}\d+)?$`)
-                console.log(reg)
-                if(session.message.length===1&& session.message[0].type==='text' && reg.test(session.message[0].text)){
-                    result=session.message[0].text
-                        .split(option.separator)
+                if(message.length===1&& message[0].type==='text' && reg.test(message[0].text)){
+                    result=message[0].text
+                        .split(separator)
                         .map(Number).map(index=>option.choices[index-1].value)
                 }else{
-                    result=option.initial||[]
+                    result=initial||[]
                 }
                 break;
         }
@@ -127,7 +130,7 @@ export namespace Prompt{
                 return '请输入'
         }
     }
-    export function formatOutput<T extends keyof TypeKV>(options:Options<T>){
+    export function formatOutput<T extends keyof TypeKV>(prev:any,answer:Dict,options:Options<T>){
         let result:Sendable=[]
         if(!options.name && !options.prefix) throw new Error('name/prefix is required')
         const titleArr=[
@@ -139,6 +142,7 @@ export namespace Prompt{
         result=result.concat(titleArr.join(','),'\n')
         if(options.prefix)result.unshift(options.prefix)
         if (options.type==='confirm')result.push("输入y[es]或句号(.或。)以确认，其他内容取消(不区分大小写)")
+        const choices=typeof options.choices==='function'?options.choices(prev,result,options):options.choices
         switch (options.type){
             case "text":
             case 'number':
@@ -148,9 +152,9 @@ export namespace Prompt{
                 break;
             case "select":
             case 'multipleSelect':
-                if(!options.choices) throw new Error('choices is required')
+                if(!choices) throw new Error('choices is required')
                 result.push(
-                    options.choices.map((option,index)=>`${index+1}:${option.title}${option.value===options.initial?' (默认)':''}`).join('\n'),
+                    choices.map((option,index)=>`${index+1}:${option.title}${option.value===options.initial?' (默认)':''}`).join('\n'),
                     '\n输入指定选项前边的索引即可'
                 )
         }

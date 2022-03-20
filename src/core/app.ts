@@ -7,6 +7,7 @@ import {success,error,sleep,merge} from "@/utils/functions";
 import {defaultOneBotConfig} from "@/onebot/config";
 import {OneBot} from "@/onebot";
 import {Dict} from "@/utils/types";
+import {PluginOptions} from "@/core/plugin";
 interface KoaOptions{
     port?:number,
     env?: string
@@ -22,6 +23,7 @@ export const defaultAppOptions={
     path:'',
     bots:[],
     admins:[],
+    plugins:[],
     token:'',
     delay:{
         prompt:60000
@@ -34,6 +36,7 @@ export interface AppOptions extends KoaOptions{
     delay?:Dict<number>
     admins?:number[]
     token?:string
+    plugins?:PluginOptions[]
 }
 export interface AppEventMap extends BotEventMap{
     'ready'():void
@@ -64,8 +67,8 @@ export class App extends Koa{
         this.options=merge(defaultAppOptions,options)
         this.router=new Router({prefix:this.options.path})
         this.use(KoaBodyParser())
-        this.use(this.router.routes())
-        this.use(this.router.allowedMethods())
+            .use(this.router.routes())
+            .use(this.router.allowedMethods())
         this.httpServer=createServer(this.callback())
         this.router.get('',(ctx)=>{
             ctx.body='this is oicq-bots api\n' +
@@ -123,9 +126,6 @@ export class App extends Koa{
             await bot.oneBot?.start()
             await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
         }
-        this.on('message',()=>{
-
-        })
         this.status=true
     }
     listen(...args){
