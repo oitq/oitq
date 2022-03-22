@@ -138,7 +138,6 @@ export async function addBot() {
     if (confClient) {
         const newDefaultConfig = await prompts(configQuestions, {
             onCancel() {
-                console.log(5)
                 throw new Error('主动结束，流程结束')
             }
         })

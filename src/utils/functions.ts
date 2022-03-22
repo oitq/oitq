@@ -1,5 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
+import {Dict} from "@/utils/types";
 
 export function success(data){
     return {
@@ -62,3 +63,13 @@ export function createIfNotExist(filepath,value={}){
         fs.writeFileSync(filepath, JSON.stringify(value, null, 4))
     }
 }
+
+export function valueMap<T, U>(object: Dict<T>, transform: (value: T, key: string) => U): Dict<U> {
+    return Object.fromEntries(Object.entries(object).map(([key, value]) => [key, transform(value, key)]))
+}
+export function defineProperty<T, K extends keyof T>(object: T, key: K, value: T[K]): void
+export function defineProperty<T, K extends keyof any>(object: T, key: K, value: any): void
+export function defineProperty<T, K extends keyof any>(object: T, key: K, value: any) {
+    Object.defineProperty(object, key, { writable: true, value })
+}
+

@@ -5,6 +5,7 @@ export namespace Prompt{
         type:T | Falsy | PrevCaller<T,T|Falsy>,
         name?:string
         label?:Sendable
+        message?:Sendable
         prefix?:string
         action?:string
         validate?:(message:Sendable)=>boolean
@@ -134,7 +135,7 @@ export namespace Prompt{
         let result:Sendable=[]
         if(!options.name && !options.prefix) throw new Error('name/prefix is required')
         const titleArr=[
-            `${getPrefix(options.type as keyof TypeKV)}${options.action||''}${options.label||options.name||''}`,
+            `${options.message||(getPrefix(options.type as keyof TypeKV)+(options.action||'')+options.label||options.name||'')}`,
             `${options.initial !==undefined && !['select','multipleSelect'].includes(options.type as keyof TypeKV)?`默认：${options.initial}`:''}`,
             `${['list','multipleSelect'].includes(options.type as keyof TypeKV)?`多项使用'${options.separator}'分隔`:''}`
         ].filter(Boolean)

@@ -7,4 +7,6 @@ export type Extend<B extends Dict,N extends Dict=Dict>={
 export type Define<D extends Dict,K extends string,V extends any=any>={
     [P in (K|keyof D)]:P extends keyof D?D[P]:P extends K?V:unknown
 }
-export type Promisify<R>=R|Promise<R>
+
+export type Promisify<T> = Promise<T extends Promise<infer S> ? S : T>
+export type Awaitable<T> = [T] extends [Promise<unknown>] ? T : T | Promise<T>

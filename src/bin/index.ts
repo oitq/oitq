@@ -18,7 +18,7 @@ if (!fs.existsSync(dir)) fs.mkdirSync(dir);
  * @param err
  */
 const onError = (err: Error): void => {
-    console.error(err.message)
+    console.error(err)
     process.exit(1)
 }
 // 监听未捕获的异常事件

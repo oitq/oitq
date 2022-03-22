@@ -2,12 +2,15 @@ import Koa from 'koa'
 import {Server,createServer} from 'http'
 import {Router} from "./router";
 import * as KoaBodyParser from 'koa-bodyparser'
-import {Bot, BotEventMap, BotList, BotOptions} from "./bot";
-import {success,error,sleep,merge} from "@/utils/functions";
+import {Bot, BotEventMap, BotList, BotOptions, NSession} from "./bot";
+import {success, error, sleep, merge} from "@/utils/functions";
 import {defaultOneBotConfig} from "@/onebot/config";
 import {OneBot} from "@/onebot";
-import {Dict} from "@/utils/types";
-import {PluginOptions} from "@/core/plugin";
+import {Awaitable, Dict} from "@/utils/types";
+import {PluginManager, Plugin, Computed} from "@/core";
+import * as path from "path";
+import {Command,Argv} from "@lc-cn/command";
+
 interface KoaOptions{
     port?:number,
     env?: string
@@ -21,50 +24,81 @@ interface KoaOptions{
 export const defaultAppOptions={
     port:8080,
     path:'',
+    prefix:()=>'',
     bots:[],
     admins:[],
     plugins:[],
+    minSimilarity:0.4,
     token:'',
+    plugin_dir:path.join(process.cwd(),'plugins'),
     delay:{
         prompt:60000
     }
 }
-export interface AppOptions extends KoaOptions{
+export interface AppOptions extends KoaOptions,PluginManager.Config{
     start?:boolean,
+    prefix?: Computed<string | string[]>
+    minSimilarity?:number,
     path?:string
     bots?:BotOptions[]
     delay?:Dict<number>
     admins?:number[]
     token?:string
-    plugins?:PluginOptions[]
 }
+
+type EventName = keyof AppEventMap
+type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
+type BeforeEventName = OmitSubstring<EventName & string, 'before-'>
+
+export type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: AppEventMap[E] }
 export interface AppEventMap extends BotEventMap{
     'ready'():void
     'dispose'():void
+    'command/before-execute'(argv: Argv): Awaitable<void | string>
+    'before-parse'(content: string, session: NSession<'message'>): void
+    'before-attach'(session: NSession<'message'>): void
+    'attach'(session: NSession<'message'>): void
+    'bot-added'(bot: Bot): void
+    'bot-removed'(bot: Bot): void
+    'plugin-added'(plugin: Plugin): void
+    'plugin-removed'(plugin: Plugin): void
+
+    'before-command'(argv: Argv): Awaitable<void | string>
+    'help/command'(output: string[], command: Command, session: NSession<'message'>): void
+    'help/option'(output: string, option: Argv.OptionDeclaration, command: Command, session: NSession<'message'>): string
 
 }
+interface CommandMap extends Map<string, Command> {
+    resolve(key: string): Command
+}
+
 export interface App extends Koa{
     constructor(options?:AppOptions):App
     addBot(options:BotOptions):Bot
     removeBot(uin:number):void
-    on<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E]):this;
-    on<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void):this;
-    once<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E]):this;
-    once<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void):this;
-    addEventListener<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E]):this;
-    addEventListener<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void):this;
+    on<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):this;
+    on<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):this;
+    once<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):this;
+    once<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):this;
+    addEventListener<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):this;
+    addEventListener<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):this;
     emit<E extends keyof AppEventMap>(name:E,...args:Parameters<AppEventMap[E]>):boolean
     emit<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,...args:any[]):boolean
 }
 export class App extends Koa{
     status:boolean=false
+    _commandList: Command[] = []
+    _commands: CommandMap = new Map<string, Command>() as never
+    _shortcuts: Command.Shortcut[] = []
     public bots:BotList=new BotList(this)
+    public pluginManager:PluginManager
     public router:Router
     readonly httpServer:Server
     options:AppOptions
     constructor(options:AppOptions={}) {
         super(options);
         this.options=merge(defaultAppOptions,options)
+        this.pluginManager=new PluginManager(this,this.options)
         this.router=new Router({prefix:this.options.path})
         this.use(KoaBodyParser())
             .use(this.router.routes())
@@ -88,11 +122,84 @@ export class App extends Koa{
             await next()
             return success('移除成功')
         })
+        this._commands.resolve = (key) => {
+            if (!key) return
+            const segments = key.split('.')
+            let i = 1, name = segments[0], cmd: Command
+            while ((cmd = this.getCommand(name)) && i < segments.length) {
+                name = cmd.name + '.' + segments[i++]
+            }
+            return cmd
+        }
         if(options.bots){
             for(const botOptions of options.bots){
                 this.addBot(botOptions)
             }
         }
+    }
+
+    getCommand(name: string) {
+        return this._commands.get(name)
+    }
+    plugin(name:string,plugin?:Plugin|PluginManager.Object,config?){
+        if(!plugin)plugin=this.pluginManager.import(name)
+        if(!(plugin instanceof Plugin)){
+            plugin=new Plugin(name,plugin)
+        }
+        this.pluginManager.install(name,plugin as Plugin,config)
+        return this
+    }
+    command<D extends string>(def: D, config?: Command.Config): Command<Argv.ArgumentType<D>>
+    command<D extends string>(def: D, desc: string, config?: Command.Config): Command<Argv.ArgumentType<D>>
+    command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
+        const desc = typeof args[0] === 'string' ? args.shift() as string : ''
+        const config = args[0] as Command.Config
+        const path = def.split(' ', 1)[0]
+        const decl = def.slice(path.length)
+        const segments = path.split(/(?=[./])/g)
+
+        let parent: Command, root: Command
+        segments.forEach((segment, index) => {
+            const code = segment.charCodeAt(0)
+            const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
+            let command = this._commands.get(name)
+            if (command) {
+                if (parent) {
+                    if (command === parent) {
+                        throw new Error(`cannot set a command (${command.name}) as its own subcommand`)
+                    }
+                    if (command.parent) {
+                        if (command.parent !== parent) {
+                            throw new Error(`cannot create subcommand ${path}: ${command.parent.name}/${command.name} alconnect exists`)
+                        }
+                    } else {
+                        command.parent = parent
+                        parent.children.push(command)
+                    }
+                }
+                return parent = command
+            }
+            command = new Command(name, decl, index === segments.length - 1 ? desc : '')
+            command.config=config||{}
+            command.app=this
+            this._commands.set(name,command)
+            this._commandList.push(command)
+            this.emit('command.add',command)
+            if (!root) root = command
+            if (parent) {
+                command.parent = parent
+                command.config.authority = parent.config.authority
+                parent.children.push(command)
+            }
+            parent = command
+        })
+
+        if (desc) parent.description = desc
+        Object.assign(parent.config||={}, config)
+        if (!config?.patch) {
+            return parent
+        }
+        return Object.create(parent)
     }
     addBot(options:BotOptions){
         this.options.bots.push(options)
@@ -124,6 +231,7 @@ export class App extends Koa{
             const option:BotOptions=botOptions.find(botOption=>botOption.uin===bot.uin) ||{} as any
             await bot.login(option.password)
             await bot.oneBot?.start()
+            await this.pluginManager.restore(bot)
             await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
         }
         this.status=true

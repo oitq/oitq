@@ -1,12 +1,11 @@
-import {App} from "@/core/app";
-import {Bot} from "@/core/bot";
-import {Dict} from "@/utils/types";
+import {App, Bot, Middleware, NSession, Prompt} from "@/core";
+import {Awaitable, Dict} from "@/utils/types";
 import {MessageElem, Sendable} from "oicq";
-import {Middleware} from "@/core/middleware";
 import {MessageRet} from "oicq/lib/events";
-import {Prompt} from "@/core/prompt";
+import {template} from "@/utils";
 export interface Session{
     message_type?:string
+    message?:MessageElem[]
     post_type?:string
     notice_type?:string
     request_type?:string
@@ -16,7 +15,23 @@ export interface Session{
     sub_type?:string
     reply?(content: Sendable, quote?: boolean): Promise<MessageRet>
 }
+export type Computed<T> = T | ((session: NSession<'message'>) => T)
+export interface Parsed {
+    content: string
+    prefix: string
+    appel: boolean
+}
+export interface SuggestOptions {
+    target: string
+    items: string[]
+    prefix?: string
+    suffix: string
+    minSimilarity?: number
+    apply: (this: NSession<'message'>, suggestion: string) => Awaitable<void | string>
+}
 export class Session{
+
+    parsed?: Parsed
     constructor(public app:App,public bot:Bot,data:Dict) {
         Object.assign(this,data)
     }
@@ -56,7 +71,6 @@ export class Session{
         let answer:Dict={},prev:any=undefined
         try{
             if(options.length===0) return
-            if(options.length===1)return await this.promptReal(prev,answer,options[0])
             for(const option of options){
                 if(typeof option.type==='function')option.type=option.type(prev,answer,option)
                 if(!option.type)continue
@@ -82,6 +96,12 @@ export class Session{
             this.discuss_id,
             this.user_id
         ].filter(Boolean).join('.')
+    }
+    resolveValue<T>(source: T | ((session: Session) => T)): T {
+        return typeof source === 'function' ? Reflect.apply(source, null, [this]) : source
+    }
+    text(path: string | string[], params: object = {}) {
+        return template(path,params)
     }
     toJSON(){
         return Object.fromEntries(Object.entries(this).filter(([key,value])=>{

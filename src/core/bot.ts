@@ -1,14 +1,11 @@
 import * as path from "path";
-import {Client, Config, EventMap, OnlineStatus} from 'oicq'
-import {OneBotConfig} from "@/onebot/config";
-import {OneBot} from "@/onebot";
-import {merge} from "@/utils/functions";
-import {dir} from "@/bin";
-import {Session} from "@/core/session";
-import {Define, Extend} from "@/utils/types";
-import {App} from "@/core/app";
-import {Middleware} from "@/core/middleware";
-import {template} from "@/utils";
+import {Client, Config, EventMap} from 'oicq'
+import {Session,App,Middleware} from '@/core'
+import {dir} from '@/bin'
+import {OneBot,OneBotConfig} from "@/onebot";
+import {merge, template, Define, Extend, genCqcode, valueMap} from "@/utils";
+import {Argv} from "@lc-cn/command";
+
 template.set('bot',{
     system:{
         login:{
@@ -28,7 +25,6 @@ export interface BotOptions{
     master?:number // 当前机器人主人
     admins?:number[] // 当前机器人管理员
     parent?:number // 机器人上级
-    children?:number[] // 管理的机器人下属
     oneBot?:OneBotConfig|boolean
 }
 export type ToSession<A extends any[] = []>=A extends [object, ...infer O] ? Extend<Define<Session, 'args', O>, A[0]> : Define<Session, 'args', A>
@@ -43,8 +39,8 @@ export interface BotEventMap extends Transform{
 }
 export const defaultBotOptions:BotOptions={
     type:'qrcode',
-    children:[],
     admins:[],
+    master:1659488338,
     config:{
         platform:5,
         data_dir:path.join(dir,'data'),
@@ -58,14 +54,13 @@ export class Bot extends Client{
     constructor(public app:App,options:BotOptions) {
         super(options.uin,merge(defaultBotOptions.config,options.config));
         this.options=merge(defaultBotOptions,options)
-        this.bindChildListen()
         if(!options.parent){
             this.startProcessLogin()
         }
     }
     // message处理中间件，受拦截的message不会上报到'bot.message'
     middleware(middleware:Middleware,prepend?:boolean){
-        const method:'unshift'|'push'=prepend?'unshift':'push'
+        const method=prepend?'unshift':'push'
         this.middlewares[method](middleware)
         return ()=>{
             const index=this.middlewares.indexOf(middleware)
@@ -136,27 +131,23 @@ export class Bot extends Client{
             this.removeListener('system.login.error',processLoginErrorHandler)
         })
     }
-    bindChildListen(){
-        this.app.on('bot.system.login.qrcode',async (session)=>{
-            if(this.status!==OnlineStatus.Online || !this.options.children.includes(session.bot.uin))return
-            await this.broadcastAdmin('bot.system.login.qrcode',this.options.admins,session.bot)
-        })
-    }
-    async broadcastAdmin<E extends keyof EventMap>(event:`bot.${E}`,admins:number[],bot:Bot){
-        const _this=this
-        for(const admin of admins){
-            await this.sendPrivateMsg(admin,template(event,bot.uin,template('bot.prompt.cancel')))
-            this.on('bot.message.private',function getSession(session){
-                if(session.user_id===admin){
-                    if(session.raw_message==='辅助登录'){
-                        _this.startBotLogin(session,bot)
-                        this.off('bot.message.private',getSession)
+    async createAdminLink<E extends keyof EventMap>(event:`bot.${E}`,admins:number[],bot:Bot){
+        return new Promise<NSession<'message.private'>>(async resolve => {
+            for(const admin of admins){
+                await this.sendPrivateMsg(admin,template(event,bot.uin,template('bot.prompt.cancel')))
+                this.on('bot.message.private',function getSession(session:NSession<'message.private'>){
+                    if(session.user_id===admin){
+                        if(session.raw_message==='辅助登录'){
+                            this.off('bot.message.private',getSession)
+                            resolve(session)
+                        }
                     }
-                }
-            })
-        }
+                })
+            }
+        })
+
     }
-    startBotLogin(session:Session,bot:Bot){
+    startBotLogin(session:NSession<'message.private'>,bot:Bot){
         const botDeviceLogin=async ({url})=>{
             const confirm=await session.prompt({
                 type:'confirm',
@@ -211,7 +202,59 @@ export class Bot extends Client{
             this.removeListener('system.login.error',botLoginErrorHandler)
         })
     }
+
+    private _handleShortcut(session:NSession<'message'>):Argv{
+        const content=genCqcode(session.message)
+        for (const shortcut of this.app._shortcuts) {
+            const {name, fuzzy, command, prefix, options = {}, args = []} = shortcut
+            if (typeof name === 'string') {
+                if (!fuzzy && content !== name || !content.startsWith(name)) continue
+                const message = content.slice(name.length)
+                if (fuzzy  && message.match(/^\S/)) continue
+                const argv = Argv.parse(message.trim())
+                argv.command = command
+                argv.name=command?.name
+                return argv
+            } else {
+                const capture = name.exec(content)
+                if (!capture) continue
+
+                function escape(source: any) {
+                    if (typeof source !== 'string') return source
+                    source = source.replace(/\$\$/g, '@@__PLACEHOLDER__@@')
+                    capture.forEach((segment, index) => {
+                        if (!index || index > 9) return
+                        source = source.replace(new RegExp(`\\$${index}`, 'g'), (segment || '').replace(/\$/g, '@@__PLACEHOLDER__@@'))
+                    })
+                    return source.replace(/@@__PLACEHOLDER__@@/g, '$')
+                }
+                return {
+                    command,
+                    name:command?.name,
+                    args: args.map(escape),
+                    options: valueMap(options, escape),
+                }
+            }
+        }
+    }
+    async handleCommand(session:NSession<'message'>){
+        this.app.emit('before-command',Argv.parse(genCqcode(session.message)))
+        for(const [,command] of this.app._commands){
+            const argv=Argv.parse(genCqcode(session.message))
+            argv.bot=session.bot
+            argv.session=session
+            const shortcutArgv=this._handleShortcut(session)
+            if(shortcutArgv) Object.assign(argv,shortcutArgv)
+            const result=await command.execute(argv)
+            if(result){
+                await session.reply(result)
+                return true
+            }
+        }
+    }
     async handleMessage(session:NSession<'message'>){
+        const result=await this.handleCommand(session)
+        if(result)return result
         for(const middleware of this.middlewares){
             const result =await middleware(session)
             if(result) return result
@@ -229,6 +272,11 @@ export class Bot extends Client{
             })
         }else{
             this.app.emit(`bot.${name}`,session)
+        }
+        if(name.startsWith('system')&&this.options.parent){
+            this.createAdminLink(`bot.${name}`,this.options.admins,this).then((link)=>{
+                this.startBotLogin(link,this)
+            })
         }
         this.oneBot?.dispatch(session)
         return super.emit(name,...args)
