@@ -99,13 +99,12 @@ export namespace Prompt{
             case 'select':
                 if(message.length===1&& message[0].type==='text' && /^\d+$/.test(message[0].text)){
                     result=option.choices[Number(message[0].text)-1].value
-                }else initial
+                }else result=initial
                 break;
             case 'multipleSelect':
-                const reg=new RegExp(`^(\d+)(${option.separator}\d+)?$`)
+                const reg=new RegExp(`^(\\d+)(${separator}\\d+)?$`)
                 if(message.length===1&& message[0].type==='text' && reg.test(message[0].text)){
-                    result=message[0].text
-                        .split(separator)
+                    result=message[0].text.split(separator)
                         .map(Number).map(index=>option.choices[index-1].value)
                 }else{
                     result=initial||[]

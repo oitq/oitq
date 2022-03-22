@@ -262,8 +262,9 @@ export class PluginManager{
         const custom_plugins: PluginDesc[] = [], module_plugins: PluginDesc[] = [],builtin_plugins:PluginDesc[]=[]
         const modulePath=path.join(__dirname, "../../node_modules")
         const orgPath=path.resolve(modulePath,'@oitq')
-        const builtinPath=path.join(__dirname,'../plugins')
         let existOrgModule:boolean
+        // 列出的插件不展示内置插件
+        const builtinPath=path.join(__dirname,'../plugins')
         const builtinPlugins=fs.readdirSync(builtinPath,{withFileTypes:true})
         for(let file of builtinPlugins){
             if(file.isDirectory()){
