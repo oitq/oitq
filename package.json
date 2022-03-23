@@ -1,12 +1,7 @@
 {
   "name": "oitq",
   "version": "1.1.1",
-  "description": "oicq生产环境部署程序",
-  "main": "lib/index.js",
-  "bin": "bin/oitq",
-  "engines": {
-    "node": ">= v14"
-  },
+  "description": "oitq",
   "scripts": {
     "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
     "dev": "ts-node-dev -r tsconfig-paths/register ./test/index.ts",
@@ -36,7 +31,6 @@
     "@types/prompts": "^2.0.14",
     "@types/ws": "^8.2.2",
     "koa-connect": "^2.1.0",
-    "oitq": "^1.1.1",
     "ts-node-dev": "^1.1.8",
     "tsc-alias": "^1.5.0",
     "tsconfig-paths": "^3.12.0",
@@ -50,7 +44,6 @@
   "dependencies": {
     "@koa/router": "^10.1.1",
     "@lc-cn/command": "^0.1.7",
-    "@oitq/plugin-system": "^1.0.0",
     "axios": "^0.26.1",
     "cac": "^6.7.12",
     "koa": "^2.13.4",

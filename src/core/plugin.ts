@@ -2,7 +2,8 @@ import {EventEmitter} from "events";
 import * as path from "path";
 import * as fs from 'fs'
 import {App,Bot} from "@/core";
-import {createIfNotExist, merge, Promisify, readConfig, writeConfig} from "@/utils";
+import {Awaitable, createIfNotExist, merge, Promisify, readConfig, writeConfig} from "@/utils";
+import {Context} from "@/core/context";
 
 
 class PluginError extends Error {
@@ -35,7 +36,7 @@ export class Plugin extends EventEmitter{
     protected hooks:PluginManager.Object
     readonly binds = new Set<Bot>()
     private config
-    public app:App
+    public context:Context
     constructor(public readonly name: string,hooks: string|PluginManager.Object) {
         super()
         if(typeof hooks==='string'){
@@ -58,19 +59,19 @@ export class Plugin extends EventEmitter{
         set[method](this.name)
         return writeConfig(dir,Array.from(set))
     }
-    async install(app:App,config?:any){
+    async install(context:Context,config?:any){
         this.config=config
-        this.app=app
+        this.context=context
         if(this.path){
             require(this.path)
             const mod = require.cache[this.fullpath] as {exports:PluginManager.Object}
             this.hooks=mod.exports
         }
         if (typeof this.hooks.install !== "function") {
-            throw new PluginError("此插件未导出install方法，无法启用。")
+            throw new PluginError(`插件(${this.name})未导出install方法，无法安装。`)
         }
         try {
-            const res = this.hooks.install(app,config)
+            const res = this.hooks.install(context,config)
             if (res instanceof Promise)
                 await res
             console.log(`插件${this.name} 已成功安装`)
@@ -88,18 +89,19 @@ export class Plugin extends EventEmitter{
             this.hooks=mod.exports
         }
         if (typeof this.hooks.enable !== "function") {
-            throw new PluginError("此插件未导出enable方法，无法启用。")
+            console.warn("此插件未导出enable方法")
+        }else{
+            try {
+                const res = this.hooks.enable(bot)
+                if (res instanceof Promise)
+                    await res
+                await this._editBotPluginCache(bot, "add")
+            } catch (e) {
+                throw new PluginError("启用插件时遇到错误。\n错误信息：" + e.message)
+            }
         }
-        try {
-            const res = this.hooks.enable(bot)
-            if (res instanceof Promise)
-                await res
-            await this._editBotPluginCache(bot, "add")
-            this.binds.add(bot)
-            console.log(`插件${this.name} 成功对机器人${bot.uin}启用`)
-        } catch (e) {
-            throw new PluginError("启用插件时遇到错误。\n错误信息：" + e.message)
-        }
+        this.binds.add(bot)
+        console.log(`插件${this.name} 成功对机器人${bot.uin}启用`)
     }
 
     async disable(bot: Bot) {
@@ -112,21 +114,22 @@ export class Plugin extends EventEmitter{
             this.hooks=mod.exports
         }
         if (typeof this.hooks.disable !== "function") {
-            throw new PluginError("此插件未导出disable方法，无法禁用。")
+            console.warn("此插件未导出disable方法，无法禁用。")
+        }else{
+            try {
+                const res = this.hooks.disable(bot)
+                if (res instanceof Promise)
+                    await res
+                await this._editBotPluginCache(bot, "delete")
+            } catch (e) {
+                throw new PluginError("禁用插件时遇到错误。\n错误信息：" + e.message)
+            }
         }
-        try {
-            const res = this.hooks.disable(bot)
-            if (res instanceof Promise)
-                await res
-            await this._editBotPluginCache(bot, "delete")
-            this.binds.delete(bot)
-            console.log(`插件${this.name} 成功对机器人${bot.uin}禁用`)
-        } catch (e) {
-            throw new PluginError("禁用插件时遇到错误。\n错误信息：" + e.message)
-        }
+        this.binds.delete(bot)
+        console.log(`插件${this.name} 成功对机器人${bot.uin}禁用`)
     }
 
-    async uninstall(app:App) {
+    async uninstall(context:Context) {
         let isModule=false,mod:NodeJS.Module
         if(this.path){
             isModule=true
@@ -139,7 +142,7 @@ export class Plugin extends EventEmitter{
                 await this.disable(bot)
             }
             if (typeof this.hooks.uninstall === "function") {
-                const res = this.hooks.uninstall(app)
+                const res = this.hooks.uninstall(context)
                 if (res instanceof Promise)
                     await res
                 console.log(`插件${this.name} 已成功卸载`)
@@ -160,8 +163,8 @@ export class Plugin extends EventEmitter{
 
     async restart() {
         try {
-            await this.uninstall(this.app)
-            await this.install(this.app,this.config)
+            await this.uninstall(this.context)
+            await this.install(this.context,this.config)
             for (let bot of this.binds) {
                 await this.enable(bot)
             }
@@ -178,15 +181,30 @@ export class PluginManager{
         const builtinPath=path.join(__dirname,'../plugins')
         const builtins=fs.readdirSync(builtinPath,{withFileTypes:true})
         // 安装内置插件
-        for(let file of builtins){
-            let fileName=file.name
-            if(file.isFile() && (file.name.endsWith('.ts') || file.name.endsWith('.js'))) {
-                fileName = file.name.replace(/\.ts|\.js/, '')
+        try{
+            for(let file of builtins){
+                let fileName:string
+                if(file.isDirectory()){
+                    fileName=file.name
+                }else if(file.isFile() && (file.name.endsWith('.ts') || file.name.endsWith('.js'))) {
+                    fileName = file.name.replace(/\.ts|\.js/, '')
+                }
+                if(fileName){
+                    this.install(new Plugin(fileName,`${builtinPath}/${fileName}`))
+                    app.on('bot.add',(bot)=>{
+                        this.checkInstall(fileName).enable(bot)
+                    })
+                }
             }
-            this.install(fileName,new Plugin(file.name,`${builtinPath}/${file.name}`))
-        }
-        for(const conf of this.config.plugins){
-            this.import(conf.name).install(app,conf.config)
+            for(const conf of this.config.plugins){
+                this.import(conf.name).install(app,conf.config)
+            }
+        }catch (e){
+           if(e instanceof PluginError){
+               console.warn(e.message)
+           }else{
+               throw e
+           }
         }
     }
 
@@ -228,9 +246,9 @@ export class PluginManager{
             throw new PluginError("插件名错误，无法找到此插件")
         return new Plugin(name, resolved)
     }
-    install(name:string,plugin:Plugin,config?){
+    install(plugin:Plugin,config?){
         plugin.install(this.app,config)
-        this.plugins.set(name,plugin)
+        this.plugins.set(plugin.name,plugin)
     }
     checkInstall(name:string){
         if (!this.plugins.has(name)) {
@@ -275,6 +293,15 @@ export class PluginManager{
                         type:PluginType.Builtin
                     })
                 }catch{}
+            }else if(file.isFile() && (file.name.endsWith('.ts') || file.name.endsWith('.js'))) {
+                const fileName = file.name.replace(/\.ts|\.js/, '')
+                try{
+                    require.resolve(`${builtinPath}/${fileName}`)
+                    builtin_plugins.push({
+                        name:fileName,
+                        type:PluginType.Builtin
+                    })
+                }catch {}
             }
         }
         const customPlugins = fs.readdirSync(this.config.dir,{ withFileTypes: true })
@@ -360,10 +387,10 @@ export namespace PluginManager{
         plugins:[]
     }
     export type Object={
-        install?(ctx:App,config?):Promisify<any>
-        uninstall?(ctx:App):Promisify<any>
-        enable?(bot:Bot):Promisify<any>
-        disable?(bot:Bot):Promisify<any>
+        install?(ctx:Context,config?):Awaitable<any>
+        uninstall?(ctx:Context):Awaitable<any>
+        enable?(bot:Bot):Awaitable<any>
+        disable?(bot:Bot):Awaitable<any>
     }
     export interface Config{
         dir?:string,

@@ -1,11 +1,11 @@
 import {Command} from "@lc-cn/command";
-import {App} from "@/core/app";
 import {NSession,Bot} from "@/core/bot";
+import {Context} from "@/core/context";
 
 declare module '@lc-cn/command/lib/command'{
 
     interface Command{
-        app:App
+        context:Context
         shortcut(name: string | RegExp, config?: Command.Shortcut):Command
         match(session?: NSession<'message'>) :boolean
     }
@@ -22,18 +22,18 @@ Command.prototype.shortcut=function (this:Command,name,config={}){
     config.name = name
     config.command = this
     config.authority ||= this.config.authority
-    this.app._shortcuts.push(config)
+    this.context.app._shortcuts.push(config)
     return this
 }
 Command.prototype.match=function (this:Command,session?){
-    return true
+    return this.context.match(session)
 }
 const oldSubCommand=Command.prototype.subcommand
 Command.prototype.subcommand=function(this:Command,def:string,...args:any[]){
     const command=oldSubCommand.bind(this)(def,...args)
-    command.app=this.app
-    this.app._commands.set(command.name,command)
-    this.app._commandList.push(command)
-    this.app.emit('command.add',command)
+    command.context=this.context
+    this.context.app._commands.set(command.name,command)
+    this.context.app._commandList.push(command)
+    this.context.emit('command.add',command)
     return command
 }

@@ -1,3 +1,5 @@
 /package-lock.json
 /lib/
 /test/
+/packages/*/lib
+/plugins/*/lib

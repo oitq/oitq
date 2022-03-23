@@ -54,6 +54,15 @@ export function writeConfig(configPath,value={}){
         return false
     }
 }
+export function isNullable(value: any) {
+    return value === null || value === undefined
+}
+export function isBailed(value: any) {
+    return value !== null && value !== false && value !== undefined
+}
+export function makeArray<T>(source: T | T[]) {
+    return Array.isArray(source) ? source : isNullable(source) ? [] : [source]
+}
 export function createIfNotExist(filepath,value={}){
     const dirname = path.dirname(filepath)
     if (!fs.existsSync(dirname)) {

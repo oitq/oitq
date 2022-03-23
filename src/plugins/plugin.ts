@@ -1,6 +1,6 @@
-import {App} from "@/core";
+import {Context} from "@/core";
 
-export function install(ctx:App){
+export function install(ctx:Context){
     ctx.command('plugin','管理插件')
         .option('enable','-e 启用指定插件')
         .option('disable','-d 禁用指定插件')
@@ -39,18 +39,20 @@ export function install(ctx:App){
                 action=Object.keys(options)[0]
             }
             if(action){
-                const {plugins}=await session.prompt({
-                    type:'multipleSelect',
-                    name:'plugins',
-                    message:`请选择你要${actionMap.find(act=>act.value===action).title.slice(0,2)}的插件`,
-                    separator:',',
-                    choices:ctx.pluginManager.loadAllPlugins().map(status=>{
-                        return {
-                            title:`${status.name} ${status.isInstall?'已安装':'未安装'} ${status.binds.includes(session.bot.uin)?'已绑定':'未绑定'}`,
-                            value:`${status.name}`
-                        }
-                    })
-                })
+                const {plugins}=await session.prompt([
+                    {
+                        type:'multipleSelect',
+                        name:'plugins',
+                        message:`请选择你要${actionMap.find(act=>act.value===action).title.slice(0,2)}的插件`,
+                        separator:',',
+                        choices:ctx.app.pluginManager.loadAllPlugins().map(status=>{
+                            return {
+                                title:`${status.name} ${status.isInstall?'已安装':'未安装'} ${status.binds.includes(session.bot.uin)?'已绑定':'未绑定'}`,
+                                value:`${status.name}`
+                            }
+                        })
+                    }
+                ])
                 if(plugins){
                     return `你选择的操作是${actionMap.find(act=>act.value===action).title}:${plugins.join()}`
                 }

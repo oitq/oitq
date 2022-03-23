@@ -149,39 +149,44 @@ export class Bot extends Client{
     }
     startBotLogin(session:NSession<'message.private'>,bot:Bot){
         const botDeviceLogin=async ({url})=>{
-            const confirm=await session.prompt({
+            const {confirm}=await session.prompt({
                 type:'confirm',
-                name:`请复制下面的url在浏览器打开，完成设备验证后继续，\n${url}`
+                name:'confirm',
+                message:`请复制下面的url在浏览器打开，完成设备验证后继续，\n${url}`
             })
             if(confirm)bot.login()
         }
         const botQrcodeLogin=async ()=>{
-            const confirm=await session.prompt({
+            const {confirm}=await session.prompt({
                 type:'confirm',
-                name:`请使用手机qq扫描控制台中的二维码，完成扫码登录后继续`
+                name:'confirm',
+                message:`请使用手机qq扫描控制台中的二维码，完成扫码登录后继续`
             })
             if(confirm)bot.qrcodeLogin()
         }
         const botSliderLogin=async ({url})=>{
-            const input=await session.prompt({
+            const {input}=await session.prompt({
                 type:'text',
-                name:`请复制下面的url在浏览器打开，完成扫码登录后继续\n${url}`
-            }) as string
+                name:'input',
+                message:`请复制下面的url在浏览器打开，完成扫码登录后继续\n${url}`
+            })
             if(input)bot.submitSlider(input)
         }
         const botPasswordLogin=async (message)=>{
-            const input=await session.prompt({
+            const {input}=await session.prompt({
                 type:'text',
-                name:message
-            }) as string
+                name:'input',
+                message
+            })
             if(input)bot.login(input)
         }
         const botSmsLogin=async (message)=>{
             this.sendSmsCode()
-            const input=await session.prompt({
+            const {input}=await session.prompt({
                 type:'text',
-                name:`${message},正在尝试进行手机验证登录，请输入账号绑定手机收到的验证码以继续`
-            }) as string
+                name:'input',
+                message:`${message},正在尝试进行手机验证登录，请输入账号绑定手机收到的验证码以继续`
+            })
             if(input)bot.submitSmsCode(input)
         }
         const botLoginErrorHandler=({message})=>{
@@ -203,54 +208,10 @@ export class Bot extends Client{
         })
     }
 
-    private _handleShortcut(session:NSession<'message'>):Argv{
-        const content=genCqcode(session.message)
-        for (const shortcut of this.app._shortcuts) {
-            const {name, fuzzy, command, prefix, options = {}, args = []} = shortcut
-            if (typeof name === 'string') {
-                if (!fuzzy && content !== name || !content.startsWith(name)) continue
-                const message = content.slice(name.length)
-                if (fuzzy  && message.match(/^\S/)) continue
-                const argv = Argv.parse(message.trim())
-                argv.command = command
-                argv.name=command?.name
-                return argv
-            } else {
-                const capture = name.exec(content)
-                if (!capture) continue
 
-                function escape(source: any) {
-                    if (typeof source !== 'string') return source
-                    source = source.replace(/\$\$/g, '@@__PLACEHOLDER__@@')
-                    capture.forEach((segment, index) => {
-                        if (!index || index > 9) return
-                        source = source.replace(new RegExp(`\\$${index}`, 'g'), (segment || '').replace(/\$/g, '@@__PLACEHOLDER__@@'))
-                    })
-                    return source.replace(/@@__PLACEHOLDER__@@/g, '$')
-                }
-                return {
-                    command,
-                    name:command?.name,
-                    args: args.map(escape),
-                    options: valueMap(options, escape),
-                }
-            }
-        }
-    }
     async handleCommand(session:NSession<'message'>){
         this.app.emit('before-command',Argv.parse(genCqcode(session.message)))
-        for(const [,command] of this.app._commands){
-            const argv=Argv.parse(genCqcode(session.message))
-            argv.bot=session.bot
-            argv.session=session
-            const shortcutArgv=this._handleShortcut(session)
-            if(shortcutArgv) Object.assign(argv,shortcutArgv)
-            const result=await command.execute(argv)
-            if(result){
-                await session.reply(result)
-                return true
-            }
-        }
+        return session.execute(genCqcode(session.message))
     }
     async handleMessage(session:NSession<'message'>){
         const result=await this.handleCommand(session)

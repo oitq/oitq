@@ -3,19 +3,19 @@
     "outDir": "./lib",
     "rootDir": "./src",
     "baseUrl": ".",
-    "target": "ES2020",
-    "module": "commonjs",
-    "declaration": true,
     "lib": [
       "es6",
       "dom"
     ],
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "downlevelIteration": true,
     "paths": {
       "@/*": ["src/*"]
     },
+    "target": "ES2020",
+    "module": "commonjs",
+    "declaration": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "downlevelIteration": true,
     "allowSyntheticDefaultImports": true
   },
   "include": ["./src/"]

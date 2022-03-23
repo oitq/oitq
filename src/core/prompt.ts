@@ -39,6 +39,7 @@ export namespace Prompt{
         select:any
         multipleSelect:any[]
     }
+    export type Answers<V extends any=any> = { [id in string]: V };
     export type ValueType<T extends keyof TypeKV>= T extends keyof TypeKV?TypeKV[T]:any
     export function formatValue<T extends keyof TypeKV>(prev:any,answer:Dict,option:Options<T>,message:MessageElem[]):ValueType<T>{
         const type=typeof option.type==="function"?option.type(prev,answer,option):option.type
@@ -76,7 +77,7 @@ export namespace Prompt{
                 }else result=initial
                 break;
             case "list":
-                if(message.length===1&& message[0].type==='text' && new RegExp(`^(.*)(${option.separator}.*)?$`).test(message[0].text)){
+                if(message.length===1&& message[0].type==='text' && new RegExp(`^(.*)(${option.separator}.*)*$`).test(message[0].text)){
                     result=message[0].text.split(separator)
                 }else{
                     result=initial||[]
@@ -102,7 +103,7 @@ export namespace Prompt{
                 }else result=initial
                 break;
             case 'multipleSelect':
-                const reg=new RegExp(`^(\\d+)(${separator}\\d+)?$`)
+                const reg=new RegExp(`^(\\d+)(${separator}\\d+)*$`)
                 if(message.length===1&& message[0].type==='text' && reg.test(message[0].text)){
                     result=message[0].text.split(separator)
                         .map(Number).map(index=>option.choices[index-1].value)

@@ -2,7 +2,8 @@ import {App, Bot, Middleware, NSession, Prompt} from "@/core";
 import {Awaitable, Dict} from "@/utils/types";
 import {MessageElem, Sendable} from "oicq";
 import {MessageRet} from "oicq/lib/events";
-import {template} from "@/utils";
+import {genCqcode, template, valueMap} from "@/utils";
+import {Argv} from "@lc-cn/command";
 export interface Session{
     message_type?:string
     message?:MessageElem[]
@@ -68,7 +69,8 @@ export class Session{
     }
     async prompt<T extends keyof Prompt.TypeKV>(options:Prompt.Options<T>|Array<Prompt.Options<T>>){
         options=[].concat(options)
-        let answer:Dict={},prev:any=undefined
+        let answer:Dict={}
+        let prev:any=undefined
         try{
             if(options.length===0) return
             for(const option of options){
@@ -82,7 +84,51 @@ export class Session{
             this.reply(e.message)
             return
         }
-        return answer
+        return answer as Prompt.Answers<Prompt.ValueType<T>>
+    }
+    private _handleShortcut(content=genCqcode(this.message)):Argv{
+        for (const shortcut of this.app._shortcuts) {
+            const {name, fuzzy, command, prefix, options = {}, args = []} = shortcut
+            if (typeof name === 'string') {
+                if (!fuzzy && content !== name || !content.startsWith(name)) continue
+                const message = content.slice(name.length)
+                if (fuzzy  && message.match(/^\S/)) continue
+                const argv = Argv.parse(message.trim())
+                argv.command = command
+                argv.name=command?.name
+                return argv
+            } else {
+                const capture = name.exec(content)
+                if (!capture) continue
+
+                function escape(source: any) {
+                    if (typeof source !== 'string') return source
+                    source = source.replace(/\$\$/g, '@@__PLACEHOLDER__@@')
+                    capture.forEach((segment, index) => {
+                        if (!index || index > 9) return
+                        source = source.replace(new RegExp(`\\$${index}`, 'g'), (segment || '').replace(/\$/g, '@@__PLACEHOLDER__@@'))
+                    })
+                    return source.replace(/@@__PLACEHOLDER__@@/g, '$')
+                }
+                return {
+                    command,
+                    name:command?.name,
+                    args: args.map(escape),
+                    options: valueMap(options, escape),
+                }
+            }
+        }
+    }
+    async execute(content:string=genCqcode(this.message)){
+        for(const [,command] of this.app._commands){
+            const argv=Argv.parse(content)
+            argv.bot=this.bot
+            argv.session=this as any
+            const shortcutArgv=this._handleShortcut(content)
+            if(shortcutArgv) Object.assign(argv,shortcutArgv)
+            const result=await command.execute(argv)
+            if(result) return result
+        }
     }
     getChannelId(){
         return [
