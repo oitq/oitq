@@ -39,7 +39,8 @@ export interface AppEventMap extends BotEventMap{
 
 }
 export type Dispose=()=>boolean
-export interface Context{
+export interface Services{}
+export interface Context extends Services{
     on<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):Dispose;
     on<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):Dispose;
     before<E extends keyof BeforeEventMap>(name:E,listener:BeforeEventMap[E],append?:boolean):Dispose
