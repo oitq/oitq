@@ -1,7 +1,7 @@
 {
   "name": "oitq",
-  "version": "1.1.1",
-  "description": "oitq",
+  "version": "1.1.2",
+  "description": "oitq base",
   "scripts": {
     "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
     "dev": "ts-node-dev -r tsconfig-paths/register ./test/index.ts",

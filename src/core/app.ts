@@ -9,12 +9,11 @@ import {OneBot} from "@/onebot";
 import { Dict} from "@/utils/types";
 import {PluginManager, Computed} from "@/core";
 import * as path from "path";
-import {Command,Argv} from "@lc-cn/command";
+import {Command} from "@lc-cn/command";
 import {Context} from "@/core/context";
 import {LogLevel} from "oicq";
 
 interface KoaOptions{
-    port?:number,
     env?: string
     keys?: string[]
     proxy?: boolean
@@ -26,13 +25,10 @@ interface KoaOptions{
 export const defaultAppOptions={
     port:8080,
     path:'',
-    prefix:()=>'',
     bots:[],
     admins:[],
     maxListeners:50,
     plugins:[],
-    minSimilarity:0.4,
-    token:'',
     logLevel:'debug',
     plugin_dir:path.join(process.cwd(),'plugins'),
     delay:{
@@ -40,14 +36,12 @@ export const defaultAppOptions={
     }
 }
 export interface AppOptions extends KoaOptions,PluginManager.Config{
+    port?:number,
     start?:boolean,
-    prefix?: Computed<string | string[]>
-    minSimilarity?:number,
     path?:string
     bots?:BotOptions[]
     delay?:Dict<number>
     admins?:number[]
-    token?:string
     logLevel?:LogLevel
     maxListeners?:number,
 }
