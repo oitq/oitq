@@ -1,0 +1,31 @@
+{
+  "name": "@oitq/core",
+  "main": "lib/index.js",
+  "version": "0.0.2",
+  "description": "oitq core",
+  "dependencies": {
+    "@lc-cn/command": "^0.1.7",
+    "@oitq/utils": "^0.0.2",
+    "oicq": "^2.2.1"
+  },
+  "scripts": {
+    "compile": "tsc --project tsconfig.json",
+    "alias": "tsc-alias -p tsconfig.json",
+    "build": "npm run compile && npm run alias",
+    "pub": "npm publish --access public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oitq/oitq.git"
+  },
+  "keywords": [
+    "utils",
+    "oitq"
+  ],
+  "author": "凉菜 <admin@liucl.cn>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/oitq/oitq/issues"
+  },
+  "homepage": "https://github.com/oitq/oitq#readme"
+}
