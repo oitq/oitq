@@ -1,7 +1,7 @@
 import Koa from 'koa'
 import {Server,createServer} from 'http'
 import {Router} from "./router";
-import * as KoaBodyParser from 'koa-bodyparser'
+import KoaBodyParser from 'koa-bodyparser'
 import {BotList, BotOptions} from "./bot";
 import {success, error, sleep, merge} from "@/utils/functions";
 import {defaultOneBotConfig} from "@/onebot/config";

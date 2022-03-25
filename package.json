@@ -1,7 +1,9 @@
 {
   "name": "oitq",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "oitq",
+  "main": "lib/index.js",
+  "types": "lib/node.d.ts",
   "scripts": {
     "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
     "dev": "ts-node-dev -r tsconfig-paths/register ./test/index.ts",

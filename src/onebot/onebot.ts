@@ -5,7 +5,7 @@ import https from "https"
 import { URL } from "url"
 import {WebSocketServer,WebSocket}from "ws"
 import * as querystring from "querystring"
-import  * as rfdc from "rfdc"
+import  rfdc from "rfdc"
 import {App} from "@/core/app";
 import {Bot} from "@/core/bot";
 import { assert } from "./filter"
