@@ -224,7 +224,7 @@ export class PluginManager{
             }
         }
         if (!resolved) {
-            const modulePath=path.join(__dirname, "../../../node_modules")
+            const modulePath=path.join(__dirname, "../../node_modules")
             const modules =fs.readdirSync(modulePath,{ withFileTypes: true })
             for (let file of modules) {
                 if (file.isDirectory() && file.name === `oitq-plugin-${name}`) {
@@ -232,12 +232,12 @@ export class PluginManager{
                 }
             }
         }
-        if(!resolved){
-            const orgPath=path.resolve(__dirname,'../../../plugins')
+        if(!resolved && fs.existsSync(path.resolve(__dirname,'../../node_modules/@oitq'))){
+            const orgPath=path.resolve(__dirname,'../../node_modules/@oitq')
             const orgModules=fs.readdirSync(orgPath,{withFileTypes:true})
             for (let file of orgModules) {
-                if (file.isDirectory() && file.name===name) {
-                    resolved = `@oitq/plugin-${file.name}`
+                if (file.isDirectory() && file.name===`plugin-${name}`) {
+                    resolved = `@oitq/${file.name}`
                 }
             }
         }
@@ -277,8 +277,8 @@ export class PluginManager{
     }
     loadAllPlugins():PluginDesc[]{
         const custom_plugins: PluginDesc[] = [], module_plugins: PluginDesc[] = [],builtin_plugins:PluginDesc[]=[]
-        const modulePath=path.join(__dirname, "../../../node_modules")
-        const orgPath=path.join(__dirname,'../../plugins')
+        const modulePath=path.join(__dirname, "../../node_modules")
+        const orgPath=path.join(__dirname,'../../node_modules/@oitq')
         // 列出的插件不展示内置插件
         const builtinPath=path.join(__dirname,'plugins')
         const builtinPlugins=fs.readdirSync(builtinPath,{withFileTypes:true})
@@ -327,19 +327,22 @@ export class PluginManager{
                 } catch { }
             }
         }
-        const orgModules=fs.readdirSync(orgPath,{ withFileTypes: true })
-        for (let file of orgModules) {
-            if (file.isDirectory() && (file.name.startsWith("plugin-"))) {
-                try {
-                    require.resolve(`@oitq/${file.name}`)
-                    module_plugins.push({
-                        name:file.name,
-                        type:PluginType.Official,
-                        fullName:`@oitq/plugin-${file.name}`
-                    })
-                } catch { }
+        if(fs.existsSync(orgPath)){
+            const orgModules=fs.readdirSync(orgPath,{ withFileTypes: true })
+            for (let file of orgModules) {
+                if (file.isDirectory() && (file.name.startsWith("plugin-"))) {
+                    try {
+                        require.resolve(`@oitq/${file.name}`)
+                        module_plugins.push({
+                            name:file.name.replace('plugin-',''),
+                            type:PluginType.Official,
+                            fullName:`@oitq/${file.name}`
+                        })
+                    } catch { }
+                }
             }
         }
+
         const plugins:PluginDesc[]=[...this.plugins.values()].map(plugin=>{
             return {
                name:plugin.name,
@@ -366,6 +369,7 @@ export class PluginManager{
      */
     async restore(bot:Bot){
         const dir = path.join(bot.dir, "plugin")
+        await createIfNotExist(dir,[])
         try {
             const arr = readConfig(dir) as string[]
             for (let name of arr) {

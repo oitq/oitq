@@ -137,16 +137,17 @@ export class Context extends Events{
     match(session?: NSession<'message'>) {
         return !session || this.filter(session)
     }
-    plugin(name:string,plugin?:Plugin|PluginManager.Object|PluginManager.Object['install'],config?){
-        if(!plugin)plugin=this.app.pluginManager.import(name)
-        if(typeof plugin==='function'){
-            if(!(plugin instanceof Plugin)){
-                plugin=new Plugin(name, {install:plugin})
-            }
-        }else{
-            plugin=new Plugin(name,plugin)
+    plugin(name:string,config?:any)
+    plugin<T extends PluginManager.Plugin>(plugin:T,config?:PluginManager.Option<T>)
+    plugin(entry: string | Plugin|PluginManager.Plugin, config?: any){
+        let plugin:Plugin
+        if(typeof entry==='string')plugin=this.app.pluginManager.import(entry)
+        else if(entry instanceof Plugin)plugin=entry
+        else{
+            if(typeof entry==='function')entry={install:entry,name:config.name||entry.name||Math.random().toString()}
+            plugin=new Plugin(entry.name,entry)
         }
-        this.app.pluginManager.install(plugin as Plugin,config)
+        this.app.pluginManager.install(plugin,config)
         return this
     }
     command<D extends string>(def: D, config?: Command.Config): Command<Argv.ArgumentType<D>>
