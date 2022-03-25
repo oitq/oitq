@@ -7,7 +7,7 @@ import {success, error, sleep, merge} from "@/utils/functions";
 import {defaultOneBotConfig} from "@/onebot/config";
 import {OneBot} from "@/onebot";
 import { Dict} from "@/utils/types";
-import {PluginManager, Computed} from "@/core";
+import {PluginManager} from "@/core";
 import * as path from "path";
 import {Command} from "@lc-cn/command";
 import {Context} from "@/core/context";

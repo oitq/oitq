@@ -1,4 +1,4 @@
-import {Client, Message} from 'oicq'
+import {Client} from 'oicq'
 import * as fs from 'fs'
 import http from "http"
 import https from "https"
