@@ -1,13 +1,14 @@
 {
-  "name": "@oitq/oitq",
+  "name": "oitq",
   "main": "lib/index.js",
+  "types": "lib/node.d.ts",
   "bin": "bin/oitq",
-  "version": "0.0.2-alpha",
+  "version": "0.0.6",
   "description": "oitq core",
   "dependencies": {
     "@koa/router": "^10.1.1",
-    "@oitq/cli": "^0.0.0",
-    "@oitq/core": "^0.0.2",
+    "@oitq/cli": "latest",
+    "@oitq/core": "^0.0.6-alpha",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-connect": "^2.1.0",
@@ -31,6 +32,12 @@
     "type": "git",
     "url": "git+https://github.com/oitq/oitq.git"
   },
+  "files": [
+    "bin/*",
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
+    "lib/**/LICENSE"
+  ],
   "keywords": [
     "utils",
     "oitq"

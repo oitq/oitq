@@ -1,20 +1,21 @@
 import {CAC} from "cac";
 import * as fs from "fs";
-import {
-    dir,
-    defaultOneBotConfig,
-    getAppConfigPath,AppOptions,
-    getOneBotConfigPath,
-    createIfNotExist,
-    readConfig,writeConfig
-} from '@oitq/oitq'
-createIfNotExist(getAppConfigPath(dir),{bots:[]})
-createIfNotExist(getOneBotConfigPath(dir),defaultOneBotConfig)
 import registerAddBotCommand from "./addBot";
 import registerStartCommand from "./start";
 import registerRemoveCommand from "./removeBot";
-export const cli= new CAC('oitq')
+import {
+    dir,
+    getAppConfigPath,AppOptions,defaultAppOptions,
+    getOneBotConfigPath,OneBotConfig,defaultOneBotConfig,
+    getBotConfigPath,BotOptions,defaultBotOptions,
+    createIfNotExist,
+    readConfig,writeConfig
+} from '@oitq/oitq'
 if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+createIfNotExist(getAppConfigPath(dir),defaultAppOptions)
+createIfNotExist(getOneBotConfigPath(dir),defaultOneBotConfig)
+createIfNotExist(getBotConfigPath(dir),defaultBotOptions)
+export const cli= new CAC('oitq')
 /**
  * 定义异常处理公共函数
  * @param err

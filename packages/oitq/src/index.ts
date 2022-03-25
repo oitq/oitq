@@ -1,16 +1,14 @@
 import Koa from 'koa'
-import {App} from '@oitq/core'
+import {App,Context} from '@oitq/core'
 import {success,error,merge} from '@oitq/utils'
 import {OneBot, OneBotConfig,defaultOneBotConfig} from "./onebot";
 import {Router} from "./router";
-import * as KoaBodyParser from "koa-bodyparser";
+import KoaBodyParser from "koa-bodyparser";
 import {createServer, Server} from "http";
 import * as path from "path";
-export const getAppConfigPath=(dir=process.cwd())=>path.join(dir,'oitq.json')
-export const getOneBotConfigPath=(dir=process.cwd())=>path.join(dir,'oneBot.json')
-export * from './onebot'
-export * from './router'
-export * from '@oitq/core'
+export function getAppConfigPath(dir=process.cwd()){return path.join(dir,'oitq.json')}
+export function getOneBotConfigPath(dir=process.cwd()){return path.join(dir,'oneBot.json')}
+export function getBotConfigPath(dir=process.cwd()){return path.join(dir,'bot.json')}
 declare module '@oitq/core'{
     interface Services{
         koa:Koa
@@ -29,6 +27,9 @@ declare module '@oitq/core'{
     }
 }
 const oldPrepare=App.prototype.prepare
+export * from './onebot'
+export * from './router'
+export * from '@oitq/core'
 App.prototype.prepare=function (){
     this.koa=new Koa(this.options)
     this.router=new Router({prefix:this.options.path})
@@ -75,8 +76,11 @@ App.prototype.prepare=function (){
 }
 const oldStart=App.prototype.start
 App.prototype.start=async function (port:number=this.options.port){
+    this.options.port=port
     this.httpServer.listen(port,()=>{
         console.log('app is listen at http://127.0.0.1:'+port)
     })
     oldStart.apply(this)
 }
+Context.service('router')
+Context.service('koa')

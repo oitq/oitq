@@ -1,7 +1,7 @@
 {
   "name": "@oitq/utils",
   "main": "lib/index.js",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "utils",
   "devDependencies": {
     "querystring": "^0.2.1"
@@ -19,6 +19,11 @@
   "keywords": [
     "utils",
     "oitq"
+  ],
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
+    "lib/**/LICENSE"
   ],
   "author": "凉菜 <admin@liucl.cn>",
   "license": "ISC",

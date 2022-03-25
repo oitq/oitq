@@ -64,7 +64,7 @@ export class Plugin extends EventEmitter{
         this.context=context
         if(this.path){
             require(this.path)
-            const mod = require.cache[this.fullpath] as {exports:PluginManager.Object}
+            const mod = require.cache[this.fullpath]
             this.hooks=mod.exports
         }
         if (typeof this.hooks.install !== "function") {
@@ -85,7 +85,7 @@ export class Plugin extends EventEmitter{
         }
         if(this.path){
             require(this.path)
-            const mod = require.cache[this.fullpath] as {exports:PluginManager.Object}
+            const mod = require.cache[this.fullpath]
             this.hooks=mod.exports
         }
         if (typeof this.hooks.enable !== "function") {
@@ -224,21 +224,20 @@ export class PluginManager{
             }
         }
         if (!resolved) {
-            const modulePath=path.join(__dirname, "../../node_modules")
-            const orgPath=path.resolve(modulePath,'@oitq')
+            const modulePath=path.join(__dirname, "../../../node_modules")
             const modules =fs.readdirSync(modulePath,{ withFileTypes: true })
-            let existOrgModule:boolean=false
             for (let file of modules) {
-                if (file.isDirectory() && (file.name === name || file.name === `oitq-plugin-${name}`)) {
+                if (file.isDirectory() && file.name === `oitq-plugin-${name}`) {
                     resolved = file.name
-                }else if(file.isDirectory() && file.name==='@oitq')existOrgModule=true
+                }
             }
-            if(existOrgModule){
-                const orgModules=fs.readdirSync(orgPath,{withFileTypes:true})
-                for (let file of orgModules) {
-                    if (file.isDirectory() && file.name === `plugin-${name}`) {
-                        resolved = `@oitq/${file.name}`
-                    }
+        }
+        if(!resolved){
+            const orgPath=path.resolve(__dirname,'../../../plugins')
+            const orgModules=fs.readdirSync(orgPath,{withFileTypes:true})
+            for (let file of orgModules) {
+                if (file.isDirectory() && file.name===name) {
+                    resolved = `@oitq/plugin-${file.name}`
                 }
             }
         }
@@ -278,11 +277,10 @@ export class PluginManager{
     }
     loadAllPlugins():PluginDesc[]{
         const custom_plugins: PluginDesc[] = [], module_plugins: PluginDesc[] = [],builtin_plugins:PluginDesc[]=[]
-        const modulePath=path.join(__dirname, "../../node_modules")
-        const orgPath=path.resolve(modulePath,'@oitq')
-        let existOrgModule:boolean
+        const modulePath=path.join(__dirname, "../../../node_modules")
+        const orgPath=path.join(__dirname,'../../plugins')
         // 列出的插件不展示内置插件
-        const builtinPath=path.join(__dirname,'../plugins')
+        const builtinPath=path.join(__dirname,'plugins')
         const builtinPlugins=fs.readdirSync(builtinPath,{withFileTypes:true})
         for(let file of builtinPlugins){
             if(file.isDirectory()){
@@ -327,21 +325,19 @@ export class PluginManager{
                         fullName:file.name
                     })
                 } catch { }
-            }else if(file.isDirectory() && file.name==='@oitq')existOrgModule=true
+            }
         }
-        if(existOrgModule){
-            const orgModules=fs.readdirSync(orgPath,{ withFileTypes: true })
-            for (let file of orgModules) {
-                if (file.isDirectory() && (file.name.startsWith("plugin-"))) {
-                    try {
-                        require.resolve(`@oitq/${file.name}`)
-                        module_plugins.push({
-                            name:file.name.replace('plugin-',''),
-                            type:PluginType.Official,
-                            fullName:`@oitq/${file.name}`
-                        })
-                    } catch { }
-                }
+        const orgModules=fs.readdirSync(orgPath,{ withFileTypes: true })
+        for (let file of orgModules) {
+            if (file.isDirectory() && (file.name.startsWith("plugin-"))) {
+                try {
+                    require.resolve(`@oitq/${file.name}`)
+                    module_plugins.push({
+                        name:file.name,
+                        type:PluginType.Official,
+                        fullName:`@oitq/plugin-${file.name}`
+                    })
+                } catch { }
             }
         }
         const plugins:PluginDesc[]=[...this.plugins.values()].map(plugin=>{
@@ -386,12 +382,19 @@ export namespace PluginManager{
         dir:path.join(process.cwd(),'plugins'),
         plugins:[]
     }
-    export type Object={
-        install?(ctx:Context,config?):Awaitable<any>
+    export type Plugin = Function | Object
+    export type Function<T = any> = (ctx: Context, options: T) => Awaitable<any>
+    export interface Object<T = any> {
+        install: Function<T>
+        name?:string
         uninstall?(ctx:Context):Awaitable<any>
         enable?(bot:Bot):Awaitable<any>
         disable?(bot:Bot):Awaitable<any>
     }
+    export type Option<T extends Plugin> =
+        | T extends Function<infer U> ? U
+                :T extends Object<infer U> ? U
+                        : never
     export interface Config{
         dir?:string,
         plugins?:PluginConfig[]

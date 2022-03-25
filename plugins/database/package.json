@@ -1,16 +1,10 @@
 {
-  "name": "@oitq/cli",
+  "name": "@oitq/plugin-database",
   "main": "lib/index.js",
-  "version": "0.0.3",
-  "description": "oitq core",
-  "dependencies": {
-    "@oitq/oitq": "latest",
-    "axios": "^0.26.1",
-    "cac": "^6.7.12",
-    "prompts": "^2.4.2"
-  },
+  "version": "0.0.4",
+  "description": "database plugin",
   "devDependencies": {
-    "@types/prompts": "^2.0.14"
+    "querystring": "^0.2.1"
   },
   "scripts": {
     "compile": "tsc --project tsconfig.json",
@@ -23,7 +17,8 @@
     "url": "git+https://github.com/oitq/oitq.git"
   },
   "keywords": [
-    "utils",
+    "database",
+    "plugin",
     "oitq"
   ],
   "files": [
@@ -36,5 +31,10 @@
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
   },
-  "homepage": "https://github.com/oitq/oitq#readme"
+  "homepage": "https://github.com/oitq/oitq#readme",
+  "dependencies": {
+    "mysql2": "^2.3.3",
+    "sequelize": "^6.17.0",
+    "sequelize-typescript": "^2.1.3"
+  }
 }

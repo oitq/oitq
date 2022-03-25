@@ -1,3 +1,4 @@
 /package-lock.json
 /packages/*/lib
 /plugins/*/lib
+/node_modules

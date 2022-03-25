@@ -5,6 +5,7 @@
   "scripts": {
     "build": "npm run build -workspaces",
     "dev": "npm run dev -w test",
+    "start": "npm start -w test",
     "pub": "npm run pub -workspaces",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -37,7 +38,9 @@
     "typescript": "^4.5.4"
   },
   "dependencies": {
+    "@koishijs/core": "^4.4.2",
     "@lc-cn/command": "^0.1.7",
+    "koishi": "^4.4.2",
     "oicq": "^2.2.1"
   }
 }

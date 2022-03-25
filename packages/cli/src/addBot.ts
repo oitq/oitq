@@ -3,15 +3,15 @@ import {Choice, PromptObject} from 'prompts'
 import {CAC} from "cac";
 import {
     dir,
-    defaultOneBotConfig, OneBotConfig,
-    defaultBotOptions,BotOptions,
-    defaultAppOptions,AppOptions,
-    getAppConfigPath,getOneBotConfigPath,
-    readConfig,writeConfig
+    defaultOneBotConfig, OneBotConfig,getOneBotConfigPath,
+    defaultBotOptions, BotOptions,getBotConfigPath,
+    defaultAppOptions, AppOptions,getAppConfigPath,
+    readConfig, writeConfig,
 } from "@oitq/oitq";
 
 const prompts = require('prompts')
 const appOptions: AppOptions = readConfig(getAppConfigPath(dir))
+const botOptions:BotOptions=readConfig(getBotConfigPath(dir))
 const oneBotConfig: OneBotConfig = readConfig(getOneBotConfigPath(dir))
 const request = axios.create({baseURL: `http://127.0.0.1:${appOptions.port || 8080}`})
 const questions: PromptObject[] = [
@@ -19,6 +19,18 @@ const questions: PromptObject[] = [
         type: 'number',
         name: 'uin',
         message: '请输入bot uin'
+    },
+    {
+        type:'confirm',
+        name:'isUseDefault',
+        message:`是否使用默认bot配置？(默认配置见${getBotConfigPath(dir)})`,
+        initial:true
+    },
+    {
+      type:(prev)=>prev?null:"multiselect",
+      name:'botConfig',
+      message:'请选择需要更改的bot配置项',
+      choices:Object.keys(oneBotConfig).filter(key=>key!=='uin').map(key=>({title:key,value:key}))
     },
     {
         type: 'select',

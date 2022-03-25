@@ -4,17 +4,19 @@
   "version": "0.0.2",
   "description": "utils",
   "dependencies": {
-    "@oitq/oitq": "^0.0.2-alpha"
+    "@oitq/plugin-database": "^0.0.4",
+    "@oitq/plugin-test123": "^0.0.1",
+    "oitq": "^0.0.6"
   },
   "devDependencies": {
     "querystring": "^0.2.1"
   },
   "scripts": {
-    "compile": "tsc --project tsconfig.json",
-    "alias": "tsc-alias -p tsconfig.json",
+    "compile": "tsc --project tsconfig.build.json",
+    "alias": "tsc-alias -p tsconfig.build.json",
     "build": "npm run compile && npm run alias",
     "start": "node .",
-    "dev": "ts-node-dev -r tsconfig-paths/register ./src/index.ts",
+    "dev": "ts-node-dev --project tsconfig.json -r tsconfig-paths/register  ./src/index.ts",
     "pub": "echo skip"
   },
   "repository": {

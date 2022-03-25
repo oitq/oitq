@@ -5,7 +5,7 @@ import https from "https"
 import { URL } from "url"
 import {WebSocketServer,WebSocket}from "ws"
 import * as querystring from "querystring"
-import  * as rfdc from "rfdc"
+import  rfdc from "rfdc"
 import {App,Bot} from "@oitq/core";
 import { assert } from "./filter"
 import { toHump, transNotice, APIS, ARGS, toBool, BOOLS, genMetaEvent } from "./static"
