@@ -17,15 +17,11 @@ export interface Selection extends BaseSelection {
 export type Filter = (session:NSession<'message'>) => boolean
 
 type EventName = keyof AppEventMap
-type ServiceAction="load"|'change'|'destroy'|'enable'|'disable'
-type ServiceListener<K extends keyof Services = keyof Services>=(key:K,service:Services[K])=>void
 type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
-type ServiceEventMap = {
-    [P in ServiceAction as `service.${P}`]: ServiceListener;
-};
+type BeforeEventName = OmitSubstring<EventName & string, 'before-'>
 
 export type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: AppEventMap[E] }
-export interface AppEventMap extends BotEventMap,ServiceEventMap{
+export interface AppEventMap extends BotEventMap{
     'ready'():void
     'dispose'():void
     'command/before-execute'(argv: Argv): Awaitable<void | string>
@@ -43,7 +39,7 @@ export interface AppEventMap extends BotEventMap,ServiceEventMap{
 
 }
 export type Dispose=()=>boolean
-export interface Context extends Services{
+export interface Context{
     on<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):Dispose;
     on<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):Dispose;
     before<E extends keyof BeforeEventMap>(name:E,listener:BeforeEventMap[E],append?:boolean):Dispose
@@ -98,25 +94,6 @@ export class Context extends Events{
     private(...values: number[]) {
         return this.exclude(this._property('group_id'))._property('user_id', ...values)
     }
-    static service<K extends keyof Services>(key: K) {
-        if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
-        const privateKey = Symbol(key)
-        Object.defineProperty(Context.prototype, key, {
-            get(this: Context) {
-                const value:Services[K] = this.app[privateKey]
-                if (!value) return
-                return value
-            },
-            set(this: Context, value:Services[K]) {
-                const oldValue:Services[K] = this.app[privateKey]
-                if (oldValue === value) return
-                this.app[privateKey] = value
-                const action = value ? oldValue ? 'change' : 'load' : 'destroy'
-                this.emit(`service.${action}`, key,value)
-                this.logger('service').debug(key, action)
-            },
-        })
-    }
     select(options: Selection) {
         let ctx: Context = this
 
@@ -159,17 +136,16 @@ export class Context extends Events{
     match(session?: NSession<'message'>) {
         return !session || this.filter(session)
     }
-    plugin(name:string,config?:any)
-    plugin<T extends PluginManager.Plugin>(plugin:T,config?:PluginManager.Option<T>)
-    plugin(entry: string | Plugin|PluginManager.Plugin, config?: any){
-        let plugin:Plugin
-        if(typeof entry==='string')plugin=this.pluginManager.import(entry)
-        else if(entry instanceof Plugin)plugin=entry
-        else{
-            if(typeof entry==='function')entry={install:entry,name:config.name||entry.name||Math.random().toString()}
-            plugin=new Plugin(entry.name,entry)
+    plugin(name:string,plugin?:Plugin|PluginManager.Object|PluginManager.Object['install'],config?){
+        if(!plugin)plugin=this.app.pluginManager.import(name)
+        if(typeof plugin==='function'){
+            if(!(plugin instanceof Plugin)){
+                plugin=new Plugin(name, {install:plugin})
+            }
+        }else{
+            plugin=new Plugin(name,plugin)
         }
-        this.app.pluginManager.install(plugin,config)
+        this.app.pluginManager.install(plugin as Plugin,config)
         return this
     }
     command<D extends string>(def: D, config?: Command.Config): Command<Argv.ArgumentType<D>>
@@ -225,9 +201,3 @@ export class Context extends Events{
         return Object.create(parent)
     }
 }
-export interface Services{
-    pluginManager:PluginManager
-    bots:BotList
-}
-Context.service('bots')
-Context.service('pluginManager')

@@ -1,7 +1,7 @@
 {
   "name": "oitq",
-  "version": "0.0.1",
-  "description": "oitq",
+  "version": "1.1.2",
+  "description": "oitq base",
   "scripts": {
     "build": "npm run build -workspaces",
     "dev": "npm run dev -w test",
