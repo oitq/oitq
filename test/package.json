@@ -3,10 +3,6 @@
   "main": "lib/index.js",
   "version": "0.0.2",
   "description": "utils",
-  "dependencies": {
-    "@oitq/plugin-database": "latest",
-    "oitq": "latest"
-  },
   "devDependencies": {
     "querystring": "^0.2.1"
   },

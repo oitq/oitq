@@ -7,8 +7,6 @@
   "description": "oitq core",
   "dependencies": {
     "@koa/router": "^10.1.1",
-    "@oitq/cli": "latest",
-    "@oitq/core": "latest",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-connect": "^2.1.0",

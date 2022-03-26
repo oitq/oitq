@@ -39,9 +39,7 @@
     "typescript": "^4.5.4"
   },
   "dependencies": {
-    "@koishijs/core": "^4.4.2",
     "@lc-cn/command": "^0.1.7",
-    "koishi": "^4.4.2",
     "oicq": "^2.2.1"
   }
 }

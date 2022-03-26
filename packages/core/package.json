@@ -7,7 +7,6 @@
   "description": "oitq core",
   "dependencies": {
     "@lc-cn/command": "^0.1.7",
-    "@oitq/utils": "latest",
     "oicq": "^2.2.1"
   },
   "scripts": {

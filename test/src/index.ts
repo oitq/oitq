@@ -1,8 +1,5 @@
-import {dir,App} from "oitq"
+import {dir,App,getAppConfigPath, readConfig} from "oitq"
 import {install as database} from '@oitq/plugin-database';
-import {
-    getAppConfigPath, readConfig
-} from "oitq";
 process.on('unhandledRejection', (e) => {
     console.log(e)
 })

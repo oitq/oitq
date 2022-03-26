@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "oitq": [
+        "packages/oitq/src"
+      ],
+      "@oitq/*": [
+        "packages/*/src"
+      ],
+      "@oitq/plugin-*": [
+        "plugins/*/src"
+      ]
+    }
+  }
+}

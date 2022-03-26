@@ -2,3 +2,4 @@
 /packages/*/lib
 /plugins/*/lib
 /node_modules
+/.idea
