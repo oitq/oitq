@@ -1,5 +1,8 @@
 import {Client} from "oicq"
 const besides=['constructor','online_status','log_level','bkn','stat','login','logout','em']
+type Args={
+    [P in keyof Client]:Client[P] extends (...args:any)=>any?Parameters<Client[P]>:unknown
+}
 export const APIS=Reflect.ownKeys(Client.prototype).filter(key=>typeof key==='string' && !besides.includes(key)&& !key.startsWith('_')) as Array<keyof Client>
 export const ARGS: { [key:string|symbol]:string[] }=Object.fromEntries(APIS.map(key=>{
     return [key,String(Reflect.get(Client.prototype,key))

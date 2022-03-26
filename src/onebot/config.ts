@@ -1,3 +1,6 @@
+import * as fs from "fs"
+import * as path from "path"
+
 export interface OneBotConfig {
     use_http?: boolean,
     use_ws?: boolean,

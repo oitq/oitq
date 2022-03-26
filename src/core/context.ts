@@ -1,10 +1,10 @@
-import {Bot, BotEventMap, BotList, NSession} from "./bot";
-import {App} from "./app";
-import {Plugin, PluginManager} from "./plugin";
+import {Bot, BotEventMap, NSession} from "@/core/bot";
+import {App} from "@/core/app";
+import {Plugin, PluginManager} from "@/core/plugin";
 import {Argv, Command} from "@lc-cn/command";
 import {getLogger} from 'log4js'
-import {Awaitable, makeArray, MaybeArray} from "@oitq/utils";
-import {Events} from "./event";
+import {Awaitable, makeArray, MaybeArray} from "@/utils";
+import {Events} from "@/core/event";
 const selectors = ['user', 'group',  'self', 'private'] as const
 export type SelectorType = typeof selectors[number]
 export type SelectorValue = boolean | MaybeArray<number>
@@ -17,15 +17,11 @@ export interface Selection extends BaseSelection {
 export type Filter = (session:NSession<'message'>) => boolean
 
 type EventName = keyof AppEventMap
-type ServiceAction="load"|'change'|'destroy'|'enable'|'disable'
-type ServiceListener<K extends keyof Services = keyof Services>=(key:K,service:Services[K])=>void
 type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
-type ServiceEventMap = {
-    [P in ServiceAction as `service.${P}`]: ServiceListener;
-};
+type BeforeEventName = OmitSubstring<EventName & string, 'before-'>
 
 export type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: AppEventMap[E] }
-export interface AppEventMap extends BotEventMap,ServiceEventMap{
+export interface AppEventMap extends BotEventMap{
     'ready'():void
     'dispose'():void
     'command/before-execute'(argv: Argv): Awaitable<void | string>
@@ -43,6 +39,7 @@ export interface AppEventMap extends BotEventMap,ServiceEventMap{
 
 }
 export type Dispose=()=>boolean
+export interface Services{}
 export interface Context extends Services{
     on<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):Dispose;
     on<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):Dispose;
@@ -98,25 +95,6 @@ export class Context extends Events{
     private(...values: number[]) {
         return this.exclude(this._property('group_id'))._property('user_id', ...values)
     }
-    static service<K extends keyof Services>(key: K) {
-        if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
-        const privateKey = Symbol(key)
-        Object.defineProperty(Context.prototype, key, {
-            get(this: Context) {
-                const value:Services[K] = this.app[privateKey]
-                if (!value) return
-                return value
-            },
-            set(this: Context, value:Services[K]) {
-                const oldValue:Services[K] = this.app[privateKey]
-                if (oldValue === value) return
-                this.app[privateKey] = value
-                const action = value ? oldValue ? 'change' : 'load' : 'destroy'
-                this.emit(`service.${action}`, key,value)
-                this.logger('service').debug(key, action)
-            },
-        })
-    }
     select(options: Selection) {
         let ctx: Context = this
 
@@ -163,7 +141,7 @@ export class Context extends Events{
     plugin<T extends PluginManager.Plugin>(plugin:T,config?:PluginManager.Option<T>)
     plugin(entry: string | Plugin|PluginManager.Plugin, config?: any){
         let plugin:Plugin
-        if(typeof entry==='string')plugin=this.pluginManager.import(entry)
+        if(typeof entry==='string')plugin=this.app.pluginManager.import(entry)
         else if(entry instanceof Plugin)plugin=entry
         else{
             if(typeof entry==='function')entry={install:entry,name:config.name||entry.name||Math.random().toString()}
@@ -225,9 +203,3 @@ export class Context extends Events{
         return Object.create(parent)
     }
 }
-export interface Services{
-    pluginManager:PluginManager
-    bots:BotList
-}
-Context.service('bots')
-Context.service('pluginManager')

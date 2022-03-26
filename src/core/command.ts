@@ -1,5 +1,6 @@
 import {Command} from "@lc-cn/command";
-import {NSession,Bot,Context} from ".";
+import {NSession,Bot} from "@/core/bot";
+import {Context} from "@/core/context";
 
 declare module '@lc-cn/command/lib/command'{
 

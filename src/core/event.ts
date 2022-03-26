@@ -1,6 +1,6 @@
-import {App} from "./app";
-import {Context} from "./context";
-import {isBailed, remove} from "@oitq/utils";
+import {App} from "@/core/app";
+import {Context} from "@/core/context";
+import {isBailed, remove} from "@/utils";
 export type EventName=string|symbol
 export class Events{
     _hooks: Record<keyof any, [App|Context, (...args: any[]) => any][]> = {}

@@ -1,5 +1,5 @@
 import {FaceElem, ImageElem, MessageElem, Sendable, VideoElem} from "oicq";
-import {Dict} from "@oitq/utils";
+import {Dict} from "@/utils";
 export namespace Prompt{
     export interface Options<T extends keyof TypeKV>{
         type:T | Falsy | PrevCaller<T,T|Falsy>,

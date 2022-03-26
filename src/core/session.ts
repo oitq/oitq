@@ -1,7 +1,8 @@
-import {App, Bot, Middleware, NSession, Prompt} from ".";
+import {App, Bot, Middleware, NSession, Prompt} from "@/core";
+import {Awaitable, Dict} from "@/utils/types";
 import {MessageElem, Sendable} from "oicq";
 import {MessageRet} from "oicq/lib/events";
-import {genCqcode, template, valueMap,Awaitable, Dict} from "@oitq/utils";
+import {genCqcode, template, valueMap} from "@/utils";
 import {Argv} from "@lc-cn/command";
 export interface Session{
     message_type?:string

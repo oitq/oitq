@@ -4,4 +4,4 @@ export * from './template'
 export * from './types'
 export * from './time'
 export {segment as s}
-export * from './cqcode'
+export * from './oicq'

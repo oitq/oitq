@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import {Dict} from "./types";
+import {Dict} from "@/utils/types";
 
 export function success(data){
     return {
@@ -35,6 +35,8 @@ export async function sleep(timeout){
     return new Promise(resolve => setTimeout(resolve,timeout))
 }
 
+export const getAppConfigPath=(dir=process.cwd())=>path.join(dir,'oitq.json')
+export const getOneBotConfigPath=(dir=process.cwd())=>path.join(dir,'oneBot.json')
 export function readConfig(configPath:string){
     try {
         return JSON.parse(fs.readFileSync(configPath,{encoding:'utf-8'}))

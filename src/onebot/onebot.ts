@@ -6,11 +6,12 @@ import { URL } from "url"
 import {WebSocketServer,WebSocket}from "ws"
 import * as querystring from "querystring"
 import  rfdc from "rfdc"
-import {App,Bot} from "@oitq/core";
+import {App} from "@/core/app";
+import {Bot} from "@/core/bot";
 import { assert } from "./filter"
 import { toHump, transNotice, APIS, ARGS, toBool, BOOLS, genMetaEvent } from "./static"
 import { OneBotConfig, defaultOneBotConfig } from "./config"
-import {genCqcode} from "@oitq/utils";
+import {genCqcode} from "@/utils";
 interface OneBotProtocol {
     action: string,
     params: any

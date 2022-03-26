@@ -9,7 +9,7 @@ export class Router extends KoaRouter {
     register(...args: Parameters<KoaRouter['register']>) {
         const path:Path=args[0]
         this.whiteList.push(path)
-        return super.register(...args)
+       return super.register(...args)
     }
     ws(path:string, server:http.Server) {
         const wsServer = new Server({server,path})

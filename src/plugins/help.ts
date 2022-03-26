@@ -1,7 +1,6 @@
-import {Context, } from "../context";
-import {NSession} from '../bot'
+import {Context, NSession} from "@/core";
 import {Argv, Command} from "@lc-cn/command";
-import {template} from "@oitq/utils";
+import {template} from "@/utils";
 
 interface HelpOptions {
     showHidden?: boolean

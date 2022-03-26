@@ -1,9 +1,9 @@
+import * as path from "path";
 import {Client, Config, EventMap} from 'oicq'
-import {App} from './app'
-import {Session} from './session'
-import {Middleware} from './middleware'
-import {defaultBotOptions} from './static'
-import {merge, template, Define, Extend, genCqcode} from "@oitq/utils";
+import {Session,App,Middleware} from '@/core'
+import {dir} from '@/bin'
+import {OneBot,OneBotConfig} from "@/onebot";
+import {merge, template, Define, Extend, genCqcode, valueMap} from "@/utils";
 import {Argv} from "@lc-cn/command";
 
 template.set('bot',{
@@ -25,6 +25,7 @@ export interface BotOptions{
     master?:number // 当前机器人主人
     admins?:number[] // 当前机器人管理员
     parent?:number // 机器人上级
+    oneBot?:OneBotConfig|boolean
 }
 export type ToSession<A extends any[] = []>=A extends [object, ...infer O] ? Extend<Define<Session, 'args', O>, A[0]> : Define<Session, 'args', A>
 export type NSession<E extends keyof EventMap> = ToSession<Parameters<EventMap[E]>>
@@ -36,8 +37,19 @@ export interface BotEventMap extends Transform{
     'bot.add'(bot:Bot):void
     'bot.remove'(bot:Bot):void
 }
+export const defaultBotOptions:BotOptions={
+    type:'qrcode',
+    admins:[],
+    master:1659488338,
+    config:{
+        platform:5,
+        data_dir:path.join(dir,'data'),
+        log_level:'debug'
+    }
+}
 export class Bot extends Client{
     private options:BotOptions
+    public oneBot:OneBot
     middlewares:Middleware[]=[]
     constructor(public app:App,options:BotOptions) {
         super(options.uin,merge(defaultBotOptions.config,options.config));
@@ -227,6 +239,7 @@ export class Bot extends Client{
                 this.startBotLogin(link,this)
             })
         }
+        this.oneBot?.dispatch(session)
         return super.emit(name,...args)
     }
     createSession<E extends keyof EventMap>(name:E,...args:Parameters<EventMap[E]>){
