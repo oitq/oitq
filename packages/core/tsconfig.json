@@ -2,7 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "lib"
+    "module": "AMD",
+    "outDir": "lib",
+    "outFile": "lib/broswer.js"
   },
   "include": [
     "src"

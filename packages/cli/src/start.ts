@@ -2,7 +2,7 @@ import {CAC} from "cac";
 import {App,dir,
     defaultAppOptions,AppOptions,getAppConfigPath,
     readConfig,writeConfig
-} from "@oitq/oitq";
+} from "oitq";
 import {addBot} from "./addBot";
 import {merge} from "@oitq/utils";
 

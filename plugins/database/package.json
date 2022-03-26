@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-database",
   "main": "lib/index.js",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "description": "database plugin",
   "devDependencies": {
     "querystring": "^0.2.1"

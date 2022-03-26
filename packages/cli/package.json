@@ -1,10 +1,10 @@
 {
   "name": "@oitq/cli",
   "main": "lib/index.js",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "oitq core",
   "dependencies": {
-    "@oitq/oitq": "latest",
+    "oitq": "latest",
     "axios": "^0.26.1",
     "cac": "^6.7.12",
     "prompts": "^2.4.2"

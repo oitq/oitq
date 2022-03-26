@@ -14,7 +14,7 @@ declare module 'oitq'{
 export const name='database'
 export function install(ctx:Context,config:Options){
     ctx.database=new Database(ctx,config)
-    ctx.on('start',async ()=>{
+    ctx.on('ready',async ()=>{
         ctx.database.sequelize.addModels(Object.values(this.models))
         await this.sequelize.sync({alter:true})
     })

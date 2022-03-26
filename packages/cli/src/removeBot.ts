@@ -4,7 +4,7 @@ import {
     defaultAppOptions,AppOptions,
     getAppConfigPath,
     readConfig,writeConfig
-} from "@oitq/oitq";
+} from "oitq";
 import axios from "axios";
 const prompts=require('prompts')
 const appOptions:AppOptions=readConfig(getAppConfigPath(dir))

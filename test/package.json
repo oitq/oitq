@@ -4,9 +4,8 @@
   "version": "0.0.2",
   "description": "utils",
   "dependencies": {
-    "@oitq/plugin-database": "^0.0.4",
-    "@oitq/plugin-test123": "^0.0.1",
-    "oitq": "^0.0.6"
+    "@oitq/plugin-database": "latest",
+    "oitq": "latest"
   },
   "devDependencies": {
     "querystring": "^0.2.1"

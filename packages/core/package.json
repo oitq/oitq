@@ -1,8 +1,9 @@
 {
   "name": "@oitq/core",
-  "main": "lib/index.js",
-  "types": "lib/types.d.ts",
-  "version": "0.0.6-alpha",
+  "main": "lib/node.js",
+  "module": "lib/browser.js",
+  "typings": "lib/index.d.ts",
+  "version": "0.1.0",
   "description": "oitq core",
   "dependencies": {
     "@lc-cn/command": "^0.1.7",

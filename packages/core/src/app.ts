@@ -91,5 +91,6 @@ export class App extends Context{
             await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
         }
         this.status=true
+        this.emit('start')
     }
 }

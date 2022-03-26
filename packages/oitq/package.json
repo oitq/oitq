@@ -1,14 +1,14 @@
 {
   "name": "oitq",
   "main": "lib/index.js",
-  "types": "lib/node.d.ts",
+  "typings": "lib/node.d.ts",
   "bin": "bin/oitq",
-  "version": "0.0.6",
+  "version": "0.1.3",
   "description": "oitq core",
   "dependencies": {
     "@koa/router": "^10.1.1",
     "@oitq/cli": "latest",
-    "@oitq/core": "^0.0.6-alpha",
+    "@oitq/core": "latest",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-connect": "^2.1.0",

@@ -10,7 +10,7 @@ import {
     getBotConfigPath,BotOptions,defaultBotOptions,
     createIfNotExist,
     readConfig,writeConfig
-} from '@oitq/oitq'
+} from 'oitq'
 if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 createIfNotExist(getAppConfigPath(dir),defaultAppOptions)
 createIfNotExist(getOneBotConfigPath(dir),defaultOneBotConfig)
