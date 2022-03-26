@@ -27,10 +27,10 @@ const questions: PromptObject[] = [
         initial:true
     },
     {
-      type:(prev)=>prev?null:"multiselect",
-      name:'botConfig',
-      message:'请选择需要更改的bot配置项',
-      choices:Object.keys(oneBotConfig).filter(key=>key!=='uin').map(key=>({title:key,value:key}))
+        type:(prev)=>prev?null:"multiselect",
+        name:'botConfig',
+        message:'请选择需要更改的bot配置项',
+        choices:Object.keys(oneBotConfig).filter(key=>key!=='uin').map(key=>({title:key,value:key}))
     },
     {
         type: 'select',
