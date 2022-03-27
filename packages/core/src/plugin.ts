@@ -42,6 +42,7 @@ export class Plugin extends EventEmitter{
         super()
         if(typeof hooks==='string'){
             this.fullpath = require.resolve(hooks)
+            this.using=require(hooks).using||[]
             this.path=hooks
         }else{
             if(hooks.using)this.using=hooks.using
