@@ -1,21 +1,26 @@
 import Koa from 'koa'
-import {App} from '@oitq/core'
+import {App, AppOptions} from '@oitq/core'
 import {success,error,merge} from '@oitq/utils'
 import {OneBot, OneBotConfig,defaultOneBotConfig} from "./onebot";
 import {Router} from "./router";
-import * as KoaBodyParser from "koa-bodyparser";
+import KoaBodyParser from "koa-bodyparser";
 import {createServer, Server} from "http";
 import * as path from "path";
 export const getAppConfigPath=(dir=process.cwd())=>path.join(dir,'oitq.json')
 export const getOneBotConfigPath=(dir=process.cwd())=>path.join(dir,'oneBot.json')
+export function createApp(options:AppOptions|string){
+    return new App(options)
+}
 export * from './onebot'
 export * from './router'
 export * from '@oitq/core'
 declare module '@oitq/core'{
-    interface Services{
-        koa:Koa
-        router:Router
-        readonly httpServer:Server
+    namespace Context{
+        interface Services{
+            koa:Koa
+            router:Router
+            readonly httpServer:Server
+        }
     }
     interface AppOptions{
         port?:number,

@@ -4,8 +4,10 @@ import {Options} from "sequelize";
 export * from 'sequelize-typescript'
 import {User} from "./models";
 declare module 'oitq'{
-    interface Services{
-        database:Database
+    namespace Context{
+        interface Services{
+            database:Database
+        }
     }
     export interface Session{
         user:User
@@ -15,8 +17,8 @@ export const name='database'
 export function install(ctx:Context,config:Options){
     ctx.database=new Database(ctx,config)
     ctx.on('ready',async ()=>{
-        ctx.database.sequelize.addModels(Object.values(this.models))
-        await this.sequelize.sync({alter:true})
+        ctx.database.sequelize.addModels(Object.values(ctx.database.models))
+        await ctx.database.sequelize.sync({alter:true})
     })
 }
 class Database{

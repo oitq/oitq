@@ -1,11 +1,12 @@
 import {LogLevel} from "oicq";
 import {BotList, BotOptions} from "./bot";
-import {sleep, merge, Dict, Awaitable} from "@oitq/utils";
+import {sleep, merge, Dict, Awaitable, readConfig} from "@oitq/utils";
 import {Context} from './context'
 import {PluginManager} from './plugin'
 import {Computed} from "./session";
-import {defaultAppOptions} from './static'
+import {defaultAppOptions, dir} from './static'
 import {Command} from "@lc-cn/command";
+import * as path from "path";
 
 interface KoaOptions{
     env?: string
@@ -43,8 +44,15 @@ export class App extends Context{
     _shortcuts: Command.Shortcut[] = []
     public app:App=this
     options:AppOptions
-    constructor(options:AppOptions={}) {
+    constructor(options:AppOptions|string=path.join(dir,'oitq.json')) {
         super(()=>true);
+        if(typeof options==='string'){
+            try{
+                options=readConfig(options) as AppOptions
+            }catch {
+                options={}
+            }
+        }
         this.options=merge(defaultAppOptions,options)
         this.bots=new BotList(this)
         this.pluginManager=new PluginManager(this,this.options)
@@ -91,6 +99,6 @@ export class App extends Context{
             await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
         }
         this.status=true
-        this.emit('start')
+        this.emit('ready')
     }
 }

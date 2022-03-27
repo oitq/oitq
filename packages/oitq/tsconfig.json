@@ -2,8 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "temp",
-    "esModuleInterop": true
+    "outDir": "lib",
+    "esModuleInterop": true,
+    "declaration": false
   },
   "include": [
     "src"

@@ -3,10 +3,11 @@
   "main": "lib/index.js",
   "typings": "lib/node.d.ts",
   "bin": "bin/oitq",
-  "version": "0.1.3",
+  "version": "0.2.1",
   "description": "oitq core",
   "dependencies": {
     "@koa/router": "^10.1.1",
+    "@oitq/core": "^0.2.0",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-connect": "^2.1.0",

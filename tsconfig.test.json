@@ -6,9 +6,7 @@
       "oitq": [
         "packages/oitq/src"
       ],
-      "@oitq/*": [
-        "packages/*/src"
-      ],
+
       "@oitq/plugin-*": [
         "plugins/*/src"
       ]

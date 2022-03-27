@@ -2,7 +2,7 @@ import {EventEmitter} from "events";
 import * as path from "path";
 import * as fs from 'fs'
 import {App,Bot} from ".";
-import {Awaitable, createIfNotExist, merge, Promisify, readConfig, writeConfig} from "@oitq/utils";
+import {Awaitable, createIfNotExist, merge, readConfig, writeConfig} from "@oitq/utils";
 import {Context} from "./context";
 
 
@@ -35,6 +35,7 @@ export class Plugin extends EventEmitter{
     protected readonly path:string
     protected hooks:PluginManager.Object
     readonly binds = new Set<Bot>()
+    using:readonly (keyof Context.Services)[]=[]
     private config
     public context:Context
     constructor(public readonly name: string,hooks: string|PluginManager.Object) {
@@ -43,6 +44,7 @@ export class Plugin extends EventEmitter{
             this.fullpath = require.resolve(hooks)
             this.path=hooks
         }else{
+            if(hooks.using)this.using=hooks.using
             this.hooks=hooks
         }
     }
@@ -74,14 +76,14 @@ export class Plugin extends EventEmitter{
             const res = this.hooks.install(context,config)
             if (res instanceof Promise)
                 await res
-            console.log(`插件${this.name} 已成功安装`)
+            console.log(`插件(${this.name})已成功安装`)
         } catch (e) {
-            throw new PluginError("安装插件时遇到错误。\n错误信息：" + e.message)
+            throw new PluginError(`安装插件(${this.name})时遇到错误。\n错误信息：` + e.message)
         }
     }
     async enable(bot: Bot) {
         if (this.binds.has(bot)) {
-            throw new PluginError("这个机器人实例已经启用了此插件")
+            throw new PluginError(`这个机器人实例已经启用了插件(${this.name})`)
         }
         if(this.path){
             require(this.path)
@@ -89,7 +91,7 @@ export class Plugin extends EventEmitter{
             this.hooks=mod.exports
         }
         if (typeof this.hooks.enable !== "function") {
-            console.warn("此插件未导出enable方法")
+            console.warn(`插件(${this.name})未导出enable方法`)
         }else{
             try {
                 const res = this.hooks.enable(bot)
@@ -97,7 +99,7 @@ export class Plugin extends EventEmitter{
                     await res
                 await this._editBotPluginCache(bot, "add")
             } catch (e) {
-                throw new PluginError("启用插件时遇到错误。\n错误信息：" + e.message)
+                throw new PluginError(`启用插件(${this.name})时遇到错误。\n错误信息：` + e.message)
             }
         }
         this.binds.add(bot)
@@ -106,7 +108,7 @@ export class Plugin extends EventEmitter{
 
     async disable(bot: Bot) {
         if (!this.binds.has(bot)) {
-            throw new PluginError("这个机器人实例尚未启用此插件")
+            throw new PluginError(`这个机器人实例尚未启用插件(${this.name})`)
         }
         if(this.path){
             require(this.path)
@@ -114,7 +116,7 @@ export class Plugin extends EventEmitter{
             this.hooks=mod.exports
         }
         if (typeof this.hooks.disable !== "function") {
-            console.warn("此插件未导出disable方法，无法禁用。")
+            console.warn(`插件(${this.name})未导出disable方法，无法禁用。`)
         }else{
             try {
                 const res = this.hooks.disable(bot)
@@ -122,7 +124,7 @@ export class Plugin extends EventEmitter{
                     await res
                 await this._editBotPluginCache(bot, "delete")
             } catch (e) {
-                throw new PluginError("禁用插件时遇到错误。\n错误信息：" + e.message)
+                throw new PluginError(`禁用插件(${this.name})时遇到错误。\n错误信息：` + e.message)
             }
         }
         this.binds.delete(bot)
@@ -145,7 +147,7 @@ export class Plugin extends EventEmitter{
                 const res = this.hooks.uninstall(context)
                 if (res instanceof Promise)
                     await res
-                console.log(`插件${this.name} 已成功卸载`)
+                console.log(`插件(${this.name})已成功卸载`)
             }
         } catch { }
         if(isModule){
@@ -169,7 +171,7 @@ export class Plugin extends EventEmitter{
                 await this.enable(bot)
             }
         } catch (e) {
-            throw new PluginError("重启插件时遇到错误。\n错误信息：" + e.message)
+            throw new PluginError(`重启插件(${this.name})时遇到错误。\n错误信息：` + e.message)
         }
     }
 }
@@ -212,7 +214,9 @@ export class PluginManager{
         if (this.plugins.has(name))
             return this.plugins.get(name)
         let resolved = ""
-        if(!resolved){
+        const modulePath=path.join(process.cwd(), "node_modules")
+        const orgPath=path.resolve(modulePath,'@oitq')
+        if(!resolved && fs.existsSync(this.config.dir)){
             const files = fs.readdirSync(
                 this.config.dir,
                 { withFileTypes: true }
@@ -223,8 +227,7 @@ export class PluginManager{
                 }
             }
         }
-        if (!resolved) {
-            const modulePath=path.join(__dirname, "../../../node_modules")
+        if (!resolved && fs.existsSync(modulePath)) {
             const modules =fs.readdirSync(modulePath,{ withFileTypes: true })
             for (let file of modules) {
                 if (file.isDirectory() && file.name === `oitq-plugin-${name}`) {
@@ -232,17 +235,16 @@ export class PluginManager{
                 }
             }
         }
-        if(!resolved){
-            const orgPath=path.resolve(__dirname,'../../../plugins')
+        if(!resolved &&fs.existsSync(orgPath)){
             const orgModules=fs.readdirSync(orgPath,{withFileTypes:true})
             for (let file of orgModules) {
-                if (file.isDirectory() && file.name===name) {
-                    resolved = `@oitq/plugin-${file.name}`
+                if (file.isDirectory() && file.name===`plugin-${name}`) {
+                    resolved = `@oitq/${file.name}`
                 }
             }
         }
         if (!resolved)
-            throw new PluginError("插件名错误，无法找到此插件")
+            throw new PluginError(`插件名错误，无法找到插件(${name})`)
         return new Plugin(name, resolved)
     }
     install(plugin:Plugin,config?){
@@ -251,7 +253,7 @@ export class PluginManager{
     }
     checkInstall(name:string){
         if (!this.plugins.has(name)) {
-            throw new PluginError("尚未安装此插件")
+            throw new PluginError(`尚未安装插件(${name})`)
         }
         return this.plugins.get(name)
     }
@@ -277,8 +279,8 @@ export class PluginManager{
     }
     loadAllPlugins():PluginDesc[]{
         const custom_plugins: PluginDesc[] = [], module_plugins: PluginDesc[] = [],builtin_plugins:PluginDesc[]=[]
-        const modulePath=path.join(__dirname, "../../../node_modules")
-        const orgPath=path.join(__dirname,'../../plugins')
+        const modulePath=path.join(process.cwd(), "node_modules")
+        const orgPath=path.join(modulePath,'@oitq')
         // 列出的插件不展示内置插件
         const builtinPath=path.join(__dirname,'plugins')
         const builtinPlugins=fs.readdirSync(builtinPath,{withFileTypes:true})
@@ -302,16 +304,18 @@ export class PluginManager{
                 }catch {}
             }
         }
-        const customPlugins = fs.readdirSync(this.config.dir,{ withFileTypes: true })
-        for (let file of customPlugins) {
-            if (file.isDirectory() || file.isSymbolicLink()) {
-                try {
-                    require.resolve(`${this.config.dir}/${file.name}`)
-                    custom_plugins.push({
-                        name:file.name,
-                        type:PluginType.Custom
-                    })
-                }catch{}
+        if(fs.existsSync(this.config.dir)){
+            const customPlugins = fs.readdirSync(this.config.dir,{ withFileTypes: true })
+            for (let file of customPlugins) {
+                if (file.isDirectory() || file.isSymbolicLink()) {
+                    try {
+                        require.resolve(`${this.config.dir}/${file.name}`)
+                        custom_plugins.push({
+                            name:file.name,
+                            type:PluginType.Custom
+                        })
+                    }catch{}
+                }
             }
         }
         const modules = fs.readdirSync(modulePath,{ withFileTypes: true })
@@ -327,17 +331,19 @@ export class PluginManager{
                 } catch { }
             }
         }
-        const orgModules=fs.readdirSync(orgPath,{ withFileTypes: true })
-        for (let file of orgModules) {
-            if (file.isDirectory() && (file.name.startsWith("plugin-"))) {
-                try {
-                    require.resolve(`@oitq/${file.name}`)
-                    module_plugins.push({
-                        name:file.name,
-                        type:PluginType.Official,
-                        fullName:`@oitq/plugin-${file.name}`
-                    })
-                } catch { }
+        if(fs.existsSync(orgPath)){
+            const orgModules=fs.readdirSync(orgPath,{ withFileTypes: true })
+            for (let file of orgModules) {
+                if (file.isDirectory() && file.name.startsWith('plugin-')) {
+                    try {
+                        require.resolve(`@oitq/${file.name}`)
+                        module_plugins.push({
+                            name:file.name.replace('plugin-',''),
+                            type:PluginType.Official,
+                            fullName:`@oitq/${file.name}`
+                        })
+                    } catch { }
+                }
             }
         }
         const plugins:PluginDesc[]=[...this.plugins.values()].map(plugin=>{
@@ -386,6 +392,7 @@ export namespace PluginManager{
     export type Function<T = any> = (ctx: Context, options: T) => Awaitable<any>
     export interface Object<T = any> {
         install: Function<T>
+        using?:readonly (keyof Context.Services)[]
         name?:string
         uninstall?(ctx:Context):Awaitable<any>
         enable?(bot:Bot):Awaitable<any>

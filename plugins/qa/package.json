@@ -1,15 +1,8 @@
 {
-  "name": "@oitq/core",
+  "name": "@oitq/plugin-qa",
   "main": "lib/index.js",
-  "module": "lib/browser.js",
-  "typings": "lib/index.d.ts",
   "version": "0.2.0",
-  "description": "oitq core",
-  "dependencies": {
-    "@lc-cn/command": "^0.1.7",
-    "@oitq/utils": "^0.1.0",
-    "oicq": "^2.2.1"
-  },
+  "description": "qa plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",
     "alias": "tsc-alias -p tsconfig.json",
@@ -21,7 +14,8 @@
     "url": "git+https://github.com/oitq/oitq.git"
   },
   "keywords": [
-    "utils",
+    "qa",
+    "plugin",
     "oitq"
   ],
   "files": [
