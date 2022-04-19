@@ -1,10 +1,12 @@
 import {App, Bot, Middleware, NSession, Prompt} from ".";
 import {MessageElem, Sendable} from "oicq";
 import {MessageRet} from "oicq/lib/events";
-import {genCqcode, template, valueMap,Awaitable, Dict} from "@oitq/utils";
+import {toCqcode, template, valueMap, Awaitable, Dict, fromCqcode} from "@oitq/utils";
 import {Argv} from "@lc-cn/command";
 export interface Session{
+    self_id?:number
     message_type?:string
+    cqCode?:string
     message?:MessageElem[]
     post_type?:string
     notice_type?:string
@@ -34,6 +36,15 @@ export class Session{
     parsed?: Parsed
     constructor(public app:App,public bot:Bot,data:Dict) {
         Object.assign(this,data)
+        if(data.message){
+            this.cqCode=toCqcode(data)
+        }
+        if(data.reply){
+            this.reply=(content)=>{
+                const messageList=[].concat(content).map(c=>typeof c==='string'?fromCqcode(c):c).flat(1)
+                return data.reply(messageList)
+            }
+        }
     }
 
     middleware(middleware:Middleware){
@@ -85,7 +96,7 @@ export class Session{
         }
         return answer as Prompt.Answers<Prompt.ValueType<T>>
     }
-    private _handleShortcut(content=genCqcode(this.message)):Argv{
+    private _handleShortcut(content=this.cqCode):Argv{
         for (const shortcut of this.app._shortcuts) {
             const {name, fuzzy, command, prefix, options = {}, args = []} = shortcut
             if (typeof name === 'string') {
@@ -118,7 +129,7 @@ export class Session{
             }
         }
     }
-    async execute(content:string=genCqcode(this.message)){
+    async execute(content:string=this.cqCode){
         for(const [,command] of this.app._commands){
             const argv=Argv.parse(content)
             argv.bot=this.bot

@@ -1,8 +1,9 @@
-import {Context, Dict,NSession} from "oitq";
+import {Context,NSession} from "oitq";
+import {Dict} from '@oitq/utils'
 import {ModelCtor, Sequelize} from "sequelize-typescript";
 import {Options} from "sequelize";
 export * from 'sequelize-typescript'
-import {User} from "./models";
+import {User,UserInfo} from "./models";
 declare module 'oitq'{
     namespace Context{
         interface Services{
@@ -10,7 +11,7 @@ declare module 'oitq'{
         }
     }
     export interface Session{
-        user:User
+        user:UserInfo
     }
 }
 export const name='database'
@@ -19,6 +20,7 @@ export function install(ctx:Context,config:Options){
     ctx.on('ready',async ()=>{
         ctx.database.sequelize.addModels(Object.values(ctx.database.models))
         await ctx.database.sequelize.sync({alter:true})
+        ctx.emit('database.ready')
     })
 }
 class Database{
@@ -28,7 +30,7 @@ class Database{
         this.addModels(User)
         this.sequelize=new Sequelize(this.options)
         ctx.before('attach',async (session:NSession<'message'>)=>{
-            const {user_id,nickname}=session
+            const {sender:{nickname,user_id}}=session
             const [user]=await User.findOrCreate({
                 attributes:['user_id',"authority",'name'],
                 where:{

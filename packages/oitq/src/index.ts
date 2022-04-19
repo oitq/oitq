@@ -1,5 +1,5 @@
 import Koa from 'koa'
-import {App, AppOptions} from '@oitq/core'
+import {App, AppOptions, dir} from '@oitq/core'
 import {success,error,merge} from '@oitq/utils'
 import {OneBot, OneBotConfig,defaultOneBotConfig} from "./onebot";
 import {Router} from "./router";
@@ -8,7 +8,7 @@ import {createServer, Server} from "http";
 import * as path from "path";
 export const getAppConfigPath=(dir=process.cwd())=>path.join(dir,'oitq.json')
 export const getOneBotConfigPath=(dir=process.cwd())=>path.join(dir,'oneBot.json')
-export function createApp(options:AppOptions|string){
+export function createApp(options:AppOptions|string=getAppConfigPath(dir)){
     return new App(options)
 }
 export * from './onebot'

@@ -4,11 +4,13 @@
     "baseUrl": ".",
     "paths": {
       "oitq": [
-        "packages/oitq/src"
+        "packages/oitq"
       ],
-
       "@oitq/plugin-*": [
         "plugins/*/src"
+      ],
+      "@oitq/*": [
+        "packages/*/src"
       ]
     }
   }

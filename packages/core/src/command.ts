@@ -2,7 +2,6 @@ import {Command} from "@lc-cn/command";
 import {NSession,Bot,Context} from ".";
 
 declare module '@lc-cn/command/lib/command'{
-
     interface Command{
         context:Context
         shortcut(name: string | RegExp, config?: Command.Shortcut):Command
@@ -17,7 +16,7 @@ declare module '@lc-cn/command/lib/argv'{
     }
 
 }
-Command.prototype.shortcut=function (this:Command,name,config={}){
+Command.prototype.shortcut=function (this:Command,name,config:Command.Shortcut={}){
     config.name = name
     config.command = this
     config.authority ||= this.config.authority

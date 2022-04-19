@@ -10,7 +10,7 @@ import {App,Bot} from "@oitq/core";
 import { assert } from "./filter"
 import { toHump, transNotice, APIS, ARGS, toBool, BOOLS, genMetaEvent } from "./static"
 import { OneBotConfig, defaultOneBotConfig } from "./config"
-import {genCqcode} from "@oitq/utils";
+import {toCqcode} from "@oitq/utils";
 interface OneBotProtocol {
     action: string,
     params: any
@@ -105,7 +105,7 @@ export class OneBot{
             case "message":
                 if (this.config.post_message_format === "string") {
                     unserialized = clone(unserialized)
-                    unserialized.message = genCqcode(data.message)
+                    unserialized.message = toCqcode(data)
                 }
                 break
             case "notice":

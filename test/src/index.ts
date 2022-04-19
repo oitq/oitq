@@ -1,13 +1,22 @@
-import {dir,App,getAppConfigPath, readConfig,Router} from "oitq"
-import {install as database} from '@oitq/plugin-database';
+// @ts-ignore
+import {createApp} from "oitq"
+import * as database from '@oitq/plugin-database'
+import * as qa from '@oitq/plugin-qa'
+import * as schedule from '@oitq/plugin-schedule'
+import * as common from '@oitq/plugin-common'
 process.on('unhandledRejection', (e) => {
     console.log(e)
 })
-const app = new App(readConfig(getAppConfigPath(dir)))
-app.plugin(database,{dialect:'mysql'})
-console.log(Router)
-console.log(app.router)
-console.log(app.bots)
-console.log(app.database)
-app.start(8086)
+createApp()
+    .plugin(common,{operator:1659488338})
+    .plugin(qa)
+    .plugin(schedule)
+    .plugin(database,{
+        dialect:'mysql',
+        host:'148.70.201.93',
+        database:'oitq',
+        username:'root',
+        password:'l196023.'
+    })
+    .start(8086)
 

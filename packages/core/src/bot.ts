@@ -1,10 +1,11 @@
-import {Client, Config, EventMap} from 'oicq'
+import {Client, Config, EventMap, MessageElem, Quotable, Sendable} from 'oicq'
 import {App} from './app'
 import {Session} from './session'
 import {Middleware} from './middleware'
 import {defaultBotOptions} from './static'
-import {merge, template, Define, Extend, genCqcode} from "@oitq/utils";
+import {merge, template, Define, Extend, fromCqcode} from "@oitq/utils";
 import {Argv} from "@lc-cn/command";
+import {MessageRet} from "oicq/lib/events";
 
 template.set('bot',{
     system:{
@@ -16,6 +17,9 @@ template.set('bot',{
         cancel:'输入`cancel`以取消'
     }
 })
+
+export type TargetType='group'|'private'|'discuss'
+export type ChannelId=`${TargetType}:${number}`
 export type LoginType='qrcode'|'password'
 export interface BotOptions{
     uin?:number
@@ -198,12 +202,16 @@ export class Bot extends Client{
 
 
     async handleCommand(session:NSession<'message'>){
-        this.app.emit('before-command',Argv.parse(genCqcode(session.message)))
-        return session.execute(genCqcode(session.message))
+        this.app.emit('before-command',Argv.parse(session.cqCode))
+        return session.execute(session.cqCode)
     }
     async handleMessage(session:NSession<'message'>){
+        await this.app.parallel('before-attach',session)
         const result=await this.handleCommand(session)
         if(result)return result
+        for(const shortcut of this.app._shortcuts){
+            // console.log(shortcut)
+        }
         for(const middleware of this.middlewares){
             const result =await middleware(session)
             if(result) return result
@@ -234,6 +242,37 @@ export class Bot extends Client{
         if(!data)data={}
         data.args=args
         return new Session(this.app, this, data) as unknown as NSession<E>
+    }
+    /**
+     * 发送消息
+     * @param channelId 通道id
+     * @param content 消息内容，如果为CQ码会自动转换
+     * @param source 引用的消息，为string时代表消息id
+     */
+    async sendMsg(channelId:ChannelId,content:Sendable,source?:Quotable|string):Promise<MessageRet>{
+        try{
+            if(typeof content==='string')content=fromCqcode(content)
+            if(Array.isArray(content))content=content.reduce((total:(string|MessageElem)[],current)=>{
+                if(typeof current==='string')total=total.concat(fromCqcode(current))
+                else total.push(current)
+                return total
+            },[])
+            if(typeof source==='string')source=await this.getMsg(source) as Quotable
+            const [type,id]=channelId.split(':')
+            switch (type){
+                case "discuss":
+                    return this.pickDiscuss(Number(id)).sendMsg(content)
+                case 'group':
+                    if(!this.gl.get(Number(id))) throw new Error(`我没有加入群:${id}`)
+                    return this.pickGroup(Number(id)).sendMsg(content,source)
+                case 'private':
+                    if(!this.fl.get(Number(id))) throw new Error(`我没有添加用户:${id}`)
+                    return this.pickUser(Number(id)).sendMsg(content,source)
+            }
+            throw new Error('无效的通道Id')
+        }catch (e){
+            throw e
+        }
     }
 
 }

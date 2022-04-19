@@ -5,6 +5,7 @@ import {Argv, Command} from "@lc-cn/command";
 import {getLogger} from 'log4js'
 import {Awaitable, makeArray, MaybeArray} from "@oitq/utils";
 import {Events} from "./event";
+import {Middleware} from "./middleware";
 const selectors = ['user', 'group',  'self', 'private'] as const
 export type SelectorType = typeof selectors[number]
 export type SelectorValue = boolean | MaybeArray<number>
@@ -146,6 +147,16 @@ export class Context extends Events{
         }
         return this.plugin({ using,...plugin},config)
     }
+    middleware(middleware:Middleware):Dispose{
+        const disposeArr=[]
+        for(const bot of this.bots){
+            disposeArr.push(bot.middleware(middleware))
+        }
+        return ()=>{
+            disposeArr.forEach(dispose=>dispose())
+            return true
+        }
+    }
     plugin(name:string,config?:any):this
     plugin<T extends PluginManager.Plugin>(plugin:T,config?:PluginManager.Option<T>):this
     plugin(entry: string | Plugin|PluginManager.Plugin, config?: any):this{
@@ -153,8 +164,8 @@ export class Context extends Events{
         if(typeof entry==='string')plugin=this.pluginManager.import(entry)
         else if(entry instanceof Plugin)plugin=entry
         else{
-            if(typeof entry==='function')entry={install:entry,name:config.name||entry.name||Math.random().toString()}
-            plugin=new Plugin(entry.name,entry)
+            if(typeof entry==='function')entry={install:entry,name:config?.name||entry?.name||Math.random().toString()}
+            plugin=new Plugin(entry?.name||Math.random().toString(),entry)
         }
 
         const using = plugin['using'] || []

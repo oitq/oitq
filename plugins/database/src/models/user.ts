@@ -8,7 +8,7 @@ export class User extends Model{
     @Column(DataType.STRING)
     name:string
 }
-export interface User{
+export interface UserInfo{
     id:number
     user_id:number
     authority:number

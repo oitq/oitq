@@ -2,6 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import {Dict} from "./types";
 
+export function noop(): any {}
 export function success(data){
     return {
         success:true,
