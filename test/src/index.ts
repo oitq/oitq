@@ -8,6 +8,9 @@ process.on('unhandledRejection', (e) => {
     console.log(e)
 })
 createApp()
+    .plugin((ctx)=>{
+        // do sth
+    })
     .plugin(common,{operator:1659488338})
     .plugin(qa)
     .plugin(schedule)
@@ -16,7 +19,8 @@ createApp()
         host:'148.70.201.93',
         database:'oitq',
         username:'root',
-        password:'l196023.'
+        password:'l196023.',
+        logging:()=>{}
     })
     .start(8086)
 

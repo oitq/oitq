@@ -1,11 +1,8 @@
 {
-  "name": "@oitq/utils",
+  "name": "@oitq/plugin-common",
   "main": "lib/index.js",
-  "version": "0.1.1",
-  "description": "utils",
-  "devDependencies": {
-    "querystring": "^0.2.1"
-  },
+  "version": "0.0.1",
+  "description": "common plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",
     "alias": "tsc-alias -p tsconfig.json",
@@ -17,7 +14,8 @@
     "url": "git+https://github.com/oitq/oitq.git"
   },
   "keywords": [
-    "utils",
+    "common",
+    "plugin",
     "oitq"
   ],
   "files": [

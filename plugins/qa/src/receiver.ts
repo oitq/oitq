@@ -48,7 +48,7 @@ export async function triggerTeach(ctx: Context, session: NSession<'message'>) {
                 dialogue.redirect = dialogue.redirect.replace(reg, args[index])
             }
         }
-        session.message = dialogue.redirect
+        session.cqCode = dialogue.redirect
         return triggerTeach(ctx, session)
     }
     if (dialogue.isReg) {

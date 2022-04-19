@@ -10,7 +10,7 @@ import {App,Bot} from "@oitq/core";
 import { assert } from "./filter"
 import { toHump, transNotice, APIS, ARGS, toBool, BOOLS, genMetaEvent } from "./static"
 import { OneBotConfig, defaultOneBotConfig } from "./config"
-import {toCqcode} from "@oitq/utils";
+import {fromCqcode, toCqcode} from "@oitq/utils";
 interface OneBotProtocol {
     action: string,
     params: any
@@ -30,7 +30,7 @@ export class OneBot{
     protected queue_running = false
     protected filter: any
     protected timestamp = Date.now()
-    constructor(private app:App,protected bot:Bot,protected config:OneBotConfig=defaultOneBotConfig,private port=app.options.port) {
+    constructor(private app:App,protected bot:Bot,protected config:OneBotConfig=defaultOneBotConfig) {
     }
     /**
      * 上报事件
@@ -275,10 +275,11 @@ export class OneBot{
                 if (Reflect.has(params, k)) {
                     if (BOOLS.includes(k))
                         params[k] = toBool(params[k])
+                    if(typeof params[k]==='string' && k==='message')
+                        params[k]=fromCqcode(params[k])
                     args.push(params[k])
                 }
             }
-
             let ret: any,result:any
             if (is_queue) {
                 this._queue.push({ method, args })
@@ -427,31 +428,35 @@ export class OneBot{
         if (!this.config.use_http && !this.config.use_ws)
             return
         if(this.config.use_http){
-            this.bot.logger.info(`OneBot - 开启http服务器成功，监听:http://127.0.0.1:${this.port}/${this.bot.uin}`)
-            this.app.router.all(new RegExp(`^/${this.bot.uin}/(.*)$`),this._httpRequestHandler.bind(this))
+            this.app.on('ready',()=>{
+                this.app.router.all(new RegExp(`^/${this.bot.uin}/(.*)$`),this._httpRequestHandler.bind(this))
+                this.bot.logger.info(`OneBot - 开启http服务器成功，监听:http://127.0.0.1:${this.app.options.port}/${this.bot.uin}`)
+            })
         }
         if (this.config.use_ws) {
-            this.bot.logger.info(`OneBot - 开启ws服务器成功，监听:ws://127.0.0.1:${this.port}/${this.bot.uin}`)
-            this.wss = this.app.router.ws(`/${this.bot.uin}`,this.app.httpServer)
-            this.wss.on("error", (err) => {
-                this.bot.logger.error(err.message)
-            })
-            this.wss.on("connection", (ws, req)=>{
-                ws.on("error", (err) => {
+            this.app.on('ready',()=>{
+                this.bot.logger.info(`OneBot - 开启ws服务器成功，监听:ws://127.0.0.1:${this.app.options.port}/${this.bot.uin}`)
+                this.wss = this.app.router.ws(`/${this.bot.uin}`,this.app.httpServer)
+                this.wss.on("error", (err) => {
                     this.bot.logger.error(err.message)
                 })
-                ws.on("close", (code, reason) => {
-                    this.bot.logger.warn(`OneBot - 正向ws连接关闭，关闭码${code}，关闭理由：` + reason)
+                this.wss.on("connection", (ws, req)=>{
+                    ws.on("error", (err) => {
+                        this.bot.logger.error(err.message)
+                    })
+                    ws.on("close", (code, reason) => {
+                        this.bot.logger.warn(`OneBot - 正向ws连接关闭，关闭码${code}，关闭理由：` + reason)
+                    })
+                    if (this.config.access_token) {
+                        const url = new URL(req.url as string, "http://127.0.0.1")
+                        const token = url.searchParams.get('access_token')
+                        if (token)
+                            req.headers["authorization"] = token
+                        if (!req.headers["authorization"] || !req.headers["authorization"].includes(this.config.access_token))
+                            return ws.close(1002, "wrong access token")
+                    }
+                    this._webSocketHandler(ws)
                 })
-                if (this.config.access_token) {
-                    const url = new URL(req.url as string, "http://127.0.0.1")
-                    const token = url.searchParams.get('access_token')
-                    if (token)
-                        req.headers["authorization"] = token
-                    if (!req.headers["authorization"] || !req.headers["authorization"].includes(this.config.access_token))
-                        return ws.close(1002, "wrong access token")
-                }
-                this._webSocketHandler(ws)
             })
         }
     }

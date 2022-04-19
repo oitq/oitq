@@ -6,8 +6,8 @@
   "version": "1.2.1",
   "description": "oitq core",
   "dependencies": {
-    "@lc-cn/command": "^0.1.7",
-    "@oitq/utils": "^0.1.0",
+    "@lc-cn/command": "latest",
+    "@oitq/utils": "latest",
     "oicq": "^2.2.1"
   },
   "scripts": {

@@ -181,6 +181,8 @@ export class PluginManager{
     public plugins:Map<string,Plugin>=new Map<string,Plugin>()
     constructor(public app:App,config:PluginManager.Config) {
         this.config=merge(PluginManager.defaultConfig,config)
+    }
+    init(){
         const builtinPath=path.join(__dirname,'plugins')
         const builtins=fs.readdirSync(builtinPath,{withFileTypes:true})
         // 安装内置插件
@@ -194,23 +196,22 @@ export class PluginManager{
                 }
                 if(fileName){
                     this.install(new Plugin(fileName,`${builtinPath}/${fileName}`))
-                    app.on('bot.add',(bot)=>{
+                    this.app.on('bot.add',(bot)=>{
                         this.checkInstall(fileName).enable(bot)
                     })
                 }
             }
             for(const conf of this.config.plugins){
-                this.import(conf.name).install(app,conf.config)
+                this.import(conf.name).install(this.app,conf.config)
             }
         }catch (e){
-           if(e instanceof PluginError){
-               console.warn(e.message)
-           }else{
-               throw e
-           }
+            if(e instanceof PluginError){
+                console.warn(e.message)
+            }else{
+                throw e
+            }
         }
     }
-
     import(name:string){
         if (this.plugins.has(name))
             return this.plugins.get(name)

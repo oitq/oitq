@@ -56,6 +56,7 @@ export class App extends Context{
         this.options=merge(defaultAppOptions,options)
         this.bots=new BotList(this)
         this.pluginManager=new PluginManager(this,this.options)
+        this.pluginManager.init()
         this.prepare()
         this._commands.resolve = (key) => {
             if (!key) return

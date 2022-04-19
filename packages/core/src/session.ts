@@ -32,7 +32,7 @@ export interface SuggestOptions {
     apply: (this: NSession<'message'>, suggestion: string) => Awaitable<void | string>
 }
 export class Session{
-
+    argv:Argv
     parsed?: Parsed
     constructor(public app:App,public bot:Bot,data:Dict) {
         Object.assign(this,data)
@@ -129,6 +129,7 @@ export class Session{
             }
         }
     }
+
     async execute(content:string=this.cqCode){
         for(const [,command] of this.app._commands){
             const argv=Argv.parse(content)

@@ -61,7 +61,7 @@ App.prototype.prepare=function (){
     })
     this.on('bot.add',(bot)=>{
         if(bot.options.oneBot){
-            bot.oneBot=new OneBot(this,bot,typeof bot.options.oneBot==='boolean'?defaultOneBotConfig:merge(defaultOneBotConfig,bot.options.oneBot),this.options.port||8088)
+            bot.oneBot=new OneBot(this,bot,typeof bot.options.oneBot==='boolean'?defaultOneBotConfig:merge(defaultOneBotConfig,bot.options.oneBot))
             bot.once('system.online',()=>{
                 bot.oneBot.start()
             })
@@ -80,6 +80,7 @@ App.prototype.prepare=function (){
 }
 const oldStart=App.prototype.start
 App.prototype.start=async function (port:number=this.options.port){
+    this.options.port=port
     this.httpServer.listen(port,()=>{
         console.log('app is listen at http://127.0.0.1:'+port)
     })

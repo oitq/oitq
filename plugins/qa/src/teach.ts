@@ -98,7 +98,7 @@ export default function install(ctx: Context) {
         .example('`# -s test` 搜索关键词为`test`的问答')
         .example('`# test hello -p 0.5` 当输入`test`时，回复`hello`，并设置该会带的概率权重为0.5')
         .example('`# test world` 将test的回答改为`world`')
-        .action(async ({session, options,...other}, q, a) => {
+        .action(async ({session, options}, q, a) => {
             if (Object.keys(options).filter(key => ['list', 'detail', 'search', 'edit', 'remove'].includes(key)).length > 1) {
                 return '查询/列表/详情、编辑/删除只能同时调用一个'
             }

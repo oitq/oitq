@@ -1,11 +1,13 @@
 {
   "name": "oitq",
   "main": "lib/index.js",
-  "typings": "lib/node.d.ts",
+  "typings": "lib/index.d.ts",
   "bin": "bin/oitq",
   "version": "1.2.1",
   "description": "oitq core",
   "dependencies": {
+    "@oitq/core": "latest",
+    "@oitq/cli": "latest",
     "@koa/router": "^10.1.1",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",

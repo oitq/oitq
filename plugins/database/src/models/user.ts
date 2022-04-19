@@ -1,7 +1,7 @@
 import {Model, Table, Column, DataType} from "sequelize-typescript";
 @Table
 export class User extends Model{
-    @Column(DataType.INTEGER)
+    @Column(DataType.DECIMAL)
     user_id:number
     @Column(DataType.INTEGER)
     authority:number
