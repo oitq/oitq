@@ -140,9 +140,9 @@ export namespace Prompt{
             `${['list','multipleSelect'].includes(options.type as keyof TypeKV)?`多项使用'${options.separator}'分隔`:''}`
         ].filter(Boolean)
         if(options.prefix){titleArr.shift()}
-        result=result.concat(titleArr.join(','),'\n')
+        result=result.concat(titleArr.join(','))
         if(options.prefix)result.unshift(options.prefix)
-        if (options.type==='confirm')result.push("输入y[es]或句号(.或。)以确认，其他内容取消(不区分大小写)")
+        if (options.type==='confirm')result.push("\n输入y[es]或句号(.或。)以确认，其他内容取消(不区分大小写)")
         const choices=typeof options.choices==='function'?options.choices(prev,result,options):options.choices
         switch (options.type){
             case "text":
@@ -154,7 +154,7 @@ export namespace Prompt{
             case "select":
             case 'multipleSelect':
                 if(!choices) throw new Error('choices is required')
-                result.push(
+                result.push('\n',
                     choices.map((option,index)=>`${index+1}:${option.title}${option.value===options.initial?' (默认)':''}`).join('\n'),
                     '\n输入指定选项前边的索引即可'
                 )

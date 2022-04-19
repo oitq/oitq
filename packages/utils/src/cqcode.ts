@@ -49,6 +49,7 @@ export function toCqcode(msg:any) {
 
         cqcode += `[CQ:reply,id=${mid}]`;
     }
+    msg.message=[].concat(msg.message);
     (msg.message || []).forEach((c) => {
         if ("text" === c.type) {
             cqcode += c.text;

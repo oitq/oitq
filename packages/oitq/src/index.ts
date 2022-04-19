@@ -1,8 +1,10 @@
 import Koa from 'koa'
-import {App, AppOptions, dir} from '@oitq/core'
+import {App, AppOptions, Context, dir} from '@oitq/core'
+import axios from "axios";
 import {success,error,merge} from '@oitq/utils'
 import {OneBot, OneBotConfig,defaultOneBotConfig} from "./onebot";
 import {Router} from "./router";
+import { Quester } from './quester'
 import KoaBodyParser from "koa-bodyparser";
 import {createServer, Server} from "http";
 import * as path from "path";
@@ -13,12 +15,14 @@ export function createApp(options:AppOptions|string=getAppConfigPath(dir)){
 }
 export * from './onebot'
 export * from './router'
+export * from './quester'
 export * from '@oitq/core'
 declare module '@oitq/core'{
     namespace Context{
         interface Services{
             koa:Koa
             router:Router
+            http:Quester,
             readonly httpServer:Server
         }
     }
@@ -37,6 +41,7 @@ const oldPrepare=App.prototype.prepare
 App.prototype.prepare=function (){
     this.koa=new Koa(this.options)
     this.router=new Router({prefix:this.options.path})
+    this.http = Quester.create()
     this.koa.use(KoaBodyParser())
         .use(this.router.routes())
         .use(this.router.allowedMethods())

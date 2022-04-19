@@ -285,7 +285,7 @@ export class Bot extends Client {
                 if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
                 const argv = command.parse(Argv.parse(message.trim()), [...args], {...options})
                 argv.command = command
-                return argv
+                return session.execute(argv.source)
             } else {
                 const capture = name.exec(content)
                 if (!capture) continue
@@ -299,10 +299,10 @@ export class Bot extends Client {
                     })
                     return source.replace(/@@__PLACEHOLDER__@@/g, '$')
                 }
-
                 return command.execute({
                     ...argv,
                     command,
+                    session,
                     tokens:[],
                     name: command.name,
                     args: args.map(escape),
