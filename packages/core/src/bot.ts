@@ -263,7 +263,7 @@ export class Bot extends Client {
         defineProperty(session, 'parsed', {content, appel, prefix})
         await this.app.parallel('before-attach', session)
         let result = await this.handleShortcut(session)
-        if (result) return result
+        if (result) return session.reply(result)
         result = await this.handleCommand(session)
         if (result) return result
         for (const middleware of this.middlewares) {
@@ -285,7 +285,7 @@ export class Bot extends Client {
                 if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
                 const argv = command.parse(Argv.parse(message.trim()), [...args], {...options})
                 argv.command = command
-                return session.execute(argv.source)
+                return session.execute(argv.source,false)
             } else {
                 const capture = name.exec(content)
                 if (!capture) continue

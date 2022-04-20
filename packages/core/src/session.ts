@@ -97,39 +97,6 @@ export class Session{
         }
         return answer as Prompt.Answers<Prompt.ValueType<T>>
     }
-    private _handleShortcut(content=this.cqCode):Argv{
-        for (const shortcut of this.app._shortcuts) {
-            const {name, fuzzy, command, prefix, options = {}, args = []} = shortcut
-            if (typeof name === 'string') {
-                if (!fuzzy && content !== name || !content.startsWith(name)) continue
-                const message = content.slice(name.length)
-                if (fuzzy  && message.match(/^\S/)) continue
-                const argv = Argv.parse(message.trim())
-                argv.command = command
-                argv.name=command?.name
-                return argv
-            } else {
-                const capture = name.exec(content)
-                if (!capture) continue
-
-                function escape(source: any) {
-                    if (typeof source !== 'string') return source
-                    source = source.replace(/\$\$/g, '@@__PLACEHOLDER__@@')
-                    capture.forEach((segment, index) => {
-                        if (!index || index > 9) return
-                        source = source.replace(new RegExp(`\\$${index}`, 'g'), (segment || '').replace(/\$/g, '@@__PLACEHOLDER__@@'))
-                    })
-                    return source.replace(/@@__PLACEHOLDER__@@/g, '$')
-                }
-                return {
-                    command,
-                    name:command?.name,
-                    args: args.map(escape),
-                    options: valueMap(options, escape),
-                }
-            }
-        }
-    }
     private async prefixInters(argv:Argv){
         if(!argv.tokens)return
         for(const token of argv.tokens){
@@ -149,8 +116,6 @@ export class Session{
             const argv=Argv.parse(content)
             argv.bot=this.bot
             argv.session=this as any
-            const shortcutArgv=this._handleShortcut(content)
-            if(shortcutArgv) Object.assign(argv,shortcutArgv)
             await this.prefixInters(argv)
             const result=await command.execute(argv)
             if(autoReply && typeof result==='string')return await this.reply(result)
