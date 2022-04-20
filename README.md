@@ -4,30 +4,20 @@
 ```shell
 npm install oitq
 # or
-yarn add @lc-cn/oicq-bots
+yarn add oitq
 ```
 ## 样例
 1.javascript
 ```javascript
-const {App} =require('oitq')
-const fs = require('fs')
-const path = require('path')
-const configPath=path.join(process.cwd(),'oitq.config.json')
-const appOption=JSON.parse(fs.readFileSync(configPath,{encoding:"utf-8"}))
-const app=new App(appOption)
-app.start(8086)
+const {createApp} =require('oitq')
+createApp().start(8080)
 
 ```
 2.typescript
 
 ```typescript
-import {App,AppOptions} from '../src'
-import * as fs from 'fs'
-import * as path from "path";
-const configPath=path.join(process.cwd(),'oitq.config.json')
-const appOption:AppOptions=JSON.parse(fs.readFileSync(configPath,{encoding:"utf-8"}))
-const app=new App(appOption)
-app.start(8086)
+import {createApp} from 'oitq'
+createApp().start(8080)
 
 ```
 ## Interface/Type
