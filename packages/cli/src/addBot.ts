@@ -8,13 +8,17 @@ import {
     defaultAppOptions, AppOptions,getAppConfigPath,
     readConfig, writeConfig,
 } from "oitq";
+import {createIfNotExist} from "@oitq/utils";
 
 const prompts = require('prompts')
+createIfNotExist(getAppConfigPath(dir),defaultAppOptions)
+createIfNotExist(getOneBotConfigPath(dir),defaultOneBotConfig)
+createIfNotExist(getBotConfigPath(dir),defaultBotOptions)
 const appOptions: AppOptions = readConfig(getAppConfigPath(dir))
 const botOptions:BotOptions=readConfig(getBotConfigPath(dir))
 const oneBotConfig: OneBotConfig = readConfig(getOneBotConfigPath(dir))
 const request = axios.create({baseURL: `http://127.0.0.1:${appOptions.port || 8080}`})
-const questions: PromptObject[] = [
+const botConfigQuestion:PromptObject[]=[
     {
         type: 'number',
         name: 'uin',
@@ -22,16 +26,18 @@ const questions: PromptObject[] = [
     },
     {
         type:'confirm',
-        name:'isUseDefault',
+        name:'isUseDefaultBotConfig',
         message:`是否使用默认bot配置？(默认配置见${getBotConfigPath(dir)})`,
         initial:true
     },
     {
         type:(prev)=>prev?null:"multiselect",
-        name:'botConfig',
+        name:'botConfigFields',
         message:'请选择需要更改的bot配置项',
-        choices:Object.keys(oneBotConfig).filter(key=>key!=='uin').map(key=>({title:key,value:key}))
+        choices:Object.keys(botOptions).filter(key=>key!=='uin').map(key=>({title:key,value:key}))
     },
+]
+const loginQuestion:PromptObject[]=[
     {
         type: 'select',
         name: 'type',
@@ -88,15 +94,15 @@ const configQuestions: PromptObject[] = [
     }
 ]
 
-function createQuestion(fields: (keyof OneBotConfig)[]): PromptObject[] {
+function createQuestion<T extends Record<string, any>>(fields: (keyof T)[],item:T): PromptObject[] {
     return fields.map((field, index) => {
-        let type: string = typeof oneBotConfig[field]
-        if (type === 'object' && Array.isArray(oneBotConfig[field])) type = 'array'
+        let type: string = typeof item[field]
+        if (type === 'object' && Array.isArray(item[field])) type = 'array'
         return <PromptObject>{
             type: type === 'boolean' ? 'confirm' : type === 'string' ? 'text' : type === 'number' ? 'number' : "list",
             name: field,
             message: `${type !== 'boolean' ? '请输入' : ''}${field}${type === 'boolean' ? '?' : ''}：${type === 'array' ? '(使用空格分隔每一项)' : ''}`,
-            initial: type === 'array' ? (oneBotConfig[field] as string[]).join('') : oneBotConfig[field],
+            initial: type === 'array' ? (item[field] as string[]).join('') : item[field],
             separator: ' '
         }
     })
@@ -104,7 +110,7 @@ function createQuestion(fields: (keyof OneBotConfig)[]): PromptObject[] {
 
 export async function addBot() {
     let msg
-    const result = await prompts(questions, {
+    const result = await prompts(botConfigQuestion, {
         onSubmit(p, answer, answers) {
             if (answers.uin && appOptions.bots.find(bot => bot.uin === answers.uin)) {
                 msg=`机器人${answers.uin} 已存在`
@@ -116,11 +122,36 @@ export async function addBot() {
             else throw new Error('主动结束，流程结束')
         }
     })
+    if(result.isUseDefaultBotConfig){
+        Object.assign(result,botOptions)
+    }else{
+        const newBotConfig=await prompts(createQuestion(result.botConfigFields,botOptions),{
+            onCancel() {
+                throw new Error('主动结束，流程结束')
+            }
+        })
+        Object.assign(result,newBotConfig)
+        const {isSave}=await prompts({
+            type:'confirm',
+            name:'isSave',
+            message:'是否保存到配置？',
+            initial:true
+        })
+        if(isSave){
+            writeConfig(getBotConfigPath(dir),{...botOptions,...newBotConfig})
+        }
+    }
+    const loginInfo=await prompts(loginQuestion,{
+        onCancel() {
+            throw new Error('主动结束，流程结束')
+        }
+    })
+    Object.assign(result,loginInfo)
     if (result.useOneBot) {
         if (result.useDefaultOneBot) {
             result.oneBot = oneBotConfig
         } else {
-            const newDefault = await prompts(createQuestion(result.configFields), {
+            const newDefault = await prompts(createQuestion(result.configFields,oneBotConfig), {
                 onCancel() {
                     throw new Error('主动结束，流程结束')
                 }
@@ -160,14 +191,14 @@ export async function addBot() {
     } else {
         result.config = defaultBotOptions.config
     }
-    const botOptions: BotOptions = {
+    const botConfig: BotOptions = {
         uin: result.uin,
         type: result.type,
         password: result.password,
         config: result.config,
         oneBot: result.oneBot || false
     }
-    appOptions.bots.push(botOptions)
+    appOptions.bots.push(botConfig)
     if (appOptions.start) {
         const {loginNow} = await prompts({
             type:'confirm',
@@ -183,5 +214,11 @@ export async function addBot() {
 
 export default function registerAddBotCommand(cli: CAC) {
     cli.command('add', '新增bot')
-        .action(addBot)
+        .action(async ()=>{
+            try{
+                await addBot()
+            }catch (e){
+                console.log(e.message)
+            }
+        })
 }

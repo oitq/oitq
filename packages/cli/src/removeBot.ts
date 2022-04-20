@@ -1,12 +1,17 @@
 import {CAC} from "cac";
 import {
     dir,
-    defaultAppOptions,AppOptions,
+    defaultAppOptions, AppOptions,
     getAppConfigPath,
-    readConfig,writeConfig
+    readConfig, writeConfig, getOneBotConfigPath, defaultOneBotConfig, getBotConfigPath, defaultBotOptions
 } from "oitq";
 import axios from "axios";
+import {createIfNotExist} from "@oitq/utils";
+import {addBot} from "./addBot";
 const prompts=require('prompts')
+createIfNotExist(getAppConfigPath(dir),defaultAppOptions)
+createIfNotExist(getOneBotConfigPath(dir),defaultOneBotConfig)
+createIfNotExist(getBotConfigPath(dir),defaultBotOptions)
 const appOptions:AppOptions=readConfig(getAppConfigPath(dir))
 const request=axios.create({baseURL:`http://127.0.0.1:${appOptions.port||8080}`})
 export async function removeBot(){
@@ -31,5 +36,12 @@ export async function removeBot(){
 }
 export default function registerRemoveCommand(cli:CAC){
     cli.command('remove','移除bot')
-        .action(removeBot)
+        .action(async ()=>{
+
+            try{
+                await removeBot()
+            }catch (e){
+                console.log(e.message)
+            }
+        })
 }

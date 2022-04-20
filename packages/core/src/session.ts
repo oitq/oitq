@@ -2,7 +2,7 @@ import {App, Bot, Middleware, NSession, Prompt} from ".";
 import {MessageElem, Sendable} from "oicq";
 import {MessageRet} from "oicq/lib/events";
 import {toCqcode, template, valueMap, Awaitable, Dict, fromCqcode} from "@oitq/utils";
-import {Argv} from "@lc-cn/command";
+import {Argv, Token} from "@lc-cn/command";
 export interface Session{
     self_id?:number
     message_type?:string
@@ -49,6 +49,7 @@ export class Session{
 
     middleware(middleware:Middleware){
         const channelId=this.getChannelId()
+        console.log(channelId)
         return this.bot.middleware(session => {
             if(session.getChannelId()!==channelId) return
             middleware(session);
@@ -129,15 +130,30 @@ export class Session{
             }
         }
     }
-
-    async execute(content:string=this.cqCode){
+    private async prefixInters(argv:Argv){
+        if(!argv.tokens)return
+        for(const token of argv.tokens){
+            let {content}=token
+            for(const inter of token.inters){
+                let res=await this.execute(inter.source,false)
+                if(typeof res==='string')inter.source=res
+                const contentArr=content.split('')
+                contentArr.splice(inter.pos,0,inter.source)
+                content=contentArr.join('')
+            }
+            token.content=content
+        }
+    }
+    async execute(content:string=this.cqCode,autoReply=true){
         for(const [,command] of this.app._commands){
             const argv=Argv.parse(content)
             argv.bot=this.bot
             argv.session=this as any
             const shortcutArgv=this._handleShortcut(content)
             if(shortcutArgv) Object.assign(argv,shortcutArgv)
+            await this.prefixInters(argv)
             const result=await command.execute(argv)
+            if(autoReply && typeof result==='string')return await this.reply(result)
             if(result) return result
         }
     }

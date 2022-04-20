@@ -3,12 +3,13 @@
   "main": "lib/index.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
-  "version": "1.2.1",
+  "version": "1.2.5",
   "description": "oitq core",
   "dependencies": {
     "@lc-cn/command": "latest",
     "@oitq/utils": "latest",
-    "oicq": "^2.2.1"
+    "lodash": "^4.17.21",
+    "oicq": "^2.2.2"
   },
   "scripts": {
     "compile": "tsc --project tsconfig.json",

@@ -4,6 +4,7 @@
   "version": "0.0.2",
   "description": "utils",
   "devDependencies": {
+    "oitq": "^1.2.3",
     "querystring": "^0.2.1"
   },
   "scripts": {

@@ -1,7 +1,7 @@
 {
   "name": "@oitq/utils",
   "main": "lib/index.js",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "utils",
   "devDependencies": {
     "querystring": "^0.2.1"
@@ -30,5 +30,8 @@
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
   },
-  "homepage": "https://github.com/oitq/oitq#readme"
+  "homepage": "https://github.com/oitq/oitq#readme",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  }
 }

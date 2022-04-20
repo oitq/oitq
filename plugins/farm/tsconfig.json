@@ -4,7 +4,6 @@
     "outDir": "lib",
     "rootDir": "src",
     "baseUrl": ".",
-    "declaration": true,
     "esModuleInterop": true
   },
   "include": [

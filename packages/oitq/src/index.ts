@@ -1,6 +1,5 @@
 import Koa from 'koa'
-import {App, AppOptions, Context, dir} from '@oitq/core'
-import axios from "axios";
+import {App, AppOptions, dir} from '@oitq/core'
 import {success,error,merge} from '@oitq/utils'
 import {OneBot, OneBotConfig,defaultOneBotConfig} from "./onebot";
 import {Router} from "./router";
@@ -9,6 +8,7 @@ import KoaBodyParser from "koa-bodyparser";
 import {createServer, Server} from "http";
 import * as path from "path";
 export const getAppConfigPath=(dir=process.cwd())=>path.join(dir,'oitq.json')
+export const getBotConfigPath=(dir=process.cwd())=>path.join(dir,'bot.json')
 export const getOneBotConfigPath=(dir=process.cwd())=>path.join(dir,'oneBot.json')
 export function createApp(options:AppOptions|string=getAppConfigPath(dir)){
     return new App(options)
@@ -85,6 +85,7 @@ App.prototype.prepare=function (){
 }
 const oldStart=App.prototype.start
 App.prototype.start=async function (port:number=this.options.port){
+    if(!port)port=8080
     this.options.port=port
     this.httpServer.listen(port,()=>{
         console.log('app is listen at http://127.0.0.1:'+port)

@@ -1,4 +1,3 @@
-// @ts-ignore
 import {createApp} from "oitq"
 import * as database from '@oitq/plugin-database'
 import * as qa from '@oitq/plugin-qa'

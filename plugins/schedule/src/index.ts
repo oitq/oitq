@@ -20,7 +20,7 @@ export function install(ctx: Context, { minInterval }: Config={minInterval:1}) {
         const date = time.valueOf()
 
         async function executeSchedule() {
-            ctx.app.logger('schedule').debug('execute %d: %c', id, command)
+            ctx.app.logger('schedule').debug('execute %d: %s', id, command)
             await session.execute(command)
             if (!lastCall || !interval) return
             lastCall = new Date()
@@ -34,7 +34,7 @@ export function install(ctx: Context, { minInterval }: Config={minInterval:1}) {
                 return
             }
 
-            ctx.app.logger('schedule').debug('prepare %d: %c at %s', id, command, time)
+            ctx.app.logger('schedule').debug('prepare %d: %s at %s', id, command, time)
             return setTimeout(async () => {
                 if (!await hasSchedule(id)) return
                 Schedule.destroy({where:{id}})
@@ -50,8 +50,8 @@ export function install(ctx: Context, { minInterval }: Config={minInterval:1}) {
 
         setTimeout(async () => {
             if (!await hasSchedule(id)) return
-            const dispose = setInterval(async () => {
-                if (!await hasSchedule(id)) return dispose()
+            const timer = setInterval(async () => {
+                if (!await hasSchedule(id)) return clearInterval(timer)
                 executeSchedule()
             }, interval)
             executeSchedule()

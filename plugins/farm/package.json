@@ -1,8 +1,8 @@
 {
-  "name": "@oitq/plugin-qa",
+  "name": "@oitq/plugin-farm",
   "main": "lib/index.js",
-  "version": "0.2.1",
-  "description": "qa plugin",
+  "version": "0.0.1",
+  "description": "farm plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",
     "alias": "tsc-alias -p tsconfig.json",
@@ -14,7 +14,7 @@
     "url": "git+https://github.com/oitq/oitq.git"
   },
   "keywords": [
-    "qa",
+    "farm",
     "plugin",
     "oitq"
   ],
@@ -28,5 +28,8 @@
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
   },
-  "homepage": "https://github.com/oitq/oitq#readme"
+  "homepage": "https://github.com/oitq/oitq#readme",
+  "dependencies": {
+    "node-fetch": "^3.2.3"
+  }
 }

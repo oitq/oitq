@@ -373,6 +373,7 @@ export class PluginManager{
      * @param {Bot} bot
      */
     async restore(bot:Bot){
+        createIfNotExist(path.join(bot.dir,'plugin'),[])
         const dir = path.join(bot.dir, "plugin")
         try {
             const arr = readConfig(dir) as string[]

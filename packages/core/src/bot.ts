@@ -318,10 +318,8 @@ export class Bot extends Client {
 
         if (name === 'message') {
             this.handleMessage(<NSession<'message'>>session).then(res => {
-                if (res) {
-                    if (typeof res === "boolean") return
-                    (session as NSession<'message'>).reply(res)
-                } else this.app.emit(`bot.${name}`, session)
+                if (res) return
+                else this.app.emit(`bot.${name}`, session)
             })
         } else {
             this.app.emit(`bot.${name}`, session)
