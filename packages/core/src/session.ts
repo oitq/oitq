@@ -50,27 +50,27 @@ export class Session {
             this.reply = async (content) => {
                 const messageList = [].concat(content)
                 const result = []
-                const executeContent = async (content: string) => {
-                    if (content.match(/\$\(.*\)/)) {
-                        const text = /\$\((.*)\)/.exec(content)[1]
+                const executeContent = async (msg: string) => {
+                    if (msg.match(/\$\(.*\)/)) {
+                        const text = /\$\((.*)\)/.exec(msg)[1]
                         const executeResult = await executeContent(text)
-                        content = content.replace(/\$\((.*)\)/, executeResult)
+                        msg = msg.replace(/\$\((.*)\)/, executeResult)
                     }
-                    let result = await this.execute(content, false)
+                    let result = await this.execute(msg, false)
                     if (typeof result === 'string') return result
-                    return content
+                    return msg
                 }
-                try{
-                    for (const msg of messageList) {
-                        if (typeof msg === 'string') {
-                            let content = await executeContent(msg)
-                            result.push(fromCqcode(typeof content === 'string' ? content : msg))
-                        } else {
-                            result.push(msg)
+                for (const msg of messageList) {
+                    if (typeof msg === 'string') {
+                        let res:any
+                        try {res = msg.match(/\$\(.*\)/) ? await executeContent(msg) : msg
+                        } catch {
+                            res = msg
                         }
+                        result.push(fromCqcode(typeof res === 'string' ? res : msg))
+                    } else {
+                        result.push(msg)
                     }
-                }catch (e){
-                    return data.reply(e.stack)
                 }
                 return data.reply(result.flat(1))
             }
@@ -148,8 +148,11 @@ export class Session {
             argv.bot = this.bot
             argv.session = this as any
             await this.prefixInters(argv)
-            const result = await command.execute(argv)
-            if (autoReply && typeof result === 'string') return await this.reply(result)
+            let result
+            try{
+                result = await command.execute(argv)
+                if (autoReply && typeof result === 'string') return await this.reply(result)
+            }catch{}
             if (result) return result
         }
     }
