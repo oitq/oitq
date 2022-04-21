@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-music",
   "main": "lib/index.js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "music plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",

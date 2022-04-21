@@ -98,7 +98,8 @@ export default function install(ctx: Context) {
         .example('`# -s test` 搜索关键词为`test`的问答')
         .example('`# test hello -p 0.5` 当输入`test`时，回复`hello`，并设置该会带的概率权重为0.5')
         .example('`# test world` 将test的回答改为`world`')
-        .action(async ({session, options}, q, a) => {
+        .action(async ({session, options,source}, q, a) => {
+            console.log(source)
             if (Object.keys(options).filter(key => ['list', 'detail', 'search', 'edit', 'remove'].includes(key)).length > 1) {
                 return '查询/列表/详情、编辑/删除只能同时调用一个'
             }
@@ -191,8 +192,11 @@ export default function install(ctx: Context) {
             }
             if (q) {
                 if(maybeRegExp(q) && !options.regexp){
-                    await session.reply('推测您输入的问题是正则表达式。发送空行或句号以添加 -x 选项')
-                    const result=await session.prompt()
+                    const {result}=await session.prompt({
+                        type:'text',
+                        name:'result',
+                        message:'推测您输入的问题是正则表达式。发送空行或句号以添加 -x 选项'
+                    })
                     if(['。','.',' '].includes(result)){
                         options.regexp=true
                     }
@@ -227,10 +231,11 @@ export default function install(ctx: Context) {
                 if (options.edit) {
                     if (dialogues.length > 1) {
                         await session.reply(template('teach.list', filterResult(dialogues).rows.join('\n'), '请输入要编辑的问答索引'))
-                        const index = await session.prompt({
+                        const {index} = await session.prompt({
                             type:'select',
+                            name:'index',
                             message:'请选择要编辑的问答',
-                            chooses:filterResult(dialogues).rows.map((item,i)=>({title:item,value:i}))
+                            choices:filterResult(dialogues).rows.map((item,i)=>({title:item,value:i}))
                         })
                         if (index < 1 || index > dialogues.length) {
                             await session.reply('输入错误')
@@ -245,11 +250,12 @@ export default function install(ctx: Context) {
                     return template('teach.edit', dialogue.get('id'))
                 }
                 if(dialogue && dialogue.get('answer')===a){
-                    const confirm=await session.prompt({
+                    const {confirm}=await session.prompt({
                         type:'confirm',
+                        name:'confirm',
                         message:'已存在相同问答，是否继续添加？'
                     })
-                    if(confirm!=='是') return '已取消添加'
+                    if(confirm) return '已取消添加'
                 }
                 dialogue = await QA.create({
                     ...data,

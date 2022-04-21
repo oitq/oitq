@@ -1,8 +1,8 @@
 import {App, Bot, Middleware, NSession, Prompt} from ".";
 import {MessageElem, Sendable} from "oicq";
 import {MessageRet} from "oicq/lib/events";
-import {toCqcode, template, valueMap, Awaitable, Dict, fromCqcode} from "@oitq/utils";
-import {Argv, Token} from "@lc-cn/command";
+import {toCqcode, template, Awaitable, Dict, fromCqcode} from "@oitq/utils";
+import {Argv} from "@lc-cn/command";
 export interface Session{
     self_id?:number
     message_type?:string
@@ -40,16 +40,31 @@ export class Session{
             this.cqCode=toCqcode(data)
         }
         if(data.reply){
-            this.reply=(content)=>{
-                const messageList=[].concat(content).map(c=>typeof c==='string'?fromCqcode(c):c).flat(1)
-                return data.reply(messageList)
+            this.reply=async (content)=>{
+                const messageList=[].concat(content)
+                const result=[]
+                const executeContent=async (msg:string)=>{
+                    if(msg.match(/\$\(.*\)/)){
+                        const text=/\$\((.*)\)/.exec(msg)[1]
+                        msg=msg.replace(/\$\((.*)\)/,await executeContent(text))
+                    }
+                    return await this.execute(msg,false)
+                }
+                for(const msg of messageList){
+                    if(typeof msg ==='string'){
+                        let content=await executeContent(msg)
+                        result.push(fromCqcode(typeof content==='string'?content:msg))
+                    }else{
+                        result.push(msg)
+                    }
+                }
+                return data.reply(result.flat(1))
             }
         }
     }
 
     middleware(middleware:Middleware){
         const channelId=this.getChannelId()
-        console.log(channelId)
         return this.bot.middleware(session => {
             if(session.getChannelId()!==channelId) return
             middleware(session);
@@ -102,8 +117,6 @@ export class Session{
         for(const token of argv.tokens){
             let {content}=token
             for(const inter of token.inters){
-                let res=await this.execute(inter.source,false)
-                if(typeof res==='string')inter.source=res
                 const contentArr=content.split('')
                 contentArr.splice(inter.pos,0,inter.source)
                 content=contentArr.join('')

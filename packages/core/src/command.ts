@@ -1,6 +1,6 @@
 import {Command} from "@lc-cn/command";
 import {NSession,Bot,Context} from ".";
-
+export * from '@lc-cn/command'
 declare module '@lc-cn/command/lib/command'{
     interface Command{
         context:Context

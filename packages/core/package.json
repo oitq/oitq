@@ -3,10 +3,10 @@
   "main": "lib/index.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "description": "oitq core",
   "dependencies": {
-    "@lc-cn/command": "latest",
+    "@lc-cn/command": "^0.2.1",
     "@oitq/utils": "latest",
     "lodash": "^4.17.21",
     "oicq": "^2.2.2"

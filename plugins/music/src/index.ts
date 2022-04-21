@@ -2,6 +2,7 @@ import {Context} from "oitq";
 
 import lodash from "lodash";
 import querystring from "querystring";
+import {MusicPlatform} from "oicq";
 
 export const name = 'music'
 const m_ERR_CODE = Object.freeze({
@@ -44,7 +45,7 @@ async function musicQQ(keyword,ctx) {
     }
 
     if (lodash.hasIn(jbody, "data.song.list[0].songid")) {
-        return {type: "qq", id: jbody.data.song.list[0].songid};
+        return {type: "qq" as MusicPlatform, id: jbody.data.song.list[0].songid};
     }
 
     return m_ERR_CODE.ERR_404;
@@ -78,14 +79,14 @@ async function music163(keyword,ctx) {
     }
 
     if (lodash.hasIn(jbody, "result.songs[0].id")) {
-        return {type: "163", id: jbody.result.songs[0].id};
+        return {type: "163" as MusicPlatform, id: jbody.result.songs[0].id};
     }
 
     return m_ERR_CODE.ERR_404;
 }
 
 type MusicInfo = {
-    type: string,
+    type: MusicPlatform,
     id: string
 }
 
