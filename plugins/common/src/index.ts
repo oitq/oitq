@@ -20,13 +20,32 @@ export interface Respondent {
     reply: string | ((...capture: string[]) => string)
 }
 export interface BasicConfig extends RecallConfig {
-    echo?: boolean
+    echo?:boolean
+    send?: boolean
     operator?: number | number[]
     respondent?: Respondent | Respondent[]
 }
-
-export function echo(ctx: Context) {
-    ctx.command('common/echo <message:text>', '向当前上下文发送消息')
+export function echo(ctx:Context){
+    ctx.command('common/echo <varName:string>','输出当前会话中的变量值')
+        .action(async ({session},varName)=>{
+            let result:any=session
+            if(!varName)return
+            const varArr=varName.split('.')
+            try{
+                while (varArr.length){
+                    result=result[varArr.shift()]
+                    console.log(result,varArr)
+                }
+            }catch{
+                if(result===undefined){
+                    result=''
+                }
+            }
+            return JSON.stringify(result,null, 4).replace(/"/g,'')
+        })
+}
+export function send(ctx: Context) {
+    ctx.command('common/send <message:text>', '向当前上下文发送消息')
         .option('anonymous', '-a  匿名发送消息')
         .option('forceAnonymous', '-A  匿名发送消息')
         .option('escape', '-e  发送转义消息')
@@ -132,7 +151,8 @@ export function respondent(ctx: Context, respondents: Respondent[]) {
     })
 }
 export function basic(ctx: Context, config: BasicConfig = {}) {
-    if (config.echo !== false) ctx.plugin(echo)
+    if(config.echo!==false)ctx.plugin(echo)
+    if (config.send !== false) ctx.plugin(send)
     if (!(config.recall <= 0)) ctx.plugin(recall, config)
 
     const operators = makeArray(config.operator).map(op=>Number(op))

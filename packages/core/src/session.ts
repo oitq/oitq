@@ -48,7 +48,13 @@ export class Session{
                         const text=/\$\((.*)\)/.exec(msg)[1]
                         msg=msg.replace(/\$\((.*)\)/,await executeContent(text))
                     }
-                    return await this.execute(msg,false)
+                    try{
+                        let result=await this.execute(msg,false)
+                        if(typeof result==='string')return result
+                        return msg
+                    }catch (e){
+                        return msg
+                    }
                 }
                 for(const msg of messageList){
                     if(typeof msg ==='string'){
