@@ -3,26 +3,31 @@ import {MessageElem, Sendable} from "oicq";
 import {MessageRet} from "oicq/lib/events";
 import {toCqcode, template, Awaitable, Dict, fromCqcode} from "@oitq/utils";
 import {Argv} from "@lc-cn/command";
-export interface Session{
-    self_id?:number
-    message_type?:string
-    cqCode?:string
-    message?:MessageElem[]
-    post_type?:string
-    notice_type?:string
-    request_type?:string
-    user_id?:number
-    group_id?:number
-    discuss_id?:number
-    sub_type?:string
+
+export interface Session {
+    self_id?: number
+    message_type?: string
+    cqCode?: string
+    message?: MessageElem[]
+    post_type?: string
+    notice_type?: string
+    request_type?: string
+    user_id?: number
+    group_id?: number
+    discuss_id?: number
+    sub_type?: string
+
     reply?(content: Sendable, quote?: boolean): Promise<MessageRet>
 }
+
 export type Computed<T> = T | ((session: NSession<'message'>) => T)
+
 export interface Parsed {
     content: string
     prefix: string
     appel: boolean
 }
+
 export interface SuggestOptions {
     target: string
     items: string[]
@@ -31,138 +36,149 @@ export interface SuggestOptions {
     minSimilarity?: number
     apply: (this: NSession<'message'>, suggestion: string) => Awaitable<void | string>
 }
-export class Session{
-    argv:Argv
+
+export class Session {
+    argv: Argv
     parsed?: Parsed
-    constructor(public app:App,public bot:Bot,data:Dict) {
-        Object.assign(this,data)
-        if(data.message){
-            this.cqCode=toCqcode(data)
+
+    constructor(public app: App, public bot: Bot, data: Dict) {
+        Object.assign(this, data)
+        if (data.message) {
+            this.cqCode = toCqcode(data)
         }
-        if(data.reply){
-            this.reply=async (content)=>{
-                const messageList=[].concat(content)
-                const result=[]
-                const executeContent=async (msg:string)=>{
-                    if(msg.match(/\$\(.*\)/)){
-                        const text=/\$\((.*)\)/.exec(msg)[1]
-                        msg=msg.replace(/\$\((.*)\)/,await executeContent(text))
+        if (data.reply) {
+            this.reply = async (content) => {
+                const messageList = [].concat(content)
+                const result = []
+                const executeContent = async (content: string) => {
+                    if (content.match(/\$\(.*\)/)) {
+                        const text = /\$\((.*)\)/.exec(content)[1]
+                        const executeResult = await executeContent(text)
+                        content = content.replace(/\$\((.*)\)/, executeResult)
                     }
-                    try{
-                        let result=await this.execute(msg,false)
-                        if(typeof result==='string')return result
-                        return msg
-                    }catch (e){
-                        return msg
-                    }
+                    let result = await this.execute(content, false)
+                    if (typeof result === 'string') return result
+                    return content
                 }
-                for(const msg of messageList){
-                    if(typeof msg ==='string'){
-                        let content=await executeContent(msg)
-                        result.push(fromCqcode(typeof content==='string'?content:msg))
-                    }else{
-                        result.push(msg)
+                try{
+                    for (const msg of messageList) {
+                        if (typeof msg === 'string') {
+                            let content = await executeContent(msg)
+                            result.push(fromCqcode(typeof content === 'string' ? content : msg))
+                        } else {
+                            result.push(msg)
+                        }
                     }
+                }catch (e){
+                    return data.reply(e.stack)
                 }
                 return data.reply(result.flat(1))
             }
         }
     }
 
-    middleware(middleware:Middleware){
-        const channelId=this.getChannelId()
+    middleware(middleware: Middleware) {
+        const channelId = this.getChannelId()
         return this.bot.middleware(session => {
-            if(session.getChannelId()!==channelId) return
+            if (session.getChannelId() !== channelId) return
             middleware(session);
             return true
-        },true)
+        }, true)
     }
-    private promptReal<T extends keyof Prompt.TypeKV>(prev:any,answer:Dict,options:Prompt.Options<T>):Promise<Prompt.ValueType<T>|void>{
-        if(typeof options.type==='function')options.type=options.type(prev,answer,options)
-        if(!options.type)return
-        if(['select','multipleSelect'].includes(options.type as keyof Prompt.TypeKV) && !options.choices) throw new Error('choices is required')
-        return new Promise<Prompt.ValueType<T>|void>(resolve => {
-            this.reply(Prompt.formatOutput(prev,answer,options))
-            const dispose=this.middleware((session)=>{
-                if(!options.validate || options.validate(session.message)){
-                    let result=Prompt.formatValue(prev,answer,options,session.message)
+
+    private promptReal<T extends keyof Prompt.TypeKV>(prev: any, answer: Dict, options: Prompt.Options<T>): Promise<Prompt.ValueType<T> | void> {
+        if (typeof options.type === 'function') options.type = options.type(prev, answer, options)
+        if (!options.type) return
+        if (['select', 'multipleSelect'].includes(options.type as keyof Prompt.TypeKV) && !options.choices) throw new Error('choices is required')
+        return new Promise<Prompt.ValueType<T> | void>(resolve => {
+            this.reply(Prompt.formatOutput(prev, answer, options))
+            const dispose = this.middleware((session) => {
+                if (!options.validate || options.validate(session.message)) {
+                    let result = Prompt.formatValue(prev, answer, options, session.message)
                     dispose()
                     resolve(result)
                     clearTimeout(timer)
-                }else{
+                } else {
                     this.reply(options.errorMsg)
                 }
             })
-            const timer=setTimeout(()=>{
+            const timer = setTimeout(() => {
                 dispose()
                 resolve()
-            },options.timeout||this.app.options.delay.prompt)
+            }, options.timeout || this.app.options.delay.prompt)
         })
     }
-    async prompt<T extends keyof Prompt.TypeKV>(options:Prompt.Options<T>|Array<Prompt.Options<T>>){
-        options=[].concat(options)
-        let answer:Dict={}
-        let prev:any=undefined
-        try{
-            if(options.length===0) return
-            for(const option of options){
-                if(typeof option.type==='function')option.type=option.type(prev,answer,option)
-                if(!option.type)continue
-                if(!option.name) throw new Error('name is required')
-                prev=await this.promptReal(prev,answer,option)
-                answer[option.name]=prev
+
+    async prompt<T extends keyof Prompt.TypeKV>(options: Prompt.Options<T> | Array<Prompt.Options<T>>) {
+        options = [].concat(options)
+        let answer: Dict = {}
+        let prev: any = undefined
+        try {
+            if (options.length === 0) return
+            for (const option of options) {
+                if (typeof option.type === 'function') option.type = option.type(prev, answer, option)
+                if (!option.type) continue
+                if (!option.name) throw new Error('name is required')
+                prev = await this.promptReal(prev, answer, option)
+                answer[option.name] = prev
             }
-        }catch (e){
+        } catch (e) {
             this.reply(e.message)
             return
         }
         return answer as Prompt.Answers<Prompt.ValueType<T>>
     }
-    private async prefixInters(argv:Argv){
-        if(!argv.tokens)return
-        for(const token of argv.tokens){
-            let {content}=token
-            for(const inter of token.inters){
-                const contentArr=content.split('')
-                contentArr.splice(inter.pos,0,inter.source)
-                content=contentArr.join('')
+
+    private async prefixInters(argv: Argv) {
+        if (!argv.tokens) return
+        for (const token of argv.tokens) {
+            let {content} = token
+            for (const inter of token.inters) {
+                const contentArr = content.split('')
+                contentArr.splice(inter.pos, 0, inter.initiator, inter.source, inter.initiator ? ')' : '')
+                content = contentArr.join('')
             }
-            token.content=content
+            token.content = content
         }
     }
-    async execute(content:string=this.cqCode,autoReply=true){
-        for(const [,command] of this.app._commands){
-            const argv=Argv.parse(content)
-            argv.bot=this.bot
-            argv.session=this as any
+
+    async execute(content: string = this.cqCode, autoReply = true) {
+        for (const [, command] of this.app._commands) {
+            const argv = Argv.parse(content)
+            argv.bot = this.bot
+            argv.session = this as any
             await this.prefixInters(argv)
-            const result=await command.execute(argv)
-            if(autoReply && typeof result==='string')return await this.reply(result)
-            if(result) return result
+            const result = await command.execute(argv)
+            if (autoReply && typeof result === 'string') return await this.reply(result)
+            if (result) return result
         }
     }
-    getChannelId(){
+
+    getChannelId() {
         return [
             this.post_type,
             this.message_type,
             this.notice_type,
             this.request_type,
             this.sub_type,
-        ].filter(Boolean).join('.')+':'+[
+        ].filter(Boolean).join('.') + ':' + [
             this.group_id,
             this.discuss_id,
             this.user_id
         ].filter(Boolean).join('.')
     }
+
     resolveValue<T>(source: T | ((session: Session) => T)): T {
         return typeof source === 'function' ? Reflect.apply(source, null, [this]) : source
     }
+
     text(path: string | string[], params: object = {}) {
-        return template(path,params)
+        return template(path, params)
     }
-    toJSON(){
-        return Object.fromEntries(Object.entries(this).filter(([key,value])=>{
-            return !['app','bot'].includes(key) && !key.startsWith('_')
+
+    toJSON() {
+        return Object.fromEntries(Object.entries(this).filter(([key, value]) => {
+            return !['app', 'bot'].includes(key) && !key.startsWith('_')
         }))
     }
 }

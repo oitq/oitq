@@ -31,16 +31,16 @@ export function echo(ctx:Context){
             let result:any=session
             if(!varName)return
             const varArr=varName.split('.')
+                .filter(name=>!['options','config','password'].includes(name))
             try{
                 while (varArr.length){
                     result=result[varArr.shift()]
-                    console.log(result,varArr)
                 }
-            }catch{
-                if(result===undefined){
-                    result=''
-                }
+            }catch(e){
+                if(result===undefined)e.stack='未找到变量'+varName
+                throw e
             }
+            if(result===undefined)throw new Error('未找到变量'+varName)
             return JSON.stringify(result,null, 4).replace(/"/g,'')
         })
 }
