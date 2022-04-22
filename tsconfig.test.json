@@ -3,6 +3,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "oitq": [
+        "packages/oitq/lib"
+      ],
       "@oitq/plugin-*": [
         "plugins/*/src"
       ],

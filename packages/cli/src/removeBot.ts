@@ -7,14 +7,16 @@ import {
 } from "oitq";
 import axios from "axios";
 import {createIfNotExist} from "@oitq/utils";
-import {addBot} from "./addBot";
+import path from "path";
 const prompts=require('prompts')
-createIfNotExist(getAppConfigPath(dir),defaultAppOptions)
-createIfNotExist(getOneBotConfigPath(dir),defaultOneBotConfig)
-createIfNotExist(getBotConfigPath(dir),defaultBotOptions)
-const appOptions:AppOptions=readConfig(getAppConfigPath(dir))
-const request=axios.create({baseURL:`http://127.0.0.1:${appOptions.port||8080}`})
 export async function removeBot(){
+    createIfNotExist(path.join(dir,'configFilePath'),dir)
+    const dirReal=readConfig(path.join(dir,'configFilePath'))
+    createIfNotExist(getAppConfigPath(dirReal),defaultAppOptions)
+    createIfNotExist(getOneBotConfigPath(dirReal),defaultOneBotConfig)
+    createIfNotExist(getBotConfigPath(dirReal),defaultBotOptions)
+    const appOptions:AppOptions=readConfig(getAppConfigPath(dirReal))
+    const request=axios.create({baseURL:`http://127.0.0.1:${appOptions.port||8080}`})
     const {uin}=await prompts({type:"number",name:'uin',message:'请输入uin'})
     let index=appOptions.bots.findIndex(bot=>bot.uin===uin)
     if(index===-1){
@@ -31,7 +33,7 @@ export async function removeBot(){
         })
         if(removeNow)await request.get('/remove',{params:{uin}})
     }
-    writeConfig(getAppConfigPath(dir),appOptions)
+    writeConfig(getAppConfigPath(dirReal),appOptions)
     console.log('配置已保存，下次启动时将不再登录该账号')
 }
 export default function registerRemoveCommand(cli:CAC){

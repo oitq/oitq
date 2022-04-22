@@ -7,9 +7,8 @@ export const dir = path.join(os.homedir(), ".oitq")
 export const defaultAppOptions:AppOptions={
     prefix:()=>'',
     bots:[],
-    admins:[],
     maxListeners:50,
-    plugins:[],
+    plugins:{},
     minSimilarity:0.4,
     token:'',
     logLevel:'debug',

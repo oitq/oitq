@@ -6,3 +6,6 @@
 /node_modules
 /test/lib
 /.idea
+/test/bot.json
+/test/oitq.json
+/test/oneBot.json

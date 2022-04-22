@@ -4,13 +4,13 @@
   "version": "0.0.2",
   "description": "utils",
   "devDependencies": {
-    "oitq": "^1.2.3",
     "querystring": "^0.2.1"
   },
   "scripts": {
     "compile": "tsc --project tsconfig.build.json",
     "alias": "tsc-alias -p tsconfig.build.json",
     "build": "npm run compile && npm run alias",
+    "cli": "node ./lib/cli.js",
     "start": "node .",
     "dev": "ts-node-dev --project tsconfig.json -r tsconfig-paths/register  ./src/index.ts",
     "pub": "echo skip"

@@ -1,9 +1,9 @@
 {
-  "name": "oitq",
+  "name": "oitq-worksapce",
   "private": true,
   "version": "0.0.1",
   "description": "oitq",
-  "bin": "packages/oitq/bin/oitq",
+  "bin": "packages/cli",
   "scripts": {
     "build": "npm run build -workspaces",
     "dev": "npm run dev -w test",
@@ -34,7 +34,6 @@
   "devDependencies": {
     "@types/node": "^17.0.23",
     "@types/prompts": "^2.0.14",
-    "oitq": "^1.2.9",
     "ts-node-dev": "^1.1.8",
     "tsc-alias": "^1.5.0",
     "tsconfig-paths": "^3.12.0",

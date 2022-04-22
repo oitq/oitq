@@ -1,5 +1,6 @@
 import axios from "axios";
 import {Choice, PromptObject} from 'prompts'
+import * as path from "path";
 import {CAC} from "cac";
 import {
     dir,
@@ -9,91 +10,7 @@ import {
     readConfig, writeConfig,
 } from "oitq";
 import {createIfNotExist} from "@oitq/utils";
-
 const prompts = require('prompts')
-createIfNotExist(getAppConfigPath(dir),defaultAppOptions)
-createIfNotExist(getOneBotConfigPath(dir),defaultOneBotConfig)
-createIfNotExist(getBotConfigPath(dir),defaultBotOptions)
-const appOptions: AppOptions = readConfig(getAppConfigPath(dir))
-const botOptions:BotOptions=readConfig(getBotConfigPath(dir))
-const oneBotConfig: OneBotConfig = readConfig(getOneBotConfigPath(dir))
-const request = axios.create({baseURL: `http://127.0.0.1:${appOptions.port || 8080}`})
-const botConfigQuestion:PromptObject[]=[
-    {
-        type: 'number',
-        name: 'uin',
-        message: '请输入bot uin'
-    },
-    {
-        type:'confirm',
-        name:'isUseDefaultBotConfig',
-        message:`是否使用默认bot配置？(默认配置见${getBotConfigPath(dir)})`,
-        initial:true
-    },
-    {
-        type:(prev)=>prev?null:"multiselect",
-        name:'botConfigFields',
-        message:'请选择需要更改的bot配置项',
-        choices:Object.keys(botOptions).filter(key=>key!=='uin').map(key=>({title:key,value:key}))
-    },
-]
-const loginQuestion:PromptObject[]=[
-    {
-        type: 'select',
-        name: 'type',
-        message: "请选择登录方式",
-        choices: [
-            {title: '密码登录', description: '使用密码登录', value: 'password'},
-            {title: '扫码登录', value: 'qrcode'},
-        ],
-        initial: 1
-    }, {
-        type: prev => prev === 'password' ? 'password' : null,
-        name: 'password',
-        message: '请输入密码'
-    }, {
-        type: 'confirm',
-        name: 'useOneBot',
-        message: "是否启用OneBot？",
-        initial: true
-    }, {
-        type: prev => prev === true ? "confirm" : null,
-        name: "useDefaultOneBot",
-        message: "是否使用默认OneBot配置",
-        initial: true
-    }, {
-        type: prev => prev === false ? "multiselect" : null,
-        name: 'configFields',
-        message: '请选择需要更改的默认配置项',
-        choices: Object.keys(oneBotConfig).map(key => ({title: key, value: key}))
-    }
-]
-const configQuestions: PromptObject[] = [
-    {
-        type: 'select',
-        name: 'platform',
-        message: '请选择登录平台',
-        choices: [
-            {title: 'android', value: 1},
-            {title: 'aPad', value: 2},
-            {title: 'aWatch', value: 3},
-            {title: 'MacOS', value: 4},
-            {title: 'iPad', value: 5}
-        ],
-        initial: 0
-    },
-    {
-        type: 'select',
-        name: 'log_level',
-        message: '请选择日志等级',
-        choices: ["trace", "debug", "info", "warn", "error", "fatal", "mark", "off"].map((name) => <Choice>({
-            title: name,
-            value: name
-        })),
-        initial: 2
-    }
-]
-
 function createQuestion<T extends Record<string, any>>(fields: (keyof T)[],item:T): PromptObject[] {
     return fields.map((field, index) => {
         let type: string = typeof item[field]
@@ -110,6 +27,92 @@ function createQuestion<T extends Record<string, any>>(fields: (keyof T)[],item:
 
 export async function addBot() {
     let msg
+
+    createIfNotExist(path.join(dir,'configFilePath'),dir)
+    const dirReal=readConfig(path.join(dir,'configFilePath'))
+    createIfNotExist(getAppConfigPath(dirReal),defaultAppOptions)
+    createIfNotExist(getOneBotConfigPath(dirReal),defaultOneBotConfig)
+    createIfNotExist(getBotConfigPath(dirReal),defaultBotOptions)
+    const appOptions: AppOptions = readConfig(getAppConfigPath(dirReal))
+    const botOptions:BotOptions=readConfig(getBotConfigPath(dirReal))
+    const oneBotConfig: OneBotConfig = readConfig(getOneBotConfigPath(dirReal))
+    const botConfigQuestion:PromptObject[]=[
+        {
+            type: 'number',
+            name: 'uin',
+            message: '请输入bot uin'
+        },
+        {
+            type:'confirm',
+            name:'isUseDefaultBotConfig',
+            message:`是否使用默认bot配置？(默认配置见${getBotConfigPath(dirReal)})`,
+            initial:true
+        },
+        {
+            type:(prev)=>prev?null:"multiselect",
+            name:'botConfigFields',
+            message:'请选择需要更改的bot配置项',
+            choices:Object.keys(botOptions).filter(key=>key!=='uin').map(key=>({title:key,value:key}))
+        },
+    ]
+    const loginQuestion:PromptObject[]=[
+        {
+            type: 'select',
+            name: 'type',
+            message: "请选择登录方式",
+            choices: [
+                {title: '密码登录', description: '使用密码登录', value: 'password'},
+                {title: '扫码登录', value: 'qrcode'},
+            ],
+            initial: 1
+        }, {
+            type: prev => prev === 'password' ? 'password' : null,
+            name: 'password',
+            message: '请输入密码'
+        }, {
+            type: 'confirm',
+            name: 'useOneBot',
+            message: "是否启用OneBot？",
+            initial: true
+        }, {
+            type: prev => prev === true ? "confirm" : null,
+            name: "useDefaultOneBot",
+            message: "是否使用默认OneBot配置",
+            initial: true
+        }, {
+            type: (prev,answers) => answers.useOneBot&&prev ? "multiselect" : null,
+            name: 'configFields',
+            message: '请选择需要更改的默认配置项',
+            choices: Object.keys(oneBotConfig).map(key => ({title: key, value: key}))
+        }
+    ]
+    const configQuestions: PromptObject[] = [
+        {
+            type: 'select',
+            name: 'platform',
+            message: '请选择登录平台',
+            choices: [
+                {title: 'android', value: 1},
+                {title: 'aPad', value: 2},
+                {title: 'aWatch', value: 3},
+                {title: 'MacOS', value: 4},
+                {title: 'iPad', value: 5}
+            ],
+            initial: 0
+        },
+        {
+            type: 'select',
+            name: 'log_level',
+            message: '请选择日志等级',
+            choices: ["trace", "debug", "info", "warn", "error", "fatal", "mark", "off"].map((name) => <Choice>({
+                title: name,
+                value: name
+            })),
+            initial: 2
+        }
+    ]
+
+    const request = axios.create({baseURL: `http://127.0.0.1:${appOptions.port || 8080}`})
     const result = await prompts(botConfigQuestion, {
         onSubmit(p, answer, answers) {
             if (answers.uin && appOptions.bots.find(bot => bot.uin === answers.uin)) {
@@ -138,7 +141,7 @@ export async function addBot() {
             initial:true
         })
         if(isSave){
-            writeConfig(getBotConfigPath(dir),{...botOptions,...newBotConfig})
+            writeConfig(getBotConfigPath(dirReal),{...botOptions,...newBotConfig})
         }
     }
     const loginInfo=await prompts(loginQuestion,{
@@ -167,7 +170,7 @@ export async function addBot() {
                 }
             })
             if (saveDefault) {
-                writeConfig(getOneBotConfigPath(dir), {...defaultOneBotConfig, ...newDefault})
+                writeConfig(getOneBotConfigPath(dirReal), {...defaultOneBotConfig, ...newDefault})
             }
         }
     }
@@ -208,7 +211,7 @@ export async function addBot() {
         })
         if(loginNow)await request.post('/add', result)
     }
-    writeConfig(getAppConfigPath(dir), appOptions)
+    writeConfig(getAppConfigPath(dirReal), appOptions)
     console.log('配置已保存，下次启动时将自动登录该账号')
 }
 

@@ -1,16 +1,9 @@
 {
-  "name": "@oitq/core",
+  "name": "@oitq/loader",
   "main": "lib/index.js",
-  "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
-  "version": "1.2.13",
-  "description": "oitq core",
-  "dependencies": {
-    "@lc-cn/command": "^0.2.1",
-    "@oitq/utils": "latest",
-    "lodash": "^4.17.21",
-    "oicq": "^2.2.2"
-  },
+  "version": "0.0.1",
+  "description": "oitq config loader",
   "scripts": {
     "compile": "tsc --project tsconfig.json",
     "alias": "tsc-alias -p tsconfig.json",
@@ -22,7 +15,7 @@
     "url": "git+https://github.com/oitq/oitq.git"
   },
   "keywords": [
-    "utils",
+    "configLoader",
     "oitq"
   ],
   "files": [
@@ -30,6 +23,12 @@
     "lib/**/*.d.ts",
     "lib/**/LICENSE"
   ],
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.5"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
   "author": "凉菜 <admin@liucl.cn>",
   "license": "ISC",
   "bugs": {

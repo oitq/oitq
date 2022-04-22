@@ -11,7 +11,7 @@ import {
 export const cli= new CAC('oitq')
 if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 
-cli.version('1.0.1')
+cli.version('1.0.2')
 registerAddBotCommand(cli)
 registerStartCommand(cli)
 registerRemoveCommand(cli)

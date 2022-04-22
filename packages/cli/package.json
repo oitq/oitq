@@ -1,11 +1,13 @@
 {
   "name": "@oitq/cli",
   "main": "lib/index.js",
-  "version": "0.1.6",
-  "description": "oitq core",
+  "version": "0.1.9",
+  "description": "oitq cli",
   "dependencies": {
+    "@oitq/loader": "latest",
     "axios": "^0.26.1",
     "cac": "^6.7.12",
+    "ns-require": "^1.1.0",
     "prompts": "^2.4.2"
   },
   "devDependencies": {
@@ -22,7 +24,7 @@
     "url": "git+https://github.com/oitq/oitq.git"
   },
   "keywords": [
-    "utils",
+    "cli",
     "oitq"
   ],
   "files": [

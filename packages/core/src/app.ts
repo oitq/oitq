@@ -1,6 +1,6 @@
 import {LogLevel} from "oicq";
 import {BotList, BotOptions} from "./bot";
-import {sleep, merge, Dict, Awaitable, readConfig} from "@oitq/utils";
+import {sleep, merge, Dict, Awaitable, readConfig, createIfNotExist} from "@oitq/utils";
 import {Context} from './context'
 import {PluginManager} from './plugin'
 import {Computed} from "./session";
@@ -23,7 +23,6 @@ export interface AppOptions extends KoaOptions,PluginManager.Config{
     minSimilarity?:number,
     bots?:BotOptions[]
     delay?:Dict<number>
-    admins?:number[]
     token?:string
     plugin_dir?:string
     logLevel?:LogLevel
@@ -47,6 +46,7 @@ export class App extends Context{
     constructor(options:AppOptions|string=path.join(dir,'oitq.json')) {
         super(()=>true);
         if(typeof options==='string'){
+            createIfNotExist(options,defaultAppOptions)
             try{
                 options=readConfig(options) as AppOptions
             }catch {
