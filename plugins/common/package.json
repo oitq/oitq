@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-common",
   "main": "lib/index.js",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "common plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",

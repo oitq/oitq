@@ -1,8 +1,7 @@
 import {formatContext,isSaveEnv} from "./utils";
 import {Schedule,ScheduleInfo} from "./model";
 import '@oitq/plugin-database'
-import {Context, NSession, Session} from "oitq";
-import {Time} from '@oitq/utils'
+import {Context, NSession, Session,Time} from "oitq";
 export const name='schedule'
 export const using=['database'] as const
 export interface Config {

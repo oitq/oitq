@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-qa",
   "main": "lib/index.js",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "qa plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",

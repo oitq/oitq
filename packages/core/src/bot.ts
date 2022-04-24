@@ -75,7 +75,12 @@ export class Bot extends Client {
         this.options.nickname = makeArray(nickname) as string[]
         this._nameRE = createLeadingRE(this.options.nickname, '@?', '([,，]\\s*|\\s+)')
     }
-
+    isMaster(user_id:number){
+        return this.options.master===user_id
+    }
+    isAdmin(user_id:number){
+        return this.options.admins.includes(user_id)
+    }
     // message处理中间件，受拦截的message不会上报到'bot.message'
     middleware(middleware: Middleware, prepend?: boolean) {
         const method = prepend ? 'unshift' : 'push'

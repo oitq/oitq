@@ -61,10 +61,7 @@ export class Loader extends ConfigLoader<AppOptions> {
     }
 
     reloadPlugin(name: string) {
-        const plugin = this.resolvePlugin(name)
-        if (!plugin) return
-        const config = this.config.plugins[name]
-        this.app.plugin(plugin, this.interpolate(config))
+        return this.app.pluginManager.restart(name)
     }
 
     createApp() {

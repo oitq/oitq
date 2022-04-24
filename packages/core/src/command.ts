@@ -1,5 +1,6 @@
 import {Command} from "@lc-cn/command";
 import {NSession,Bot,Context} from ".";
+import {remove} from "@oitq/utils";
 export * from '@lc-cn/command'
 declare module '@lc-cn/command/lib/command'{
     interface Command{
@@ -21,6 +22,7 @@ Command.prototype.shortcut=function (this:Command,name,config:Command.Shortcut={
     config.command = this
     config.authority ||= this.config.authority
     this.context.app._shortcuts.push(config)
+    this.context.state.disposes.push(()=>remove(this.context.app._shortcuts,config))
     return this
 }
 Command.prototype.match=function (this:Command,session?){
@@ -32,6 +34,10 @@ Command.prototype.subcommand=function(this:Command,def:string,...args:any[]){
     command.context=this.context
     this.context.app._commands.set(command.name,command)
     this.context.app._commandList.push(command)
+    this.context.state.disposes.push(()=>remove(this.context.app._commandList,command),()=>{
+        this.context.app._commands.delete(command.name)
+        return true
+    })
     this.context.emit('command.add',command)
     return command
 }

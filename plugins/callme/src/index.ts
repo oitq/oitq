@@ -1,5 +1,4 @@
-import {Context} from "oitq";
-import {template} from '@oitq/utils'
+import {Context,template} from "oitq";
 import '@oitq/plugin-database'
 
 export const name = 'callme'

@@ -1,7 +1,6 @@
 import {Dialogue} from './teach'
-import {NSession,Context} from "oitq";
+import {NSession,Context,s} from "oitq";
 import {QA} from "./models";
-import {s} from '@oitq/utils'
 
 function hasEnv(envs, type, target) {
     return envs.length === 0 || envs.some(item => {

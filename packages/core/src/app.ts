@@ -2,7 +2,7 @@ import {LogLevel} from "oicq";
 import {BotList, BotOptions} from "./bot";
 import {sleep, merge, Dict, Awaitable, readConfig, createIfNotExist} from "@oitq/utils";
 import {Context} from './context'
-import {PluginManager} from './plugin'
+import {Plugin, PluginManager} from './plugin'
 import {Computed} from "./session";
 import {defaultAppOptions, dir} from './static'
 import {Command} from "@lc-cn/command";
@@ -42,6 +42,7 @@ export class App extends Context{
     _commands: CommandMap = new Map<string, Command>() as never
     _shortcuts: Command.Shortcut[] = []
     public app:App=this
+    public disposeState:Map<Plugin,Plugin.State>=new Map<Plugin, Plugin.State>()
     options:AppOptions
     constructor(options:AppOptions|string=path.join(dir,'oitq.json')) {
         super(()=>true);
@@ -53,6 +54,12 @@ export class App extends Context{
                 options={}
             }
         }
+        this.disposeState.set(null,{
+            children:[],
+            context:this,
+            plugin:null,
+            disposes:[]
+        })
         this.options=merge(defaultAppOptions,options)
         this.bots=new BotList(this)
         this.pluginManager=new PluginManager(this,this.options)

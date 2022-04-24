@@ -5,7 +5,7 @@ import {
     Model,
     Table,
 } from "@oitq/plugin-database";
-import {Session} from "@oitq/core";
+import {Session} from 'oitq'
 
 export interface ScheduleInfo {
     id: number

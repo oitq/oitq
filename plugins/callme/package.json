@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-callme",
   "main": "lib/index.js",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "callme plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",
@@ -28,5 +28,8 @@
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
   },
-  "homepage": "https://github.com/oitq/oitq#readme"
+  "homepage": "https://github.com/oitq/oitq#readme",
+  "dependencies": {
+    "@oitq/utils": "^0.1.2"
+  }
 }

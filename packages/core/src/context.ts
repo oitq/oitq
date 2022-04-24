@@ -3,7 +3,7 @@ import {App} from "./app";
 import {Plugin, PluginManager} from "./plugin";
 import {Argv, Command} from "@lc-cn/command";
 import {getLogger} from 'log4js'
-import {Awaitable, makeArray, MaybeArray} from "@oitq/utils";
+import {Awaitable, makeArray, MaybeArray, remove} from "@oitq/utils";
 import {Events} from "./event";
 import {Middleware} from "./middleware";
 const selectors = ['user', 'group',  'self', 'private'] as const
@@ -57,7 +57,7 @@ export interface Context extends Context.Services{
     emit<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,...args:any[]):boolean
 }
 export class Context extends Events{
-    constructor(public filter:Filter,public app?:App) {
+    constructor(public filter:Filter,public app?:App,public _plugin: Plugin = null) {
         super();
     }
     logger(name: string) {
@@ -65,6 +65,15 @@ export class Context extends Events{
         logger.level=this.app.options.logLevel
         return logger
     }
+    get state(){
+        return this.app.disposeState.get(this._plugin)
+    }
+    override on<K extends EventName>(name: K, listener: (...args: any[]) => void, prepend?: boolean): () => boolean {
+        const dispose=super.on(name, listener, prepend);
+        this.state.disposes.push(dispose)
+        return dispose
+    }
+
     intersect(arg: Filter | Context) {
         const filter = typeof arg === 'function' ? arg : arg.filter
         return new Context(s => this.filter(s) && filter(s), this.app)
@@ -147,15 +156,28 @@ export class Context extends Events{
         }
         return this.plugin({ using,...plugin},config)
     }
+    dispose(plugin:Plugin=this._plugin){
+        const state=this.app.disposeState.get(plugin)
+        for(const ctx of state.children){
+            ctx.dispose()
+        }
+        for(const dispose of state.disposes){
+            dispose()
+        }
+    }
     middleware(middleware:Middleware):Dispose{
-        const disposeArr=[]
+        const disposeArr:Dispose[]=[]
         for(const bot of this.bots){
             disposeArr.push(bot.middleware(middleware))
         }
-        return ()=>{
+        this.on('bot.add',(bot)=>{
+            disposeArr.push(bot.middleware(middleware))
+        })
+        const dispose=()=>{
             disposeArr.forEach(dispose=>dispose())
             return true
         }
+        return dispose
     }
     plugin(name:string,config?:any):this
     plugin<T extends PluginManager.Plugin>(plugin:T,config?:PluginManager.Option<T>):this
@@ -167,7 +189,15 @@ export class Context extends Events{
             if(typeof entry==='function')entry={install:entry,name:config?.name||entry?.name||Math.random().toString()}
             plugin=new Plugin(entry?.name||Math.random().toString(),entry)
         }
-
+        const context=new Context(this.filter,this.app,plugin)
+        plugin.bindCtx(context)
+        this.app.disposeState.set(plugin,{
+            plugin,
+            context,
+            children:[],
+            disposes:[]
+        })
+        this.state.children.push(context)
         const using = plugin['using'] || []
         if (using.length) {
             this.on('service.load', async (name) => {
@@ -217,6 +247,10 @@ export class Context extends Events{
             command.context=this
             this.app._commands.set(name,command)
             this.app._commandList.push(command)
+            this.state.disposes.push(()=>remove(this.app._commandList,command),()=>{
+                this.app._commands.delete(name)
+                return true
+            })
             this.emit('command.add',command)
             if (!root) root = command
             if (parent) {

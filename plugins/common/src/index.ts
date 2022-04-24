@@ -1,6 +1,5 @@
-import {Context} from "oitq";
+import {Context,template, s, fromCqcode,Dict,sleep,noop,makeArray} from "oitq";
 import { genDmMessageId } from "oicq/lib/message/message.js";
-import {template, s, fromCqcode,Dict,sleep,noop,makeArray} from "@oitq/utils";
 import {OnlineStatus, Quotable} from "oicq";
 
 template.set('common', {
@@ -33,9 +32,8 @@ export function echo(ctx:Context){
             const varArr=varName.split('.')
                 .filter(name=>!['options','config','password'].includes(name))
             try{
-                while (varArr.length){
-                    result=result[varArr.shift()]
-                }
+                const func=new Function(`return this.${varArr.join('.')}`)
+                result =func.apply(session)
             }catch(e){
                 if(result===undefined)e.stack='未找到变量'+varName
                 throw e

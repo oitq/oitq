@@ -1,7 +1,7 @@
 import {EventEmitter} from "events";
 import * as path from "path";
 import * as fs from 'fs'
-import {App, Bot} from ".";
+import {App, Bot, Dispose} from ".";
 import {Awaitable, createIfNotExist, merge, readConfig, writeConfig} from "@oitq/utils";
 import {Context} from "./context";
 
@@ -54,6 +54,10 @@ export class Plugin extends EventEmitter {
         }
     }
 
+    bindCtx(ctx: Context) {
+        this.context = ctx
+    }
+
     protected async _editBotPluginCache(bot: Bot, method: "add" | "delete") {
         const dir = path.join(bot.dir, "plugin")
         createIfNotExist(dir, [])
@@ -68,9 +72,9 @@ export class Plugin extends EventEmitter {
         return writeConfig(dir, Array.from(set))
     }
 
-    async install(context: Context, config?: any) {
-        this.config = config
-        this.context = context
+    async install(config?: any) {
+        if(config)this.config=config
+        else config=this.config
         if (this.path) {
             require(this.path)
             const mod = require.cache[this.fullpath]
@@ -80,7 +84,7 @@ export class Plugin extends EventEmitter {
             throw new PluginError(`插件(${this.name})未导出install方法，无法安装。`)
         }
         try {
-            const res = this.hooks.install(context, config)
+            const res = this.hooks.install(this.context, config)
             if (res instanceof Promise)
                 await res
             console.log(`插件(${this.name})已成功安装`)
@@ -139,43 +143,14 @@ export class Plugin extends EventEmitter {
         console.log(`插件${this.name} 成功对机器人${bot.uin}禁用`)
     }
 
-    async uninstall(context: Context) {
-        let isModule = false, mod: NodeJS.Module
-        if (this.path) {
-            isModule = true
-            require(this.path)
-            mod = require.cache[this.fullpath] as NodeJS.Module
-            this.hooks = mod.exports
-        }
-        try {
-            for (let bot of this.binds) {
-                await this.disable(bot)
-            }
-            if (typeof this.hooks.uninstall === "function") {
-                const res = this.hooks.uninstall(context)
-                if (res instanceof Promise)
-                    await res
-                console.log(`插件(${this.name})已成功卸载`)
-            }
-        } catch {
-        }
-        if (isModule) {
-            const ix = mod.parent?.children?.indexOf(mod) as number;
-            if (ix >= 0)
-                mod.parent?.children.splice(ix, 1);
-            for (const fullpath in require.cache) {
-                if (require.cache[fullpath]?.id.startsWith(mod.path)) {
-                    delete require.cache[fullpath]
-                }
-            }
-            delete require.cache[this.fullpath];
-        }
+    async uninstall() {
+        this.context.dispose(this)
     }
 
     async restart() {
         try {
-            await this.uninstall(this.context)
-            await this.install(this.context, this.config)
+            await this.uninstall()
+            await this.install(this.config)
             for (let bot of this.binds) {
                 await this.enable(bot)
             }
@@ -188,7 +163,7 @@ export class Plugin extends EventEmitter {
 export class PluginManager {
     public config: PluginManager.Config
     public plugins: Map<string, Plugin> = new Map<string, Plugin>()
-
+    private pluginsCache:Map<string,Plugin>=new Map<string,Plugin>()
     constructor(public app: App, config: PluginManager.Config) {
         this.config = merge(PluginManager.defaultConfig, config)
     }
@@ -205,7 +180,9 @@ export class PluginManager {
                 fileName = file.name.replace(/\.ts|\.js/, '')
             }
             if (fileName) {
-                this.install(new Plugin(fileName, `${builtinPath}/${fileName}`))
+                const plugin = new Plugin(fileName, `${builtinPath}/${fileName}`)
+                plugin.bindCtx(this.app)
+                this.install(plugin)
                 this.app.on('bot.add', (bot) => {
                     this.checkInstall(fileName).enable(bot)
                 })
@@ -213,7 +190,17 @@ export class PluginManager {
         }
         for (const [name, conf] of Object.entries(this.config.plugins)) {
             try {
-                this.import(name).install(this.app, conf)
+                const plugin = this.import(name)
+                const context = new Context(this.app.filter, this.app, plugin)
+                this.app.disposeState.set(plugin, {
+                    plugin,
+                    context,
+                    children:[],
+                    disposes: []
+                })
+                this.app.state.children.push(context)
+                plugin.bindCtx(context)
+                this.install(plugin, conf)
             } catch (e) {
                 if (e instanceof PluginError) {
                     console.warn(e.message)
@@ -258,7 +245,7 @@ export class PluginManager {
     }
 
     install(plugin: Plugin, config?) {
-        plugin.install(this.app, config)
+        plugin.install(config)
         this.plugins.set(plugin.name, plugin)
     }
 
@@ -270,7 +257,7 @@ export class PluginManager {
     }
 
     async uninstall(name: string) {
-        this.checkInstall(name).uninstall(this.app)
+        await this.checkInstall(name).uninstall()
         this.plugins.delete(name)
     }
 
@@ -438,5 +425,13 @@ export namespace PluginManager {
     export interface Config {
         dir?: string,
         plugins?: Record<string, any>
+    }
+}
+export namespace Plugin {
+    export interface State {
+        context: Context,
+        children:Context[]
+        disposes: Dispose[]
+        plugin: Plugin
     }
 }

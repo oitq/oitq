@@ -1,5 +1,4 @@
-import {Context,NSession} from "oitq";
-import {Dict} from '@oitq/utils'
+import {Context,NSession,Dict} from "oitq";
 import {ModelCtor, Sequelize} from "sequelize-typescript";
 import {Options} from "sequelize";
 export * from 'sequelize-typescript'
