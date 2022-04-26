@@ -29,6 +29,7 @@ const echo={
             })
     }
 }
+// createApp可以传AppOptions对象，也可以是josn文件路径，不传时默认为电脑home目录下的.oitq/oitq.json
 const app=createApp({
     dir:'./plugins',//你自己写的插件在哪个目录
     bots:[
