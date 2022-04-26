@@ -24,7 +24,7 @@ export interface AppOptions extends KoaOptions,PluginManager.Config{
     bots?:BotOptions[]
     delay?:Dict<number>
     token?:string
-    plugin_dir?:string
+    dir?:string
     logLevel?:LogLevel
     maxListeners?:number,
 }

@@ -66,7 +66,7 @@ export class Bot extends Client {
     private _nameRE: RegExp
 
     constructor(public app: App, options: BotOptions) {
-        super(options.uin, merge(defaultBotOptions.config, options.config));
+        super(options.uin, merge(defaultBotOptions.config, {logLevel:app.options.logLevel,...options.config}));
         this.options = merge(defaultBotOptions, options)
         if (!options.parent) {
             this.startProcessLogin()
@@ -268,7 +268,10 @@ export class Bot extends Client {
         defineProperty(session, 'parsed', {content, appel, prefix})
         await this.app.parallel('before-attach', session)
         let result = await this.handleShortcut(session)
-        if (result) return session.reply(result)
+        if (result){
+            if(typeof result==='string') return session.reply(result)
+            return
+        }
         result = await this.handleCommand(session)
         if (result) return result
         for (const middleware of this.middlewares) {

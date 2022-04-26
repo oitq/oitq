@@ -65,7 +65,9 @@ export class Loader extends ConfigLoader<AppOptions> {
     }
 
     createApp() {
-        return this.app = new App(this.config)
+        this.app=new App(this.config)
+        this.app.loader=this
+        return this.app
     }
 
     fullReload() {

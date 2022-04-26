@@ -47,7 +47,6 @@ function createWorker(options: Dict<any>) {
         }
     })
     execArgv.push(...options['--'])
-
     child = fork(resolve(__dirname, 'worker'), [], {
         execArgv,
     })
@@ -82,12 +81,21 @@ function createWorker(options: Dict<any>) {
         createWorker(options)
     })
 }
-
+function setEnvArg(name: string, value: string | boolean) {
+    if (value === true) {
+        process.env[name] = ''
+    } else if (value) {
+        process.env[name] = value
+    }
+}
 export default function registerStartCommand(cli: CAC) {
     cli.command('start [configPath]','启动项目')
         .alias('run')
         .allowUnknownOptions()
+        .option('--log-level [level]', 'specify log level (default: off)')
+        .option('--watch [path]', 'watch and reload at change')
         .action(async (configPath,options) => {
+            const { logLevel, watch, ...rest } = options
             if(!configPath)configPath=dir
             else configPath=path.join(process.cwd(),configPath)
             createIfNotExist(path.join(dir,'configFilePath'),configPath)
@@ -106,9 +114,11 @@ export default function registerStartCommand(cli: CAC) {
                     appOptions.port=port
                 }
                 appOptions.start = true
+                setEnvArg('OITQ_WATCH_ROOT', watch)
                 writeConfig(getAppConfigPath(configPath), appOptions)
+                process.env.OITQ_LOG_LEVEL = logLevel || 'off'
                 process.env.OITQ_CONFIG_FILE = getAppConfigPath(configPath) || ''
-                createWorker(options)
+                createWorker(rest)
             } catch (e) {
                 console.log(e.message)
             }

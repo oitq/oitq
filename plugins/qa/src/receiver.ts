@@ -59,11 +59,28 @@ export async function triggerTeach(ctx: Context, session: NSession<'message'>) {
             dialogue.answer = dialogue?.answer.replace(reg, args[index])
         }
     }
-    session.reply(dialogue.answer.replace(/\$A/g, s('at', { type: 'all' }))
+    let answerText=dialogue.answer.replace(/\$A/g, s('at', { type: 'all' }))
         .replace(/\$a/g, s('at', { id: session.user_id }))
         .replace(/\$m/g, s('at', { id: session.bot.uin }))
         .replace(/\$s/g, () => session.sender['card']||session.sender['title']||session.sender.nickname)
-        .replace(/\$0/g,question))
+        .replace(/\$0/g,question)
+    const executeContent = async (msg: string) => {
+        if (msg.match(/\$\(.*\)/)) {
+            const text = /\$\((.*)\)/.exec(msg)[1]
+            const executeResult = await executeContent(text)
+            msg = msg.replace(/\$\((.*)\)/, executeResult)
+        }
+        let result = await session.execute(msg, false)
+        if (typeof result === 'string') return result
+        return msg
+    }
+    try{
+        let executeResult=answerText.match(/\$\(.*\)/) ? await executeContent(answerText) : answerText
+        if(typeof executeResult==='string'){
+            answerText=executeResult
+        }
+    }catch {}
+    session.reply(answerText)
     return true
 }
 

@@ -2,8 +2,8 @@
   "name": "@oitq/core",
   "main": "lib/index.js",
   "module": "lib/browser.js",
-  "typings": "lib/index.d.ts",
-  "version": "1.2.15",
+  "typings": "lib/node.d.ts",
+  "version": "1.2.27",
   "description": "oitq core",
   "dependencies": {
     "@lc-cn/command": "^0.2.1",

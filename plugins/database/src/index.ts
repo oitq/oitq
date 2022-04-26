@@ -27,7 +27,7 @@ class Database{
     public sequelize:Sequelize
     constructor(public ctx:Context,public options:Options) {
         this.addModels(User)
-        this.sequelize=new Sequelize(this.options)
+        this.sequelize=new Sequelize({...this.options,logging:(text)=>this.logger.debug(text)})
         ctx.before('attach',async (session:NSession<'message'>)=>{
             const {sender:{nickname,user_id}}=session
             const [user]=await User.findOrCreate({

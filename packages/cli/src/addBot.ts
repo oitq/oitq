@@ -80,7 +80,7 @@ export async function addBot() {
             message: "是否使用默认OneBot配置",
             initial: true
         }, {
-            type: (prev,answers) => answers.useOneBot&&prev ? "multiselect" : null,
+            type: (prev,answers) => answers.useOneBot&&!prev ? "multiselect" : null,
             name: 'configFields',
             message: '请选择需要更改的默认配置项',
             choices: Object.keys(oneBotConfig).map(key => ({title: key, value: key}))

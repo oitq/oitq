@@ -1,1 +1,1 @@
-import '@oitq/cli'
+import '@oitq/cli/lib/bin'

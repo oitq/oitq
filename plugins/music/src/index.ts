@@ -25,7 +25,6 @@ async function musicQQ(keyword,ctx) {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
     };
     let jbody;
-
     try {
         jbody = await ctx.http.get(`${url}?${new URLSearchParams(query)}`, {headers});
     } catch (e) {

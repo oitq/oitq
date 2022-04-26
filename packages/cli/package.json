@@ -1,14 +1,25 @@
 {
   "name": "@oitq/cli",
-  "main": "lib/index.js",
-  "version": "0.1.12",
+  "version": "0.1.22",
+  "typings": "index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "bin": {
+    "oitq": "lib/bin.js"
+  },
   "description": "oitq cli",
   "dependencies": {
-    "@oitq/loader": "latest",
+    "@oitq/loader": "^0.0.1",
     "axios": "^0.26.1",
     "cac": "^6.7.12",
-    "ns-require": "^1.1.0",
-    "prompts": "^2.4.2"
+    "chokidar": "^3.5.3",
+    "ns-require": "^1.1.1",
+    "prompts": "^2.4.2",
+    "throttle-debounce": "^4.0.1"
+  },
+  "peerDependencies": {
+    "oitq": "latest"
   },
   "devDependencies": {
     "@types/prompts": "^2.0.14"

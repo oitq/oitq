@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import {CAC} from "cac";
 import * as fs from "fs";
 import registerAddBotCommand from "./addBot";
@@ -8,9 +9,12 @@ import {
     getAppConfigPath,AppOptions,
     readConfig,writeConfig
 } from 'oitq'
-export const cli= new CAC('oitq')
+import {createIfNotExist} from "@oitq/utils";
+import * as path from "path";
+const cli= new CAC('oitq')
 if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 
+createIfNotExist(path.join(dir,'configFilePath'),dir)
 cli.version('1.0.2')
 registerAddBotCommand(cli)
 registerStartCommand(cli)
@@ -30,7 +34,8 @@ process.on('uncaughtException', onError)
 // 监听Promise未捕获的异常事件
 process.on('unhandledRejection', onError)
 process.on('exit',()=>{
-    const appOptions:AppOptions=readConfig(getAppConfigPath(dir))
+    const dirReal=readConfig(path.join(dir,'configFilePath'))
+    const appOptions:AppOptions=readConfig(getAppConfigPath(dirReal))
     appOptions.start=false
-    writeConfig(getAppConfigPath(dir),appOptions)
+    writeConfig(getAppConfigPath(dirReal),appOptions)
 })

@@ -62,7 +62,7 @@ export class Context extends Events{
     }
     logger(name: string) {
         const logger=getLogger(name)
-        logger.level=this.app.options.logLevel
+        logger.level=process.env.OITQ_LOG_LEVEL || this.app.options.logLevel ||'off'
         return logger
     }
     get state(){
@@ -164,6 +164,7 @@ export class Context extends Events{
         for(const dispose of state.disposes){
             dispose()
         }
+        state.disposes=[]
     }
     middleware(middleware:Middleware):Dispose{
         const disposeArr:Dispose[]=[]

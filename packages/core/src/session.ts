@@ -46,33 +46,10 @@ export class Session {
         if (data.message) {
             this.cqCode = toCqcode(data)
         }
-        if (data.reply) {
-            this.reply = async (content) => {
-                const messageList = [].concat(content)
-                const result = []
-                const executeContent = async (msg: string) => {
-                    if (msg.match(/\$\(.*\)/)) {
-                        const text = /\$\((.*)\)/.exec(msg)[1]
-                        const executeResult = await executeContent(text)
-                        msg = msg.replace(/\$\((.*)\)/, executeResult)
-                    }
-                    let result = await this.execute(msg, false)
-                    if (typeof result === 'string') return result
-                    return msg
-                }
-                for (const msg of messageList) {
-                    if (typeof msg === 'string') {
-                        let res:any
-                        try {res = msg.match(/\$\(.*\)/) ? await executeContent(msg) : msg
-                        } catch {
-                            res = msg
-                        }
-                        result.push(fromCqcode(typeof res === 'string' ? res : msg))
-                    } else {
-                        result.push(msg)
-                    }
-                }
-                return data.reply(result.flat(1))
+        if(data.reply){
+            this.reply=(content,source)=>{
+                const msgList=[].concat(content).map(msg=>typeof msg==='string'?fromCqcode(msg):msg)
+                return data.reply(msgList.flat(1),source)
             }
         }
     }

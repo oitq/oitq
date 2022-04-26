@@ -11,8 +11,7 @@ export const defaultAppOptions:AppOptions={
     plugins:{},
     minSimilarity:0.4,
     token:'',
-    logLevel:'debug',
-    plugin_dir:path.join(process.cwd(),'plugins'),
+    dir:process.cwd(),
     delay:{
         prompt:60000
     }
@@ -24,7 +23,6 @@ export const defaultBotOptions:BotOptions={
     master:1659488338,
     config:{
         platform:5,
-        data_dir:path.join(dir,'data'),
-        log_level:'debug'
+        data_dir:path.join(dir,'data')
     }
 }
