@@ -12,7 +12,7 @@ export function install(ctx:Context){
         .action(async ({session,options},key,value)=>{
             const keys:string[]=[]
             if(key)keys.push(...key.split('.'))
-            const cl=new ConfigLoader(getAppConfigPath(dir))
+            const cl=new ConfigLoader(getAppConfigPath(ctx.app.options.dir))
             cl.readConfig()
             let currentValue:any=cl.config
             let pre=currentValue

@@ -119,7 +119,7 @@ export class Session {
         }
     }
 
-    async execute(content: string = this.cqCode, autoReply = true) {
+    async execute(content: string = this.cqCode, autoReply = true):Promise<Sendable|MessageRet|boolean> {
         for (const [, command] of this.app._commands) {
             const argv = Argv.parse(content)
             argv.bot = this.bot

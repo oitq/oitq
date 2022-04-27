@@ -1,6 +1,7 @@
 import {Dialogue} from './teach'
 import {NSession,Context,s} from "oitq";
 import {QA} from "./models";
+import {MessageRet, Sendable} from "oicq";
 
 function hasEnv(envs, type, target) {
     return envs.length === 0 || envs.some(item => {
@@ -64,23 +65,24 @@ export async function triggerTeach(ctx: Context, session: NSession<'message'>) {
         .replace(/\$m/g, s('at', { id: session.bot.uin }))
         .replace(/\$s/g, () => session.sender['card']||session.sender['title']||session.sender.nickname)
         .replace(/\$0/g,question)
-    const executeContent = async (msg: string) => {
+    const executeContent:(msg:string)=>Promise<boolean|Sendable|MessageRet> = async (msg: string) => {
         if (msg.match(/\$\(.*\)/)) {
             const text = /\$\((.*)\)/.exec(msg)[1]
             const executeResult = await executeContent(text)
+            if(typeof executeResult==='string')
             msg = msg.replace(/\$\((.*)\)/, executeResult)
         }
-        let result = await session.execute(msg, false)
-        if (typeof result === 'string') return result
-        return msg
+        return await session.execute(msg, false)
     }
     try{
         let executeResult=answerText.match(/\$\(.*\)/) ? await executeContent(answerText) : answerText
-        if(typeof executeResult==='string'){
+        if(executeResult){
             answerText=executeResult
         }
     }catch {}
-    session.reply(answerText)
+    if(typeof answerText==='string'){
+        session.reply(answerText)
+    }
     return true
 }
 
