@@ -138,7 +138,7 @@ oitq start // 启动项目
 2.如果不想全局安装，可使用软连接激活cli指令
 ```shell
 npm install oitq
-npm link oitq
+npm link @oitq/cli
 oitq add //开启一个添加账号流程
 oitq remove // 开启一个移除账号流程
 oitq start // 启动项目 
