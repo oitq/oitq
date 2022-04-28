@@ -19,7 +19,7 @@
     "throttle-debounce": "^4.0.1"
   },
   "peerDependencies": {
-    "oitq": "latest"
+    "oitq": "^1.2.19"
   },
   "devDependencies": {
     "@types/prompts": "^2.0.14"
