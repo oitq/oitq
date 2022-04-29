@@ -1,3 +1,4 @@
+# 萌新绕道！！！萌新绕道！！！萌新绕道！！！这项目不适合你，请自觉关闭网页
 # oitq
 用于生产环境部署oicq
 ## 安装
@@ -128,17 +129,17 @@ interface ChoiceItem{
 ### usage
 此处提供两种用法：
 
-1.全局安装`oitq`
+1.全局安装`@oitq/cli和oitq`
 ```shell
-npm install -g oitq
+npm install -g @oitq/cli oitq
 oitq add //开启一个添加账号流程
 oitq remove // 开启一个移除账号流程
 oitq start // 启动项目 
 ```
 2.如果不想全局安装，可使用软连接激活cli指令
 ```shell
-npm install oitq
-npm link oitq
+npm install @oitq/cli oitq
+npm link @oitq/cli
 oitq add //开启一个添加账号流程
 oitq remove // 开启一个移除账号流程
 oitq start // 启动项目 
