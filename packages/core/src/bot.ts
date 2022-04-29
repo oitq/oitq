@@ -64,10 +64,13 @@ export class Bot extends Client {
     private options: BotOptions
     middlewares: Middleware[] = []
     private _nameRE: RegExp
-
+    admins:number[]=[]
+    master:number
     constructor(public app: App, options: BotOptions) {
         super(options.uin, merge(defaultBotOptions.config, {logLevel:app.options.logLevel,...options.config}));
         this.options = merge(defaultBotOptions, options)
+        this.admins=options.admins||[]
+        this.master=options.master||null
         if (!options.parent) {
             this.startProcessLogin()
         }
@@ -292,6 +295,7 @@ export class Bot extends Client {
                 const message = content.slice(name.length)
                 if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
                 const argv = command.parse(Argv.parse(message.trim()), [...args], {...options})
+                if(!command.match(session))continue
                 argv.command = command
                 return session.execute(argv.source,false)
             } else {
@@ -307,6 +311,7 @@ export class Bot extends Client {
                     })
                     return source.replace(/@@__PLACEHOLDER__@@/g, '$')
                 }
+                if(!command.match(session)) continue
                 return command.execute({
                     ...argv,
                     command,
@@ -377,6 +382,14 @@ export class Bot extends Client {
         } catch (e) {
             throw e
         }
+    }
+    async broadcast(channelIds:(ChannelId|number)[],message:Sendable){
+        const result=[]
+        for(const channelId of channelIds){
+            if(typeof channelId==="number")result.push(await this.sendPrivateMsg(channelId,message))
+            else result.push(await this.sendMsg(channelId,message))
+        }
+        return result
     }
 
 }

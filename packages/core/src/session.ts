@@ -125,6 +125,7 @@ export class Session {
             argv.bot = this.bot
             argv.session = this as any
             await this.prefixInters(argv)
+            if(!command.match(this as any))continue
             let result
             try{
                 result = await command.execute(argv)

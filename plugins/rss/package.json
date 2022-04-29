@@ -1,28 +1,27 @@
 {
-  "name": "@oitq/core",
+  "name": "@oitq/plugin-rss",
   "main": "lib/index.js",
-  "module": "lib/browser.js",
-  "typings": "lib/node.d.ts",
-  "version": "1.2.30",
-  "description": "oitq core",
-  "dependencies": {
-    "@lc-cn/command": "^0.2.1",
-    "@oitq/utils": "latest",
-    "lodash": "^4.17.21",
-    "oicq": "^2.2.2"
-  },
+  "version": "0.0.2",
+  "description": "rss plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",
     "alias": "tsc-alias -p tsconfig.json",
     "build": "npm run compile && npm run alias",
     "pub": "npm publish --access public"
   },
+  "dependencies": {
+    "rss-feed-emitter": "^3.2.3"
+  },
+  "peerDependencies": {
+    "@oitq/plugin-database": "^0.2.5"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/oitq/oitq.git"
   },
   "keywords": [
-    "utils",
+    "rss",
+    "plugin",
     "oitq"
   ],
   "files": [

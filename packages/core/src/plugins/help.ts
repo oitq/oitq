@@ -157,6 +157,7 @@ template.set('internal', {
 export function install(ctx: Context) {
     ctx.on('command-added', cmd => cmd.use(enableHelp))
     // show help when use `-h, --help` or when there is no action
+    // @ts-ignore
     ctx.before('command', async ({command, session, options}) => {
         if (!command) return
         if (command['_actions'].length && !options['help']) return

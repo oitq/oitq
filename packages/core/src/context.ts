@@ -1,4 +1,4 @@
-import {Bot, BotEventMap, BotList, NSession} from "./bot";
+import {Bot, BotEventMap, BotList, ChannelId, NSession, TargetType} from "./bot";
 import {App} from "./app";
 import {Plugin, PluginManager} from "./plugin";
 import {Argv, Command} from "@lc-cn/command";
@@ -6,6 +6,7 @@ import {getLogger} from 'log4js'
 import {Awaitable, makeArray, MaybeArray, remove} from "@oitq/utils";
 import {Events} from "./event";
 import {Middleware} from "./middleware";
+import {Sendable} from "oicq";
 const selectors = ['user', 'group',  'self', 'private'] as const
 export type SelectorType = typeof selectors[number]
 export type SelectorValue = boolean | MaybeArray<number>
@@ -44,6 +45,7 @@ export interface AppEventMap extends BotEventMap,ServiceEventMap{
 
 }
 export type Dispose=()=>boolean
+export type MsgChannelId=`${number}-${TargetType}:${number}`
 export interface Context extends Context.Services{
     on<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):Dispose;
     on<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):Dispose;
@@ -149,6 +151,13 @@ export class Context extends Events{
     }
     match(session?: NSession<'message'>) {
         return !session || this.filter(session)
+    }
+    async broadcast(msgChannelIds:MsgChannelId|MsgChannelId[],msg:Sendable){
+        msgChannelIds=[].concat(msgChannelIds)
+        for(const msgChannelId of msgChannelIds){
+            const [_,uin,target_type,target_id]=/^(\d+)-(\S+):(\d+)$/.exec(msgChannelId)
+            await this.app.bots.get(Number(uin)).sendMsg(`${target_type}:${target_id}` as ChannelId,msg)
+        }
     }
     using<T extends PluginManager.Plugin>(using: readonly (keyof Context.Services)[], plugin:T,config?:PluginManager.Option<T>) {
         if(typeof plugin==='function'){

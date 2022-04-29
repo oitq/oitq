@@ -44,9 +44,9 @@ export class OneBot{
             for (const ws of this.wss.clients) {
                 ws.send(serialized, (err) => {
                     if (err)
-                        this.bot.logger.error(`OneBot - 正向WS(${ws.url})上报事件失败: ` + err.message)
+                        this.app.logger('OneBot').error(`OneBot - 正向WS(${ws.url})上报事件失败: ` + err.message)
                     else
-                        this.bot.logger.debug(`OneBot - 正向WS(${ws.url})上报事件成功: ` + serialized)
+                        this.app.logger('OneBot').debug(`OneBot - 正向WS(${ws.url})上报事件成功: ` + serialized)
                 })
             }
         }
@@ -60,7 +60,7 @@ export class OneBot{
                 "Content-Length": Buffer.byteLength(serialized),
                 "X-Self-ID": String(this.bot.uin),
                 "User-Agent": "OneBot",
-            }
+            },
         }
         if (this.config.secret) {
             //@ts-ignore
@@ -71,27 +71,27 @@ export class OneBot{
             try {
                 protocol.request(url, options, (res) => {
                     if (res.statusCode !== 200)
-                        return this.bot.logger.warn(`OneBot - POST(${url})上报事件收到非200响应：` + res.statusCode)
+                        return this.app.logger('OneBot').warn(`OneBot - POST(${url})上报事件收到非200响应：` + res.statusCode)
                     let data = ""
                     res.setEncoding("utf-8")
                     res.on("data", (chunk) => data += chunk)
                     res.on("end", () => {
-                        this.bot.logger.debug(`OneBot - 收到HTTP响应 ${res.statusCode} ：` + data)
+                        this.app.logger('OneBot').debug(`OneBot - 收到HTTP响应 ${res.statusCode} ：` + data)
                         if (!data)
                             return
                         try {
                             this._quickOperate(unserialized, JSON.parse(data))
                         } catch (e) {
-                            this.bot.logger.error(`OneBot - 快速操作遇到错误：` + e.message)
+                            this.app.logger('OneBot').error(`OneBot - 快速操作遇到错误：` + e.message)
                         }
                     })
                 }).on("error", (err) => {
-                    this.bot.logger.error(`OneBot - POST(${url})上报事件失败：` + err.message)
+                    this.app.logger('OneBot').error(`OneBot - POST(${url})上报事件失败：` + err.message)
                 }).end(serialized, () => {
-                    this.bot.logger.debug(`OneBot - POST(${url})上报事件成功: ` + serialized)
+                    this.app.logger('OneBot').debug(`OneBot - POST(${url})上报事件成功: ` + serialized)
                 })
             } catch (e) {
-                this.bot.logger.error(`OneBot - POST(${url})上报失败：` + e.message)
+                this.app.logger('OneBot').error(`OneBot - POST(${url})上报失败：` + e.message)
             }
         }
     }
@@ -149,7 +149,7 @@ export class OneBot{
             ctx.res.setHeader("Access-Control-Allow-Origin", "*")
         const action = url.pathname.replace(`/${this.bot.uin}`,'').slice(1)
         if (ctx.method === "GET") {
-            this.bot.logger.debug(`OneBot - 收到GET请求: ` + ctx.url)
+            this.app.logger('OneBot').debug(`OneBot - 收到GET请求: ` + ctx.url)
             const params = querystring.parse(url.search.slice(1))
             try {
                 const ret = await this.apply({ action, params })
@@ -163,7 +163,7 @@ export class OneBot{
             ctx.req.on("data", (chunk) => data += chunk)
             ctx.req.on("end", async () => {
                 try {
-                    this.bot.logger.debug(`OneBot - 收到POST请求: ` + data)
+                    this.app.logger('OneBot').debug(`OneBot - 收到POST请求: ` + data)
                     let params, ct = ctx.req.headers["content-type"]
                     if (!ct || ct.includes("json"))
                         params = data ? JSON.parse(data) : {}
@@ -190,7 +190,7 @@ export class OneBot{
      */
     protected _webSocketHandler(ws: WebSocket) {
         ws.on("message", async (msg) => {
-            this.bot.logger.debug("插件OneBot - 收到ws消息：" + msg)
+            this.app.logger('OneBot').debug("OneBot - 收到ws消息：" + msg)
             var data
             try {
                 data = JSON.parse(String(msg)) as OneBotProtocol
@@ -378,10 +378,10 @@ export class OneBot{
             headers.Authorization = "Bearer " + this.config.access_token
         const ws = new WebSocket(url, { headers })
         ws.on("error", (err) => {
-            this.bot.logger.error(err.message)
+            this.app.logger('OneBot').error(err.message)
         })
         ws.on("open", ()=>{
-            this.bot.logger.info(`OneBot - 反向ws(${url})连接成功。`)
+            this.app.logger('OneBot').info(`OneBot - 反向ws(${url})连接成功。`)
             this.wsr.add(ws)
             this._webSocketHandler(ws)
         })
@@ -389,7 +389,7 @@ export class OneBot{
             this.wsr.delete(ws)
             if (timestmap < this.timestamp)
                 return
-            this.bot.logger.warn(`OneBot - 反向ws(${url})被关闭，关闭码${code}，将在${this.config.ws_reverse_reconnect_interval}毫秒后尝试重连。`)
+            this.app.logger('OneBot').warn(`OneBot - 反向ws(${url})被关闭，关闭码${code}，将在${this.config.ws_reverse_reconnect_interval}毫秒后尝试重连。`)
             setTimeout(() => {
                 if (timestmap < this.timestamp)
                     return
@@ -419,10 +419,10 @@ export class OneBot{
         if (this.config.event_filter) {
             try {
                 this.filter = JSON.parse(await fs.promises.readFile(this.config.event_filter, "utf-8"))
-                this.bot.logger.info("OneBot - 事件过滤器加载成功。")
+                this.app.logger('OneBot').info("OneBot - 事件过滤器加载成功。")
             } catch (e) {
-                this.bot.logger.error(e.message)
-                this.bot.logger.error("OneBot - 事件过滤器加载失败，将不会进行任何过滤。")
+                this.app.logger('OneBot').error(e.message)
+                this.app.logger('OneBot').error("OneBot - 事件过滤器加载失败，将不会进行任何过滤。")
             }
         }
         if (!this.config.use_http && !this.config.use_ws)
@@ -438,14 +438,14 @@ export class OneBot{
                 this.app.logger('oneBot').mark(`OneBot - 开启ws服务器成功，监听:ws://127.0.0.1:${this.app.options.port}/${this.bot.uin}`)
                 this.wss = this.app.router.ws(`/${this.bot.uin}`,this.app.httpServer)
                 this.wss.on("error", (err) => {
-                    this.bot.logger.error(err.message)
+                    this.app.logger('OneBot').error(err.message)
                 })
                 this.wss.on("connection", (ws, req)=>{
                     ws.on("error", (err) => {
-                        this.bot.logger.error(err.message)
+                        this.app.logger('OneBot').error(err.message)
                     })
                     ws.on("close", (code, reason) => {
-                        this.bot.logger.warn(`OneBot - 正向ws连接关闭，关闭码${code}，关闭理由：` + reason)
+                        this.app.logger('OneBot').warn(`OneBot - 正向ws连接关闭，关闭码${code}，关闭理由：` + reason)
                     })
                     if (this.config.access_token) {
                         const url = new URL(req.url as string, "http://127.0.0.1")

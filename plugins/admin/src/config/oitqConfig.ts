@@ -2,7 +2,8 @@ import {Context,getAppConfigPath,dir} from 'oitq'
 import ConfigLoader from '@oitq/loader'
 export const name='admin.config.oitq'
 export function install(ctx:Context){
-    ctx.command('admin/config/oitq [key] [value]','更改oitq配置文件')
+    ctx.private()
+        .command('admin/config/oitq [key] [value]','更改oitq配置文件')
         .option('delete','-d 删除指定key值')
         .check(async ({session})=>{
             if(!session.bot.isMaster(session.user_id)&&!session.bot.isAdmin(session.user_id)){
