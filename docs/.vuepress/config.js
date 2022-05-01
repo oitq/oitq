@@ -1,5 +1,6 @@
 module.exports={
     title: 'oitq',
+    base:'/oitq/',
     description: 'Ohh,I tick you!',
     themeConfig: {
         displayAllHeaders: true, // 默认值：false
