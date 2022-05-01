@@ -1,5 +1,5 @@
 import Koa from 'koa'
-import {App, AppOptions, dir,Context} from '@oitq/core'
+import {App,Bot, AppOptions, dir,Context} from '@oitq/core'
 import {success,error,merge} from '@oitq/utils'
 import {OneBot, OneBotConfig,defaultOneBotConfig} from "./onebot";
 import {Router} from "./router";
@@ -66,17 +66,16 @@ App.prototype.prepare=function (){
         if(!uin) ctx.body=error('请输入uin')
         await this.removeBot(Number(uin))
         await next()
-        return success('移除成功')
+        ctx.body= success('移除成功')
     })
-    this.on('bot.add',(bot)=>{
+    this.on('bot.add',async (bot:Bot)=>{
         if(bot.options.oneBot){
             bot.oneBot=new OneBot(this,bot,typeof bot.options.oneBot==='boolean'?defaultOneBotConfig:merge(defaultOneBotConfig,bot.options.oneBot))
-            bot.once('system.online',()=>{
-                bot.oneBot.start()
-            })
+            await bot.oneBot.start()
             bot.on('message',bot.oneBot.dispatch.bind(bot.oneBot))
             bot.on('notice',bot.oneBot.dispatch.bind(bot.oneBot))
             bot.on('request',bot.oneBot.dispatch.bind(bot.oneBot))
+            bot.on('system',bot.oneBot.dispatch.bind(bot.oneBot))
         }
     })
     this.on('bot.remove',bot=>{

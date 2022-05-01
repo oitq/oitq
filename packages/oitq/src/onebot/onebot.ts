@@ -4,13 +4,12 @@ import http from "http"
 import https from "https"
 import { URL } from "url"
 import {WebSocketServer,WebSocket}from "ws"
-import * as querystring from "querystring"
 import  rfdc from "rfdc"
 import {App,Bot} from "@oitq/core";
 import { assert } from "./filter"
 import { toHump, transNotice, APIS, ARGS, toBool, BOOLS, genMetaEvent } from "./static"
 import { OneBotConfig, defaultOneBotConfig } from "./config"
-import {fromCqcode, toCqcode} from "@oitq/utils";
+import {fromCqcode, toCqcode,toSegment,fromSegment} from "@oitq/utils";
 interface OneBotProtocol {
     action: string,
     params: any
@@ -103,9 +102,11 @@ export class OneBot{
         let unserialized: any = data
         switch (data.post_type) {
             case "message":
+                unserialized = clone(unserialized)
                 if (this.config.post_message_format === "string") {
-                    unserialized = clone(unserialized)
                     unserialized.message = toCqcode(data)
+                }else{
+                    unserialized.message=toSegment(data.message)
                 }
                 break
             case "notice":
@@ -257,8 +258,13 @@ export class OneBot{
                 if (Reflect.has(params, k)) {
                     if (BOOLS.includes(k))
                         params[k] = toBool(params[k])
-                    if(typeof params[k]==='string' && k==='message')
-                        params[k]=fromCqcode(params[k])
+                    if(k==='message'){
+                        if(typeof params[k]==='string'){
+                            params[k]=fromCqcode(params[k])
+                        }else{
+                            params[k]=fromSegment(params[k])
+                        }
+                    }
                     args.push(params[k])
                 }
             }

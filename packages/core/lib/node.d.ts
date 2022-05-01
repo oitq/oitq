@@ -66,7 +66,6 @@ declare module '@oitq/core'{
             message?: Sendable;
             prefix?: string;
             action?: string;
-            validate?: Regexp|((message: string) => boolean);
             errorMsg?: string;
             separator?: string | PrevCaller<T, string>;
             choices?: ChoiceItem[] | PrevCaller<T, ChoiceItem[]>;
@@ -219,7 +218,7 @@ declare module '@oitq/core'{
     }
     export class Bot extends Client {
         app: App;
-        private options;
+        options;
         middlewares: Middleware[];
         admins:number[]
         master:number

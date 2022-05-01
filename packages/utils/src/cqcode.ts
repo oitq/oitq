@@ -1,6 +1,7 @@
 import lodash = require('lodash')
 import { genDmMessageId } from "oicq/lib/message/message.js";
 import querystring from "querystring";
+import {MessageElem} from "oicq";
 const mCQ = {
     "&#91;": "[",
     "&#93;": "]",
@@ -38,6 +39,22 @@ export function qs(text, sep = ",", equal = "=") {
     }
 
     return ret;
+}
+export type SegmentElem={data:Omit<MessageElem, 'type'>,type:MessageElem['type']}
+export function toSegment(msgList:MessageElem|MessageElem[]):SegmentElem[]{
+    msgList=[].concat(msgList)
+    return msgList.map(msg=>{
+        const {type,...other}=msg
+        return {type,data:other}
+    })
+}
+export function fromSegment(msgList:SegmentElem|SegmentElem[]):MessageElem[]{
+    msgList=[].concat(msgList)
+        return msgList.map(msg=>{
+            const {type,data,...other}=msg
+            return {type,...other,...data} as MessageElem
+        })
+
 }
 export function toCqcode(msg:any) {
     const isQuote = !!msg?.source?.message;

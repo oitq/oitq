@@ -2,11 +2,11 @@
   "name": "oitq",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
-  "version": "1.2.22",
+  "version": "1.2.24",
   "description": "oitq core",
   "dependencies": {
     "@koa/router": "^10.1.1",
-    "@oitq/core": "^1.2.15",
+    "@oitq/core": "^1.2.33",
     "axios": "^0.26.1",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
