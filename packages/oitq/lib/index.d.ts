@@ -222,7 +222,7 @@ declare module 'oitq'{
             message?: Sendable;
             prefix?: string;
             action?: string;
-            validate?: (message: Sendable) => boolean;
+            validate?: Regexp|((message: string) => boolean);
             errorMsg?: string;
             separator?: string | PrevCaller<T, string>;
             choices?: ChoiceItem[] | PrevCaller<T, ChoiceItem[]>;

@@ -5,6 +5,8 @@
   "description": "oitq",
   "bin": "packages/cli",
   "scripts": {
+    "docs:dev": "vuepress dev docs",
+    "docs:build": "vuepress build docs",
     "build": "npm run build -workspaces",
     "dev": "npm run build -w @oitq/utis -w @oitq/loader -w @oitq/core -w oitq -w @oitq/cli && npm run dev -w test",
     "start": "npm start -w test",
@@ -14,7 +16,8 @@
   "workspaces": [
     "packages/*",
     "plugins/*",
-    "test"
+    "test",
+    "docs"
   ],
   "repository": {
     "type": "git",
@@ -34,10 +37,13 @@
   "devDependencies": {
     "@types/node": "^17.0.23",
     "@types/prompts": "^2.0.14",
+    "esbuild": "^0.14.38",
+    "esbuild-register": "^3.3.2",
     "ts-node-dev": "^1.1.8",
     "tsc-alias": "^1.5.0",
     "tsconfig-paths": "^3.12.0",
-    "typescript": "^4.5.4"
+    "typescript": "^4.5.4",
+    "vuepress": "^1.9.7"
   },
   "dependencies": {
     "@lc-cn/command": "^0.1.7",

@@ -70,13 +70,25 @@ export class Session {
         return new Promise<Prompt.ValueType<T> | void>(resolve => {
             this.reply(Prompt.formatOutput(prev, answer, options))
             const dispose = this.middleware((session) => {
-                if (!options.validate || options.validate(session.message)) {
+                const cb=()=>{
                     let result = Prompt.formatValue(prev, answer, options, session.message)
                     dispose()
                     resolve(result)
                     clearTimeout(timer)
+                }
+                if (!options.validate) {
+                    cb()
                 } else {
-                    this.reply(options.errorMsg)
+                    if(typeof options.validate!=="function"){
+                        options.validate=(str:string)=>(options.validate as RegExp).test(str)
+                    }
+                    try{
+                        let result=options.validate(session.cqCode)
+                        if(result && typeof result==="boolean") cb()
+                        else this.reply(options.errorMsg)
+                    }catch (e){
+                        this.reply(e.message)
+                    }
                 }
             })
             const timer = setTimeout(() => {

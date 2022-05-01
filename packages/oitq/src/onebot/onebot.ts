@@ -149,37 +149,19 @@ export class OneBot{
             ctx.res.setHeader("Access-Control-Allow-Origin", "*")
         const action = url.pathname.replace(`/${this.bot.uin}`,'').slice(1)
         if (ctx.method === "GET") {
-            this.app.logger('OneBot').debug(`OneBot - 收到GET请求: ` + ctx.url)
-            const params = querystring.parse(url.search.slice(1))
             try {
-                const ret = await this.apply({ action, params })
+                const ret = await this.apply({ action,params:ctx.query })
                 ctx.res.end(ret)
             } catch (e) {
                 ctx.res.writeHead(500).end(e.message)
             }
         } else if (ctx.method === "POST") {
-            let data = ""
-            ctx.req.setEncoding("utf-8")
-            ctx.req.on("data", (chunk) => data += chunk)
-            ctx.req.on("end", async () => {
-                try {
-                    this.app.logger('OneBot').debug(`OneBot - 收到POST请求: ` + data)
-                    let params, ct = ctx.req.headers["content-type"]
-                    if (!ct || ct.includes("json"))
-                        params = data ? JSON.parse(data) : {}
-                    else if (ct && ct.includes("x-www-form-urlencoded"))
-                        params = querystring.parse(data)
-                    else
-                        return ctx.res.writeHead(406).end()
-                    const ret = await this.apply({ action, params })
-                    ctx.res.end(ret)
-                } catch (e) {
-                    if (e instanceof NotFoundError)
-                        ctx.res.writeHead(404).end(e.message)
-                    else
-                        ctx.res.writeHead(400).end(e.message)
-                }
-            })
+            try {
+                const params={...ctx.query,...ctx.request.body}
+                ctx.res.end(await this.apply({action,params}))
+            } catch (e) {
+                ctx.res.writeHead(500).end(e.message)
+            }
         } else {
             ctx.res.writeHead(405).end()
         }

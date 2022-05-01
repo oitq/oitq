@@ -1,6 +1,6 @@
 {
   "name": "test",
-  "main": "lib/index.js",
+  "main": "lib/bin.js",
   "version": "0.0.2",
   "description": "utils",
   "devDependencies": {
@@ -12,7 +12,7 @@
     "build": "npm run compile && npm run alias",
     "cli": "node ./lib/cli.js",
     "start": "node .",
-    "dev": "ts-node ./src/cli.ts start . --log-level info --watch .. -r tsconfig-paths/register",
+    "dev": "ts-node-dev --project tsconfig.json ./src/cli.ts start . --log-level info -r esbuild-register -r tsconfig-paths/register",
     "pub": "echo skip"
   },
   "repository": {
