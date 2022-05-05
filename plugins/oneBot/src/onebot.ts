@@ -417,11 +417,11 @@ export class OneBot{
             return
         if(this.config.use_http){
             this.app.router.all(new RegExp(`^/${this.bot.uin}/(.*)$`),this._httpRequestHandler.bind(this))
-            this.app.logger('oneBot').mark(`OneBot - 开启http服务器成功，监听:http://127.0.0.1:${this.app.options.port}/${this.bot.uin}`)
+            this.app.logger('oneBot').mark(`OneBot - 开启http服务器成功，监听:http://127.0.0.1:${this.app.httpServer.port}/${this.bot.uin}`)
         }
         if (this.config.use_ws) {
             this.wss = this.app.router.ws(`/${this.bot.uin}`,this.app.httpServer)
-            this.app.logger('oneBot').mark(`OneBot - 开启ws服务器成功，监听:ws://127.0.0.1:${this.app.options.port}/${this.bot.uin}`)
+            this.app.logger('oneBot').mark(`OneBot - 开启ws服务器成功，监听:ws://127.0.0.1:${this.app.httpServer.port}/${this.bot.uin}`)
             this.wss.on("error", (err) => {
                 this.app.logger('OneBot').error(err.message)
             })

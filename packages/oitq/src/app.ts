@@ -89,7 +89,7 @@ export class App extends Context{
     async start(){
         if(this.options.bots){
             for(const botOptions of this.options.bots){
-                this.addBot(botOptions)
+                this.bots.create(botOptions)
             }
         }
         for(const bot of this.bots){

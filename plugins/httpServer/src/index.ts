@@ -9,15 +9,16 @@ declare module 'oitq'{
         export interface Services{
             koa:Koa
             router:Router
-            httpServer:Server
+            httpServer:HttpServer
         }
     }
 }
 Context.service('koa')
 Context.service('router')
 Context.service('httpServer')
-
-
+class HttpServer extends Server{
+    public port:number
+}
 export interface KoaOptions{
     env?: string
     keys?: string[]
@@ -34,7 +35,8 @@ export const name='httpServer'
 export function install(context:Context,config:HttpServerConfig){
     const koa=new Koa(config)
     const router=new Router({prefix:config.path})
-    const httpServer=createServer(koa.callback())
+    const httpServer=createServer(koa.callback()) as HttpServer
+    httpServer.port=config.port
     context.httpServer=httpServer
     context.koa=koa
     context.router=router
