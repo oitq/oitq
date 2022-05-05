@@ -6,7 +6,7 @@ import {
     dir,
     hyphenate,
     defaultAppOptions, AppOptions, getAppConfigPath,
-    readConfig, writeConfig, getOneBotConfigPath, defaultOneBotConfig, getBotConfigPath, defaultBotOptions,
+    readConfig, writeConfig,  getBotConfigPath, defaultBotOptions,
     Dict
 } from "oitq";
 import {createIfNotExist} from "@oitq/utils";
@@ -101,18 +101,9 @@ export default function registerStartCommand(cli: CAC) {
             createIfNotExist(path.join(dir,'configFilePath'),configPath)
             writeConfig(path.join(dir,'configFilePath'),configPath)
             createIfNotExist(getAppConfigPath(configPath),defaultAppOptions)
-            createIfNotExist(getOneBotConfigPath(configPath),defaultOneBotConfig)
             createIfNotExist(getBotConfigPath(configPath),defaultBotOptions)
             let appOptions: AppOptions = readConfig(getAppConfigPath(configPath))
             try {
-                if(!appOptions.port){
-                    const {port}=await prompts({
-                        type:'number',
-                        message:'请输入项目监听端口',
-                        name:'port'
-                    })
-                    appOptions.port=port
-                }
                 appOptions.start = true
                 setEnvArg('OITQ_WATCH_ROOT', watch)
                 writeConfig(getAppConfigPath(configPath), appOptions)

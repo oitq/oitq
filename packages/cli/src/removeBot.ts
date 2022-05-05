@@ -3,7 +3,7 @@ import {
     dir,
     defaultAppOptions, AppOptions,
     getAppConfigPath,
-    readConfig, writeConfig, getOneBotConfigPath, defaultOneBotConfig, getBotConfigPath, defaultBotOptions
+    readConfig, writeConfig, getBotConfigPath, defaultBotOptions
 } from "oitq";
 import axios from "axios";
 import {createIfNotExist} from "@oitq/utils";
@@ -13,10 +13,8 @@ export async function removeBot(){
     createIfNotExist(path.join(dir,'configFilePath'),dir)
     const dirReal=readConfig(path.join(dir,'configFilePath'))
     createIfNotExist(getAppConfigPath(dirReal),defaultAppOptions)
-    createIfNotExist(getOneBotConfigPath(dirReal),defaultOneBotConfig)
     createIfNotExist(getBotConfigPath(dirReal),defaultBotOptions)
     const appOptions:AppOptions=readConfig(getAppConfigPath(dirReal))
-    const request=axios.create({baseURL:`http://127.0.0.1:${appOptions.port||8080}`})
     const {uin}=await prompts({type:"number",name:'uin',message:'请输入uin'})
     let index=appOptions.bots.findIndex(bot=>bot.uin===uin)
     if(index===-1){
@@ -24,15 +22,6 @@ export async function removeBot(){
         return
     }
     appOptions.bots.splice(index,1)
-    if(appOptions.start){
-        const {removeNow}=await prompts({
-            name:'removeNow',
-            type:'confirm',
-            message:'是否立即移除？',
-            initial:true
-        })
-        if(removeNow)await request.get('/remove',{params:{uin}})
-    }
     writeConfig(getAppConfigPath(dirReal),appOptions)
     console.log('配置已保存，下次启动时将不再登录该账号')
 }

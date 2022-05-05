@@ -128,7 +128,7 @@ export function install(ctx: Context, { minInterval }: Config={minInterval:1}) {
                 assignee: session.bot.uin,
                 interval,
                 command: options.rest,
-                session: session.toJSON(),
+                session: session.toJSON('group_name'),
             })
             prepareSchedule(schedule.toJSON(), session as any)
             return `日程已创建，编号为 ${schedule.id}。`

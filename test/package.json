@@ -12,7 +12,7 @@
     "build": "npm run compile && npm run alias",
     "cli": "node ./lib/cli.js",
     "start": "node .",
-    "dev": "ts-node-dev --project tsconfig.json ./src/cli.ts start . --log-level info -r esbuild-register -r tsconfig-paths/register",
+    "dev": "oitq start . --log-level info --watch .. -r esbuild-register -r tsconfig-paths/register",
     "pub": "echo skip"
   },
   "repository": {
@@ -28,5 +28,8 @@
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
   },
-  "homepage": "https://github.com/oitq/oitq#readme"
+  "homepage": "https://github.com/oitq/oitq#readme",
+  "dependencies": {
+    "@oitq/cli": "^0.1.23"
+  }
 }

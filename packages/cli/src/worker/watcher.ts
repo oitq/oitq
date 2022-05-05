@@ -40,7 +40,6 @@ declare module 'oitq'{
 
 class Watcher {
     public suspend = false
-
     private root: string
     private watcher: FSWatcher
 
@@ -296,6 +295,7 @@ namespace Watcher {
     }
 
 }
+export const name='Watcher'
 export function install(ctx:Context,config:Watcher.Config){
     new Watcher(ctx,config)
 }

@@ -3,11 +3,11 @@ import WebSocket from 'ws'
 import {Dict} from "@oitq/utils";
 import ProxyAgent from 'proxy-agent'
 import axios, { AxiosRequestConfig, AxiosResponse, Method } from 'axios'
-export interface Quester {
+export interface Requester {
     <T = any>(method: Method, url: string, config?: AxiosRequestConfig): Promise<T>
     axios<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>>
-    extend(config: Quester.Config): Quester
-    config: Quester.Config
+    extend(config: Requester.Config): Requester
+    config: Requester.Config
     head(url: string, config?: AxiosRequestConfig): Promise<Dict<string>>
     get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
     delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
@@ -17,7 +17,7 @@ export interface Quester {
     ws(url: string, options?: ClientRequestArgs): WebSocket
 }
 
-export namespace Quester {
+export namespace Requester {
     export interface Config {
         headers?: Dict
         endpoint?: string
@@ -33,7 +33,7 @@ export namespace Quester {
         return agents[url] ||= new ProxyAgent(url)
     }
 
-    export function create(config: Quester.Config = {}) {
+    export function create(config: Requester.Config = {}) {
         const { endpoint = '' } = config
 
         const options: AxiosRequestConfig = {
@@ -59,7 +59,7 @@ export namespace Quester {
         const http = (async (method, url, config) => {
             const response = await request(url, { ...config, method })
             return response.data
-        }) as Quester
+        }) as Requester
 
         http.config = config
         http.axios = request as any

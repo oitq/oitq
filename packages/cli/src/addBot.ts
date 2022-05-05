@@ -4,7 +4,6 @@ import * as path from "path";
 import {CAC} from "cac";
 import {
     dir,
-    defaultOneBotConfig, OneBotConfig,getOneBotConfigPath,
     defaultBotOptions, BotOptions,getBotConfigPath,
     defaultAppOptions, AppOptions,getAppConfigPath,
     readConfig, writeConfig,
@@ -31,11 +30,9 @@ export async function addBot() {
     createIfNotExist(path.join(dir,'configFilePath'),dir)
     const dirReal=readConfig(path.join(dir,'configFilePath'))
     createIfNotExist(getAppConfigPath(dirReal),defaultAppOptions)
-    createIfNotExist(getOneBotConfigPath(dirReal),defaultOneBotConfig)
     createIfNotExist(getBotConfigPath(dirReal),defaultBotOptions)
     const appOptions: AppOptions = readConfig(getAppConfigPath(dirReal))
     const botOptions:BotOptions=readConfig(getBotConfigPath(dirReal))
-    const oneBotConfig: OneBotConfig = readConfig(getOneBotConfigPath(dirReal))
     const botConfigQuestion:PromptObject[]=[
         {
             type: 'number',
@@ -69,21 +66,6 @@ export async function addBot() {
             type: prev => prev === 'password' ? 'password' : null,
             name: 'password',
             message: '请输入密码'
-        }, {
-            type: 'confirm',
-            name: 'useOneBot',
-            message: "是否启用OneBot？",
-            initial: true
-        }, {
-            type: prev => prev === true ? "confirm" : null,
-            name: "useDefaultOneBot",
-            message: "是否使用默认OneBot配置",
-            initial: true
-        }, {
-            type: (prev,answers) => answers.useOneBot&&!prev ? "multiselect" : null,
-            name: 'configFields',
-            message: '请选择需要更改的默认配置项',
-            choices: Object.keys(oneBotConfig).map(key => ({title: key, value: key}))
         }
     ]
     const configQuestions: PromptObject[] = [
@@ -112,7 +94,6 @@ export async function addBot() {
         }
     ]
 
-    const request = axios.create({baseURL: `http://127.0.0.1:${appOptions.port || 8080}`})
     const result = await prompts(botConfigQuestion, {
         onSubmit(p, answer, answers) {
             if (answers.uin && appOptions.bots.find(bot => bot.uin === answers.uin)) {
@@ -150,30 +131,6 @@ export async function addBot() {
         }
     })
     Object.assign(result,loginInfo)
-    if (result.useOneBot) {
-        if (result.useDefaultOneBot) {
-            result.oneBot = oneBotConfig
-        } else {
-            const newDefault = await prompts(createQuestion(result.configFields,oneBotConfig), {
-                onCancel() {
-                    throw new Error('主动结束，流程结束')
-                }
-            })
-            result.oneBot = {...oneBotConfig, ...newDefault}
-            const {saveDefault} = await prompts({
-                type: 'confirm',
-                name: 'saveDefault',
-                message: '是否将此默认配置更新到OneBot默认配置文件？'
-            }, {
-                onCancel() {
-                    throw new Error('主动结束，流程结束')
-                }
-            })
-            if (saveDefault) {
-                writeConfig(getOneBotConfigPath(dirReal), {...defaultOneBotConfig, ...newDefault})
-            }
-        }
-    }
     const {confClient} = await prompts({
         type: 'confirm',
         name: 'confClient',
@@ -199,18 +156,8 @@ export async function addBot() {
         type: result.type,
         password: result.password,
         config: result.config,
-        oneBot: result.oneBot || false
     }
     appOptions.bots.push(botConfig)
-    if (appOptions.start) {
-        const {loginNow} = await prompts({
-            type:'confirm',
-            name:'loginNow',
-            message:'是否立即登录？',
-            initial:true
-        })
-        if(loginNow)await request.post('/add', result)
-    }
     writeConfig(getAppConfigPath(dirReal), appOptions)
     console.log('配置已保存，下次启动时将自动登录该账号')
 }

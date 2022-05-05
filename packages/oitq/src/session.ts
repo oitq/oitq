@@ -1,4 +1,4 @@
-import {App, Bot, Middleware, NSession, Prompt} from ".";
+import {App, Bot, ChannelId, Middleware, NSession, Prompt} from "./index";
 import {MessageElem, Sendable} from "oicq";
 import {MessageRet} from "oicq/lib/events";
 import {toCqcode, template, Awaitable, Dict, fromCqcode} from "@oitq/utils";
@@ -55,9 +55,9 @@ export class Session {
     }
 
     middleware(middleware: Middleware) {
-        const channelId = this.getChannelId()
+        const channelId = this.getFromUrl()
         return this.bot.middleware(session => {
-            if (session.getChannelId() !== channelId) return
+            if (session.getFromUrl() !== channelId) return
             middleware(session);
             return true
         }, true)
@@ -141,13 +141,21 @@ export class Session {
             let result
             try{
                 result = await command.execute(argv)
-                if (autoReply && typeof result === 'string') return await this.reply(result)
+                if (autoReply && typeof result === 'string') return await this.bot.sendMsg(this.getChannelId(),result)
             }catch{}
             if (result) return result
         }
     }
-
-    getChannelId() {
+    getChannelId():ChannelId{
+        return [
+            this.message_type,
+            this.notice_type,
+            this.request_type,
+        ].filter(Boolean).join('.') + ':' + [
+            this.group_id||this.discuss_id||this.user_id,
+        ].filter(Boolean).join('.') as ChannelId
+    }
+    getFromUrl() {
         return [
             this.post_type,
             this.message_type,
@@ -169,9 +177,9 @@ export class Session {
         return template(path, params)
     }
 
-    toJSON() {
+    toJSON(...besides:string[]) {
         return Object.fromEntries(Object.entries(this).filter(([key, value]) => {
-            return !['app', 'bot'].includes(key) && !key.startsWith('_')
+            return !['app', 'bot'].includes(key) && !key.startsWith('_') && !besides.includes(key)
         }))
     }
 }

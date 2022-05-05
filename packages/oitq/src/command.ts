@@ -1,5 +1,5 @@
 import {Command} from "@lc-cn/command";
-import {NSession,Bot,Context} from ".";
+import {NSession,Bot,Context} from "./index";
 import {remove} from "@oitq/utils";
 export * from '@lc-cn/command'
 declare module '@lc-cn/command/lib/command'{

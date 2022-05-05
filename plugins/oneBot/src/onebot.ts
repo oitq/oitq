@@ -5,7 +5,7 @@ import https from "https"
 import { URL } from "url"
 import {WebSocketServer,WebSocket}from "ws"
 import  rfdc from "rfdc"
-import {App,Bot} from "@oitq/core";
+import {App,Bot} from "oitq";
 import { assert } from "./filter"
 import { toHump, transNotice, APIS, ARGS, toBool, BOOLS, genMetaEvent } from "./static"
 import { OneBotConfig, defaultOneBotConfig } from "./config"
@@ -15,7 +15,7 @@ interface OneBotProtocol {
     params: any
     echo?: any
 }
-
+import '@oitq/plugin-http-server'
 const clone = rfdc()
 class NotFoundError extends Error { }
 export class OneBot{
@@ -416,35 +416,31 @@ export class OneBot{
         if (!this.config.use_http && !this.config.use_ws)
             return
         if(this.config.use_http){
-            this.app.on('ready',()=>{
-                this.app.router.all(new RegExp(`^/${this.bot.uin}/(.*)$`),this._httpRequestHandler.bind(this))
-                this.app.logger('oneBot').mark(`OneBot - 开启http服务器成功，监听:http://127.0.0.1:${this.app.options.port}/${this.bot.uin}`)
-            })
+            this.app.router.all(new RegExp(`^/${this.bot.uin}/(.*)$`),this._httpRequestHandler.bind(this))
+            this.app.logger('oneBot').mark(`OneBot - 开启http服务器成功，监听:http://127.0.0.1:${this.app.options.port}/${this.bot.uin}`)
         }
         if (this.config.use_ws) {
-            this.app.on('ready',()=>{
-                this.app.logger('oneBot').mark(`OneBot - 开启ws服务器成功，监听:ws://127.0.0.1:${this.app.options.port}/${this.bot.uin}`)
-                this.wss = this.app.router.ws(`/${this.bot.uin}`,this.app.httpServer)
-                this.wss.on("error", (err) => {
+            this.wss = this.app.router.ws(`/${this.bot.uin}`,this.app.httpServer)
+            this.app.logger('oneBot').mark(`OneBot - 开启ws服务器成功，监听:ws://127.0.0.1:${this.app.options.port}/${this.bot.uin}`)
+            this.wss.on("error", (err) => {
+                this.app.logger('OneBot').error(err.message)
+            })
+            this.wss.on("connection", (ws, req)=>{
+                ws.on("error", (err) => {
                     this.app.logger('OneBot').error(err.message)
                 })
-                this.wss.on("connection", (ws, req)=>{
-                    ws.on("error", (err) => {
-                        this.app.logger('OneBot').error(err.message)
-                    })
-                    ws.on("close", (code, reason) => {
-                        this.app.logger('OneBot').warn(`OneBot - 正向ws连接关闭，关闭码${code}，关闭理由：` + reason)
-                    })
-                    if (this.config.access_token) {
-                        const url = new URL(req.url as string, "http://127.0.0.1")
-                        const token = url.searchParams.get('access_token')
-                        if (token)
-                            req.headers["authorization"] = token
-                        if (!req.headers["authorization"] || !req.headers["authorization"].includes(this.config.access_token))
-                            return ws.close(1002, "wrong access token")
-                    }
-                    this._webSocketHandler(ws)
+                ws.on("close", (code, reason) => {
+                    this.app.logger('OneBot').warn(`OneBot - 正向ws连接关闭，关闭码${code}，关闭理由：` + reason)
                 })
+                if (this.config.access_token) {
+                    const url = new URL(req.url as string, "http://127.0.0.1")
+                    const token = url.searchParams.get('access_token')
+                    if (token)
+                        req.headers["authorization"] = token
+                    if (!req.headers["authorization"] || !req.headers["authorization"].includes(this.config.access_token))
+                        return ws.close(1002, "wrong access token")
+                }
+                this._webSocketHandler(ws)
             })
         }
     }

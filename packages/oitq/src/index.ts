@@ -1,97 +1,12 @@
-import Koa from 'koa'
-import {App,Bot, AppOptions, dir,Context} from '@oitq/core'
-import {success,error,merge} from '@oitq/utils'
-import {OneBot, OneBotConfig,defaultOneBotConfig} from "./onebot";
-import {Router} from "./router";
-import { Quester } from './quester'
-import KoaBodyParser from "koa-bodyparser";
-import {createServer, Server} from "http";
-import * as path from "path";
-export const getAppConfigPath=(dir=process.cwd())=>path.join(dir,'oitq.config.json')
-export const getBotConfigPath=(dir=process.cwd())=>path.join(dir,'bot.default.json')
-export const getOneBotConfigPath=(dir=process.cwd())=>path.join(dir,'oneBot.default.json')
-export function createApp(options:AppOptions|string=getAppConfigPath(dir)){
-    return new App(options)
-}
-export * from './onebot'
-export * from './router'
-export * from './quester'
-export * from '@oitq/core'
-declare module '@oitq/core'{
-    namespace Context{
-        interface Services{
-            koa:Koa
-            router:Router
-            http:Quester,
-            readonly httpServer:Server
-        }
-    }
-    interface AppOptions{
-        port?:number,
-        path?:string
-    }
-    interface Bot{
-        oneBot:OneBot
-    }
-    interface BotOptions{
-        oneBot?:boolean|OneBotConfig
-    }
-}
-Context.service('koa')
-Context.service('router')
-Context.service('http')
-Context.service('httpServer')
-const oldPrepare=App.prototype.prepare
-App.prototype.prepare=function (){
-    this.koa=new Koa(this.options)
-    this.router=new Router({prefix:this.options.path})
-    this.http = Quester.create()
-    this.koa.use(KoaBodyParser())
-        .use(this.router.routes())
-        .use(this.router.allowedMethods())
-    this.httpServer=createServer(this.koa.callback())
-    this.router.get('',(ctx)=>{
-        ctx.body='this is oicq-bots api\n' +
-            'use post request to visit `/${uin}/method` to apply bot method,post data will used by method params\n' +
-            'use websocket to connect `/uin` to listen bot request/notice'
-    })
-    this.router.post('/add',async (ctx,next)=>{
-        if(!ctx.body || Object.keys(ctx.body).length==0) return ctx.body=error('请输入完整bot配置，具体配置见github（BotOptions）')
-        await this.addBot(ctx.body)
-        ctx.body=success('添加成功')
-        await next()
-    })
-    this.router.get('/remove',async (ctx,next)=>{
-        const {uin}=ctx.query
-        if(!uin) ctx.body=error('请输入uin')
-        await this.removeBot(Number(uin))
-        await next()
-        ctx.body= success('移除成功')
-    })
-    this.on('bot.add',async (bot:Bot)=>{
-        if(bot.options.oneBot){
-            bot.oneBot=new OneBot(this,bot,typeof bot.options.oneBot==='boolean'?defaultOneBotConfig:merge(defaultOneBotConfig,bot.options.oneBot))
-            await bot.oneBot.start()
-            bot.on('message',bot.oneBot.dispatch.bind(bot.oneBot))
-            bot.on('notice',bot.oneBot.dispatch.bind(bot.oneBot))
-            bot.on('request',bot.oneBot.dispatch.bind(bot.oneBot))
-            bot.on('system',bot.oneBot.dispatch.bind(bot.oneBot))
-        }
-    })
-    this.on('bot.remove',bot=>{
-        if(bot.oneBot){
-            bot.oneBot.stop()
-        }
-    })
+export * from './app'
+export * from './bot'
+export * from './middleware'
+export * from './plugin'
+export * from './prompt'
+export * from './command'
+export * from './session'
+export * from './context'
+export * from './static'
+export * from '@oitq/utils'
 
-    oldPrepare.apply(this)
-}
-const oldStart=App.prototype.start
-App.prototype.start=async function (port:number=this.options.port){
-    if(!port)port=8080
-    this.options.port=port
-    this.httpServer.listen(port,()=>{
-        this.logger('app').mark('app is listen at http://127.0.0.1:'+port)
-    })
-    oldStart.apply(this)
-}
+

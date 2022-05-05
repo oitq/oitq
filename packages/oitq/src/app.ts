@@ -8,16 +8,9 @@ import {defaultAppOptions, dir} from './static'
 import {Command} from "@lc-cn/command";
 import * as path from "path";
 
-interface KoaOptions{
-    env?: string
-    keys?: string[]
-    proxy?: boolean
-    subdomainOffset?: number
-    proxyIpHeader?: string
-    maxIpsCount?: number
-}
 
-export interface AppOptions extends KoaOptions,PluginManager.Config{
+
+export interface AppOptions extends PluginManager.Config{
     start?:boolean,
     prefix?: Computed<string | string[]>
     minSimilarity?:number,
@@ -64,7 +57,6 @@ export class App extends Context{
         this.bots=new BotList(this)
         this.pluginManager=new PluginManager(this,this.options)
         this.pluginManager.init()
-        this.prepare()
         this._commands.resolve = (key) => {
             if (!key) return
             const segments = key.split('.')
@@ -74,11 +66,7 @@ export class App extends Context{
             }
             return cmd
         }
-        if(options.bots){
-            for(const botOptions of options.bots){
-                this.addBot(botOptions)
-            }
-        }
+        this.prepare()
     }
 
     getCommand(name: string) {
@@ -99,6 +87,11 @@ export class App extends Context{
         return await this.bots.remove(uin)
     }
     async start(){
+        if(this.options.bots){
+            for(const botOptions of this.options.bots){
+                this.addBot(botOptions)
+            }
+        }
         for(const bot of this.bots){
             const botOptions=this.options.bots||=[]
             const option:BotOptions=botOptions.find(botOption=>botOption.uin===bot.uin) ||{} as any
@@ -109,4 +102,9 @@ export class App extends Context{
         this.status=true
         this.emit('ready')
     }
+}
+export const getAppConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'oitq.config.json')
+export const getBotConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'bot.default.json')
+export function createApp(options:string|AppOptions=getAppConfigPath(dir)){
+    return new App(options)
 }

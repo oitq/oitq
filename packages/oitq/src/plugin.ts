@@ -1,7 +1,7 @@
 import {EventEmitter} from "events";
 import * as path from "path";
 import * as fs from 'fs'
-import {App, Bot, Dispose} from ".";
+import {App, Bot, Dispose} from "./index";
 import {Awaitable, createIfNotExist, merge, readConfig, writeConfig} from "@oitq/utils";
 import {Context} from "./context";
 
@@ -176,25 +176,6 @@ export class PluginManager {
         return this.app.logger('pluginManager')
     }
     init() {
-        const builtinPath = path.join(__dirname, 'plugins')
-        const builtins = fs.readdirSync(builtinPath, {withFileTypes: true})
-        // 安装内置插件
-        for (let file of builtins) {
-            let fileName: string
-            if (file.isDirectory()) {
-                fileName = file.name
-            } else if (file.isFile() && ((file.name.endsWith('.ts') && !file.name.endsWith('d.ts')) || file.name.endsWith('.js'))) {
-                fileName = file.name.replace(/\.ts|\.js/, '')
-            }
-            if (fileName) {
-                const plugin = new Plugin(fileName, `${builtinPath}/${fileName}`)
-                plugin.bindCtx(this.app)
-                this.install(plugin)
-                this.app.on('bot.add', (bot) => {
-                    this.checkInstall(fileName).enable(bot)
-                })
-            }
-        }
         for (const [name, conf] of Object.entries(this.config.plugins)) {
             try {
                 this.app.plugin(name,conf)
@@ -215,7 +196,12 @@ export class PluginManager {
         let resolved = ""
         const modulePath = path.join(process.cwd(), "node_modules")
         const orgPath = path.resolve(modulePath, '@oitq')
-        if (fs.existsSync(this.config.plugin_dir)) {
+        // 查找内置插件
+        try{
+            require.resolve(path.join(__dirname,`plugins/${name}`))
+            resolved=`${__dirname}/plugins/${name}`
+        }catch {}
+        if(!resolved && fs.existsSync(this.config.plugin_dir)){
             try {
                 require.resolve(`${this.config.plugin_dir}/${name}`)
                 resolved = `${this.config.plugin_dir}/${name}`

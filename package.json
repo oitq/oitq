@@ -8,9 +8,11 @@
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs",
     "build": "npm run build -workspaces",
-    "dev": "npm run build -w @oitq/utis -w @oitq/loader -w @oitq/core -w oitq -w @oitq/cli && npm run dev -w test",
+    "build:base": "npm run build -w @oitq/utis -w @oitq/loader -w oitq -w @oitq/cli",
+    "dev": "npm run build -w oitq && npm run dev -w test",
     "start": "npm start -w test",
     "pub": "npm run pub -workspaces",
+    "deploy-gh": "bash ./deploy.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "workspaces": [
@@ -39,11 +41,10 @@
     "@types/prompts": "^2.0.14",
     "esbuild": "^0.14.38",
     "esbuild-register": "^3.3.2",
-    "ts-node-dev": "^1.1.8",
     "tsc-alias": "^1.5.0",
     "tsconfig-paths": "^3.12.0",
     "typescript": "^4.5.4",
-    "vuepress": "^1.9.7"
+    "vuepress": "^2.0.0-beta.43"
   },
   "dependencies": {
     "@lc-cn/command": "^0.1.7",

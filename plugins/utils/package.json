@@ -1,11 +1,8 @@
 {
-  "name": "@oitq/plugin-schedule",
+  "name": "@oitq/plugin-utils",
   "main": "lib/index.js",
-  "version": "0.1.3",
-  "description": "schedule job plugin",
-  "devDependencies": {
-    "querystring": "^0.2.1"
-  },
+  "version": "0.0.1",
+  "description": "utils plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",
     "alias": "tsc-alias -p tsconfig.json",
@@ -17,7 +14,7 @@
     "url": "git+https://github.com/oitq/oitq.git"
   },
   "keywords": [
-    "schedule job",
+    "utils",
     "plugin",
     "oitq"
   ],
@@ -33,8 +30,11 @@
   },
   "homepage": "https://github.com/oitq/oitq#readme",
   "dependencies": {
-    "mysql2": "^2.3.3",
-    "sequelize": "^6.17.0",
-    "sequelize-typescript": "^2.1.3"
+    "node-fetch": "^3.2.3"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.13.4",
+    "@types/koa__router": "^8.0.11",
+    "@types/koa-bodyparser": "^4.3.7"
   }
 }

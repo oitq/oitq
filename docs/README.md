@@ -2,8 +2,10 @@
 home: true
 heroText: Oitq
 tagline: 为oicq而开发的多机器人框架
-actionText: 快速上手 →
-actionLink: /start/
+actions:
+- text: 快速上手
+  link: /start/
+  type: primary
 features:
 - title: Typescript
   details: 以typescript作为开发语言，拥有良好的代码提示。
