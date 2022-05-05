@@ -1,8 +1,8 @@
 # 快速上手
 oitq提供两种工作模式可供开发者选择：
 
-## 仅作为bot服务提供者工作
-在这种模式下，你可以使用任何编程语言编写自己的机器人功能
+## 作为HttpAPI Server
+在这种模式下，你可以使用任何编程语言编写自己的机器人功能，然后调用Oitq的提供的HttpAPI以实现自己的功能
 1.新建一个node项目
 ```shell
 mkdir server // 建立文件夹
@@ -60,5 +60,7 @@ ticket可用post`baseUrl+/submitSlider/:你的机器人qq/`提交，参数为`{t
 
 可post请求`baseUrl+/login/:你的机器人qq`调用bot的login方法可带password字段，不带则为扫码登录。
 登录成功请自行监听ws数据
-## 作为插件开发框架编写自己的机器人服务
-
+## 作为Bot开发框架
+在这种模式下，即代表你需要在本框架下实现自己的Bot所需功能代码，而不依赖其他框架。
+在此模式下，你至少需要掌握`javascript`或`typescript`语言的代码撰写能力以及`nodeJs`基础。
+若你不具备以上条件，请
