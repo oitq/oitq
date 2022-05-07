@@ -3,8 +3,9 @@ import {Context} from "oitq";
 import lodash from "lodash";
 import querystring from "querystring";
 import {MusicPlatform} from "oicq";
-
+import '@oitq/plugin-utils'
 export const name = 'music'
+export const using=['utils'] as const
 const m_ERR_CODE = Object.freeze({
     ERR_SRC: "1",
     ERR_404: "2",
@@ -17,7 +18,7 @@ const m_ERR_MSG = Object.freeze({
     [m_ERR_CODE.ERR_API]: "歌曲查询出错",
 });
 
-async function musicQQ(keyword,ctx) {
+async function musicQQ(keyword,ctx:Context) {
     const url = "https://c.y.qq.com/soso/fcgi-bin/client_search_cp";
     const query = {w: keyword};
     const headers = {
@@ -26,7 +27,7 @@ async function musicQQ(keyword,ctx) {
     };
     let jbody;
     try {
-        jbody = await ctx.http.get(`${url}?${new URLSearchParams(query)}`, {headers});
+        jbody = await ctx.axios.get(`${url}?${new URLSearchParams(query)}`, {headers});
     } catch (e) {
         return m_ERR_CODE.ERR_API;
     }
@@ -50,7 +51,7 @@ async function musicQQ(keyword,ctx) {
     return m_ERR_CODE.ERR_404;
 }
 
-async function music163(keyword,ctx) {
+async function music163(keyword,ctx:Context) {
     const url = "https://music.163.com/api/search/get/";
     const form = {
         s: keyword,
@@ -68,7 +69,7 @@ async function music163(keyword,ctx) {
     };
     let jbody;
     try {
-        jbody = await ctx.http.post(url,body, {headers});
+        jbody = await ctx.axios.post(url,body, {headers});
     } catch (e) {
         return m_ERR_CODE.ERR_API;
     }

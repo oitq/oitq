@@ -16,7 +16,7 @@ namespace addons {
     export const name = 'CLI'
 
     export function install(ctx: Context,config) {
-        ctx.plugin(daemon, {autoRestart:true,exitCommand:true})
+        ctx.plugin(daemon, config)
 
         if (process.env.OITQ_WATCH_ROOT !== undefined) {
             (config.watch ??= {}).root = process.env.OITQ_WATCH_ROOT

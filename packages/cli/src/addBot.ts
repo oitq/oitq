@@ -4,8 +4,8 @@ import * as path from "path";
 import {CAC} from "cac";
 import {
     dir,
-    defaultBotOptions, BotOptions,getBotConfigPath,
-    defaultAppOptions, AppOptions,getAppConfigPath,
+    defaultBotConfig, BotConfig,getBotConfigPath,
+    defaultAppConfig, AppConfig,getAppConfigPath,
     readConfig, writeConfig,
 } from "oitq";
 import {createIfNotExist} from "@oitq/utils";
@@ -29,10 +29,10 @@ export async function addBot() {
 
     createIfNotExist(path.join(dir,'configFilePath'),dir)
     const dirReal=readConfig(path.join(dir,'configFilePath'))
-    createIfNotExist(getAppConfigPath(dirReal),defaultAppOptions)
-    createIfNotExist(getBotConfigPath(dirReal),defaultBotOptions)
-    const appOptions: AppOptions = readConfig(getAppConfigPath(dirReal))
-    const botOptions:BotOptions=readConfig(getBotConfigPath(dirReal))
+    createIfNotExist(getAppConfigPath(dirReal),defaultAppConfig)
+    createIfNotExist(getBotConfigPath(dirReal),defaultBotConfig)
+    const appOptions: AppConfig = readConfig(getAppConfigPath(dirReal))
+    const botOptions:BotConfig=readConfig(getBotConfigPath(dirReal))
     const botConfigQuestion:PromptObject[]=[
         {
             type: 'number',
@@ -149,9 +149,9 @@ export async function addBot() {
         })
         result.config = {...newDefaultConfig}
     } else {
-        result.config = defaultBotOptions.config
+        result.config = defaultBotConfig.config
     }
-    const botConfig: BotOptions = {
+    const botConfig: BotConfig = {
         uin: result.uin,
         type: result.type,
         password: result.password,

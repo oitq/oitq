@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-http-server",
   "main": "lib/index.js",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "httpServer plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",

@@ -1,4 +1,4 @@
-import { App, Context, Dict, interpolate, valueMap,AppOptions } from 'oitq'
+import { App, Context, Dict, interpolate, valueMap,AppConfig } from 'oitq'
 import ConfigLoader from '@oitq/loader'
 import ns from 'ns-require'
 
@@ -17,9 +17,9 @@ Context.service('loader')
 const context = {
     env: process.env,
 }
-export class Loader extends ConfigLoader<AppOptions> {
+export class Loader extends ConfigLoader<AppConfig> {
     app: App
-    config:AppOptions
+    config:AppConfig
     cache: Dict<string> = {}
     envfile: string
     scope: ns.Scope

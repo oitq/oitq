@@ -94,7 +94,7 @@ export class Session {
             const timer = setTimeout(() => {
                 dispose()
                 resolve()
-            }, options.timeout || this.app.options.delay.prompt)
+            }, options.timeout || this.app.config.delay.prompt)
         })
     }
 

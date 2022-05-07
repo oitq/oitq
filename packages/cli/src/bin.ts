@@ -6,7 +6,7 @@ import registerStartCommand from "./start";
 import registerRemoveCommand from "./removeBot";
 import {
     dir,
-    getAppConfigPath,AppOptions,
+    getAppConfigPath,AppConfig,
     readConfig,writeConfig
 } from 'oitq'
 import {createIfNotExist} from "@oitq/utils";
@@ -35,7 +35,7 @@ process.on('uncaughtException', onError)
 process.on('unhandledRejection', onError)
 process.on('exit',()=>{
     const dirReal=readConfig(path.join(dir,'configFilePath'))
-    const appOptions:AppOptions=readConfig(getAppConfigPath(dirReal))
+    const appOptions:AppConfig=readConfig(getAppConfigPath(dirReal))
     appOptions.start=false
     writeConfig(getAppConfigPath(dirReal),appOptions)
 })

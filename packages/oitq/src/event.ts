@@ -87,10 +87,10 @@ export class Events{
         }
 
         const hooks = this.app._hooks[name]||=[]
-        if (hooks.length >= this.app.options.maxListeners) {
+        if (hooks.length >= this.app.config.maxListeners) {
             this.app.logger('app').warn(
                 'max listener count (%d) for event "%s" exceeded, which may be caused by a memory leak',
-                this.app.options.maxListeners, name,
+                this.app.config.maxListeners, name,
             )
         }
 

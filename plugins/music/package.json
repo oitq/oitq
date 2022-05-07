@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-music",
   "main": "lib/index.js",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "music plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",
@@ -28,8 +28,5 @@
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
   },
-  "homepage": "https://github.com/oitq/oitq#readme",
-  "dependencies": {
-    "node-fetch": "^3.2.3"
-  }
+  "homepage": "https://github.com/oitq/oitq#readme"
 }

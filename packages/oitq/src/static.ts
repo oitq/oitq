@@ -1,10 +1,10 @@
 import * as path from "path";
 import * as os from "os";
-import {AppOptions} from "./app";
-import {BotOptions} from "./bot";
+import {AppConfig} from "./app";
+import {BotConfig} from "./bot";
 
 export const dir = path.join(os.homedir(), ".oitq")
-export const defaultAppOptions:AppOptions={
+export const defaultAppConfig:AppConfig={
     prefix:()=>'',
     bots:[],
     maxListeners:50,
@@ -17,7 +17,7 @@ export const defaultAppOptions:AppOptions={
     }
 }
 
-export const defaultBotOptions:BotOptions={
+export const defaultBotConfig:BotConfig={
     type:'qrcode',
     admins:[],
     master:1659488338,

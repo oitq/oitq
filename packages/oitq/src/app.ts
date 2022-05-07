@@ -1,20 +1,20 @@
 import {LogLevel} from "oicq";
-import {BotList, BotOptions} from "./bot";
+import {BotList, BotConfig} from "./bot";
 import {sleep, merge, Dict, Awaitable, readConfig, createIfNotExist} from "@oitq/utils";
 import {Context} from './context'
 import {Plugin, PluginManager} from './plugin'
 import {Computed} from "./session";
-import {defaultAppOptions, dir} from './static'
+import {defaultAppConfig, dir} from './static'
 import {Command} from "@lc-cn/command";
 import * as path from "path";
 
 
 
-export interface AppOptions extends PluginManager.Config{
+export interface AppConfig extends PluginManager.Config{
     start?:boolean,
     prefix?: Computed<string | string[]>
     minSimilarity?:number,
-    bots?:BotOptions[]
+    bots?:BotConfig[]
     delay?:Dict<number>
     token?:string
     dir?:string
@@ -36,15 +36,15 @@ export class App extends Context{
     _shortcuts: Command.Shortcut[] = []
     public app:App=this
     public disposeState:Map<Plugin,Plugin.State>=new Map<Plugin, Plugin.State>()
-    options:AppOptions
-    constructor(options:AppOptions|string=path.join(dir,'oitq.json')) {
+    config:AppConfig
+    constructor(config:AppConfig|string=path.join(dir,'oitq.json')) {
         super(()=>true);
-        if(typeof options==='string'){
-            createIfNotExist(options,defaultAppOptions)
+        if(typeof config==='string'){
+            createIfNotExist(config,defaultAppConfig)
             try{
-                options=readConfig(options) as AppOptions
+                config=readConfig(config) as AppConfig
             }catch {
-                options={}
+                config={}
             }
         }
         this.disposeState.set(null,{
@@ -53,9 +53,9 @@ export class App extends Context{
             plugin:null,
             disposes:[]
         })
-        this.options=merge(defaultAppOptions,options)
+        this.config=merge(defaultAppConfig,config)
         this.bots=new BotList(this)
-        this.pluginManager=new PluginManager(this,this.options)
+        this.pluginManager=new PluginManager(this,this.config)
         this.pluginManager.init()
         this._commands.resolve = (key) => {
             if (!key) return
@@ -66,35 +66,26 @@ export class App extends Context{
             }
             return cmd
         }
-        this.prepare()
     }
 
     getCommand(name: string) {
         return this._commands.get(name)
     }
-    prepare(){
-
+    addBot(config:BotConfig){
+        return this.bots.create(config)
     }
-    addBot(options:BotOptions){
-        this.options.bots.push(options)
-        const bot=this.bots.create(options)
-        if(this.status) {
-            bot.login(options.password)
-        }
-        return bot
-    }
-    async removeBot(uin:number){
-        return await this.bots.remove(uin)
+    removeBot(uin:number){
+        return this.bots.remove(uin)
     }
     async start(){
-        if(this.options.bots){
-            for(const botOptions of this.options.bots){
-                this.bots.create(botOptions)
+        if(this.config.bots){
+            for(const config of this.config.bots){
+                this.bots.create(config)
             }
         }
         for(const bot of this.bots){
-            const botOptions=this.options.bots||=[]
-            const option:BotOptions=botOptions.find(botOption=>botOption.uin===bot.uin) ||{} as any
+            const config=this.config.bots||=[]
+            const option:BotConfig=config.find(botOption=>botOption.uin===bot.uin) ||{} as any
             await bot.login(option.password)
             await this.pluginManager.restore(bot)
             await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
@@ -105,6 +96,9 @@ export class App extends Context{
 }
 export const getAppConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'oitq.config.json')
 export const getBotConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'bot.default.json')
-export function createApp(options:string|AppOptions=getAppConfigPath(dir)){
-    return new App(options)
+export function createApp(config:string|AppConfig=getAppConfigPath(dir)){
+    return new App(config)
+}
+export function defineConfig(config:AppConfig){
+    return config
 }

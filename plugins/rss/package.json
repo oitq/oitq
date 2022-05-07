@@ -12,9 +12,6 @@
   "dependencies": {
     "rss-feed-emitter": "^3.2.3"
   },
-  "peerDependencies": {
-    "@oitq/plugin-database": "^0.2.5"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/oitq/oitq.git"

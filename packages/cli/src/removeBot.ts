@@ -1,9 +1,9 @@
 import {CAC} from "cac";
 import {
     dir,
-    defaultAppOptions, AppOptions,
+    defaultAppConfig, AppConfig,
     getAppConfigPath,
-    readConfig, writeConfig, getBotConfigPath, defaultBotOptions
+    readConfig, writeConfig, getBotConfigPath, defaultBotConfig
 } from "oitq";
 import axios from "axios";
 import {createIfNotExist} from "@oitq/utils";
@@ -12,9 +12,9 @@ const prompts=require('prompts')
 export async function removeBot(){
     createIfNotExist(path.join(dir,'configFilePath'),dir)
     const dirReal=readConfig(path.join(dir,'configFilePath'))
-    createIfNotExist(getAppConfigPath(dirReal),defaultAppOptions)
-    createIfNotExist(getBotConfigPath(dirReal),defaultBotOptions)
-    const appOptions:AppOptions=readConfig(getAppConfigPath(dirReal))
+    createIfNotExist(getAppConfigPath(dirReal),defaultAppConfig)
+    createIfNotExist(getBotConfigPath(dirReal),defaultBotConfig)
+    const appOptions:AppConfig=readConfig(getAppConfigPath(dirReal))
     const {uin}=await prompts({type:"number",name:'uin',message:'请输入uin'})
     let index=appOptions.bots.findIndex(bot=>bot.uin===uin)
     if(index===-1){

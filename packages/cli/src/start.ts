@@ -5,8 +5,8 @@ import * as path from 'path'
 import {
     dir,
     hyphenate,
-    defaultAppOptions, AppOptions, getAppConfigPath,
-    readConfig, writeConfig,  getBotConfigPath, defaultBotOptions,
+    defaultAppConfig, AppConfig, getAppConfigPath,
+    readConfig, writeConfig,  getBotConfigPath, defaultBotConfig,
     Dict
 } from "oitq";
 import {createIfNotExist} from "@oitq/utils";
@@ -100,9 +100,9 @@ export default function registerStartCommand(cli: CAC) {
             else configPath=path.join(process.cwd(),configPath)
             createIfNotExist(path.join(dir,'configFilePath'),configPath)
             writeConfig(path.join(dir,'configFilePath'),configPath)
-            createIfNotExist(getAppConfigPath(configPath),defaultAppOptions)
-            createIfNotExist(getBotConfigPath(configPath),defaultBotOptions)
-            let appOptions: AppOptions = readConfig(getAppConfigPath(configPath))
+            createIfNotExist(getAppConfigPath(configPath),defaultAppConfig)
+            createIfNotExist(getBotConfigPath(configPath),defaultBotConfig)
+            let appOptions: AppConfig = readConfig(getAppConfigPath(configPath))
             try {
                 appOptions.start = true
                 setEnvArg('OITQ_WATCH_ROOT', watch)

@@ -169,7 +169,7 @@ declare module 'oitq'{
         protected hooks: PluginManager.Object;
         readonly binds: Set<Bot>;
         using: readonly (keyof Context.Services)[];
-        private config;
+        private options;
         context: Context;
 
         constructor(name: string, hooks: string | PluginManager.Object);
@@ -226,7 +226,7 @@ declare module 'oitq'{
     export namespace PluginManager {
         const defaultConfig: Config;
         type Plugin = Function | Object;
-        type Function<T = any> = (ctx: Context, options: T) => Awaitable<any>;
+        type Function<T = any> = (ctx: Context, config: T) => Awaitable<any>;
 
         interface Object<T = any> {
             install: Function<T>;
@@ -247,21 +247,10 @@ declare module 'oitq'{
         }
     }
 
-    export declare namespace Plugin {
-        interface State {
-            id: string;
-            context?: Context;
-            config?: any;
-            using: readonly (keyof Context.Services)[];
-            plugin?: Plugin;
-            children: Plugin[];
-            disposables: Dispose[];
-        }
-    }
     export type Middleware = (session: NSession<'message'>) => Awaitable<boolean | Sendable | void>;
     export type LoginType = 'qrcode' | 'password';
 
-    export interface BotOptions {
+    export interface BotConfig {
         uin?: number;
         config: Config;
         type: LoginType;
@@ -289,12 +278,12 @@ declare module 'oitq'{
 
     export class Bot extends Client {
         app: App;
-        options;
+        options:BotConfig;
         middlewares: Middleware[];
         admins: number[]
         master: number
 
-        constructor(app: App, options: BotOptions);
+        constructor(app: App, config: BotConfig);
 
         isMaster(user_id: number): boolean;
 
@@ -334,9 +323,9 @@ declare module 'oitq'{
 
         get(uin: number): Bot;
 
-        create(options: BotOptions): Bot;
+        create(config: BotConfig): Bot;
 
-        remove(uin: number): Promise<boolean>;
+        remove(uin: number): boolean;
     }
 
     const selectors: readonly ["user", "group", "self", "private"];
@@ -446,7 +435,6 @@ declare module 'oitq'{
 
         dispose(plugin?: Plugin): Plugin.State;
 
-        static service<K extends keyof Context.Services>(key: K): void;
 
         select(options: Selection): Context;
 
@@ -455,8 +443,6 @@ declare module 'oitq'{
         broadcast(msgChannelIds: MsgChannelId | MsgChannelId[], msg: Sendable): Promise<void>;
 
         using<T extends PluginManager.Plugin>(using: readonly (keyof Context.Services)[], plugin: T, config?: PluginManager.Option<T>): this;
-
-        get state(): Plugin.State;
 
         dispose(plugin?: Plugin): void;
 
@@ -524,11 +510,11 @@ declare module 'oitq'{
         maxIpsCount?: number;
     }
 
-    export interface AppOptions extends KoaOptions, PluginManager.Config {
+    export interface AppConfig extends KoaOptions, PluginManager.Config {
         start?: boolean;
         prefix?: Computed<string | string[]>;
         minSimilarity?: number;
-        bots?: BotOptions[];
+        bots?: BotConfig[];
         delay?: Dict<number>;
         admins?: number[];
         token?: string;
@@ -554,28 +540,19 @@ declare module 'oitq'{
         _shortcuts: Command.Shortcut[];
         disposeState: Map<Plugin, Plugin.State>;
         app: App;
-        options: AppOptions;
+        config: AppConfig;
 
-        constructor(options?: AppOptions | string);
+        constructor(config?: AppConfig | string);
 
         getCommand(name: string): Command<any[], {}>;
 
         prepare(): void;
 
-        addBot(options: BotOptions): Bot;
+        addBot(config: BotConfig): Bot;
 
         removeBot(uin: number): Promise<boolean>;
     }
 
-    export const dir: string;
-    export const defaultAppOptions: AppOptions;
-    export const defaultBotOptions: BotOptions;
-
-    export function getAppConfigPath(dir?: string): string;
-
-    export function getBotConfigPath(dir?: string): string;
-
-    export * from '@oitq/utils'
 
 
     export interface Token {
@@ -748,7 +725,7 @@ declare module 'oitq'{
         type Action<A extends any[] = any[], O extends {} = {}> = (argv: Argv<A, O>, ...args: A) => any | Promise<any>;
     }
 
-    export declare class Command<A extends any[] = any[], O extends {} = {}> {
+    export class Command<A extends any[] = any[], O extends {} = {}> {
         name: string;
         description: string;
         declaration: string;
@@ -798,10 +775,16 @@ declare module 'oitq'{
         stringify(args: readonly string[], options: any): string;
     }
 
-    export declare function defineCommand<D extends string>(def: D, config?: Command.Config): Command<Argv.ArgumentType<D>>;
-    export declare function defineCommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<Argv.ArgumentType<D>>;
+    export function defineCommand<D extends string>(def: D, config?: Command.Config): Command<Argv.ArgumentType<D>>;
+    export function defineCommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<Argv.ArgumentType<D>>;
 
-    export declare const getAppConfigPath: (baseDir?: string) => string;
-    export declare const getBotConfigPath: (baseDir?: string) => string;
-    export declare function createApp(options?: string | AppOptions): App;
+    export const dir: string;
+    export const defaultAppConfig: AppConfig;
+    export const defaultBotConfig: BotConfig;
+
+
+    export const getAppConfigPath: (baseDir?: string) => string;
+    export const getBotConfigPath: (baseDir?: string) => string;
+    export function createApp(config?: string | AppConfig): App;
+    export function defineConfig(config: AppConfig): AppConfig;
 }

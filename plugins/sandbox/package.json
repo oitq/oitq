@@ -1,20 +1,29 @@
 {
-  "name": "@oitq/plugin-utils",
+  "name": "@oitq/plugin-sandbox",
   "main": "lib/index.js",
-  "version": "0.0.5",
-  "description": "utils plugin",
+  "version": "0.0.1",
+  "description": "sandbox plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",
     "alias": "tsc-alias -p tsconfig.json",
     "build": "npm run compile && npm run alias",
     "pub": "npm publish --access public"
   },
+  "dependencies": {
+    "assert": "^2.0.0",
+    "cheerio": "^1.0.0-rc.10",
+    "crypto": "^1.0.1",
+    "moment": "^2.29.3",
+    "querystring": "^0.2.1",
+    "string.ify": "^1.0.64",
+    "utf-8-validate": "^5.0.9"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/oitq/oitq.git"
   },
   "keywords": [
-    "utils",
+    "sandbox",
     "plugin",
     "oitq"
   ],
@@ -28,15 +37,5 @@
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
   },
-  "homepage": "https://github.com/oitq/oitq#readme",
-  "devDependencies": {
-    "@types/koa": "^2.13.4",
-    "@types/koa__router": "^8.0.11",
-    "@types/koa-bodyparser": "^4.3.7",
-    "@types/ws": "^8.5.3"
-  },
-  "dependencies": {
-    "proxy-agent": "^5.0.0",
-    "ws": "^8.6.0"
-  }
+  "homepage": "https://github.com/oitq/oitq#readme"
 }

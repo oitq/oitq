@@ -3,7 +3,9 @@ export interface Config {
     exitCommand?: boolean | string
     autoRestart?: boolean
 }
-
+declare module 'oitq'{
+    interface AppConfig extends Config{}
+}
 template.set('daemon', {
     exiting: '正在关机……',
     restarting: '正在重启……',

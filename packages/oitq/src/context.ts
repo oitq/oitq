@@ -64,7 +64,7 @@ export class Context extends Events{
     }
     logger(name: string) {
         const logger=getLogger(name)
-        logger.level=process.env.OITQ_LOG_LEVEL || this.app.options.logLevel ||'off'
+        logger.level=process.env.OITQ_LOG_LEVEL || this.app.config.logLevel ||'info'
         return logger
     }
     get state(){

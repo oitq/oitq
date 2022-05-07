@@ -168,7 +168,6 @@ export class Plugin extends EventEmitter {
 export class PluginManager {
     public config: PluginManager.Config
     public plugins: Map<string, Plugin> = new Map<string, Plugin>()
-    private pluginsCache:Map<string,Plugin>=new Map<string,Plugin>()
     constructor(public app: App, config: PluginManager.Config) {
         this.config = merge(config,PluginManager.defaultConfig)
     }

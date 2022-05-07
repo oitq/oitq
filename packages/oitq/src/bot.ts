@@ -2,7 +2,7 @@ import {Client, Config, EventMap, MessageElem, Quotable, Sendable} from 'oicq'
 import {App} from './app'
 import {Session} from './session'
 import {Middleware} from './middleware'
-import {defaultBotOptions} from './static'
+import {defaultBotConfig} from './static'
 import {
     merge,
     template,
@@ -32,7 +32,7 @@ export type TargetType = 'group' | 'private' | 'discuss'
 export type ChannelId = `${TargetType}:${number}`
 export type LoginType = 'qrcode' | 'password'
 
-export interface BotOptions {
+export interface BotConfig {
     uin?: number
     config: Config,
     type: LoginType
@@ -61,14 +61,14 @@ function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
 }
 
 export class Bot extends Client {
-    private options: BotOptions
+    private options: BotConfig
     middlewares: Middleware[] = []
     private _nameRE: RegExp
     admins:number[]=[]
     master:number
-    constructor(public app: App, options: BotOptions) {
-        super(options.uin, merge(defaultBotOptions.config, {logLevel:app.options.logLevel,...options.config}));
-        this.options = merge(defaultBotOptions, options)
+    constructor(public app: App, options: BotConfig) {
+        super(options.uin, merge(defaultBotConfig.config, {logLevel:app.config.logLevel,...options.config}));
+        this.options = merge(defaultBotConfig, options)
         this.admins=options.admins||[]
         this.master=options.master||null
         if (!options.parent) {
@@ -403,20 +403,19 @@ export class BotList extends Array<Bot> {
         return this.find(bot => bot.uin === uin)
     }
 
-    create(options: BotOptions) {
+    create(options: BotConfig) {
         const bot = new Bot(this.app, options)
         this.push(bot)
         this.app.emit('bot.add', bot)
         return bot
     }
 
-    async remove(uin: number) {
+    remove(uin: number) {
         const index = this.findIndex(bot => bot.uin === uin)
         if (index < 0) {
             return false
         }
         const bot = this[index]
-        await bot.logout()
         this.app.emit('bot.remove', bot)
         this.splice(index, 1)
         return true
