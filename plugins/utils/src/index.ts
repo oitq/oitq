@@ -1,6 +1,7 @@
 import {Context} from "oitq";
 import {Requester} from "./request/requester";
-
+import * as time from './time'
+import axios from "axios";
 declare module 'oitq'{
     namespace Context{
         interface Services{
@@ -14,6 +15,7 @@ export interface Config {
 Context.service('axios')
 export const name='常用工具'
 export function install(ctx:Context,config:Config){
+    ctx.plugin(time)
     if(config.axios!==false)ctx.axios=Requester.create(config.axios)
     const cmd=ctx.command('utils','公共工具')
     cmd.subcommand('axios.get <url>','发起get请求')
@@ -30,7 +32,12 @@ export function install(ctx:Context,config:Config){
                     config=JSON.parse(c)
                 }catch {}
             }
-            return JSON.stringify(await ctx.axios.get(url,config),null,2)
+            const res=await ctx.axios.get(url,config)
+            try{
+                return JSON.stringify(res,null,2)
+            }catch {
+                return typeof res==='string'?res:undefined
+            }
         })
     cmd.subcommand('axios.post <url>','发起post请求')
         .option('config','-c 配置请求config')
@@ -58,7 +65,12 @@ export function install(ctx:Context,config:Config){
                     config=JSON.parse(c)
                 }catch {}
             }
-            return JSON.stringify(await ctx.axios.post(url,data,config),null,2)
+            const res=await ctx.axios.post(url,data,config)
+            try{
+                return JSON.stringify(res,null,2)
+            }catch {
+                return typeof res==='string'?res:undefined
+            }
         })
 
 }

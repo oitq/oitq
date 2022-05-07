@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-utils",
   "main": "lib/index.js",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "description": "utils plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",

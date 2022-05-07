@@ -1,7 +1,7 @@
 import {App, Bot, ChannelId, Middleware, NSession, Prompt} from "./index";
 import {MessageElem, Sendable} from "oicq";
 import {MessageRet} from "oicq/lib/events";
-import {toCqcode, template, Awaitable, Dict, fromCqcode} from "@oitq/utils";
+import {toCqcode, template, Awaitable, Dict, fromCqcode,s} from "@oitq/utils";
 import {Argv} from "@lc-cn/command";
 
 export interface Session {
@@ -130,7 +130,21 @@ export class Session {
             token.content = content
         }
     }
-
+    async executeTemplate(template:string){
+        const session:NSession<'message'>=this as any
+        template=template.replace(/\$A/g, s('at', { type: 'all' }))
+            .replace(/\$a/g, s('at', { id: session.user_id }))
+            .replace(/\$m/g, s('at', { id: session.bot.uin }))
+            .replace(/\$s/g, () => session.sender['card']||session.sender['title']||session.sender.nickname)
+        while (template.match(/\$\(.*\)/)){
+            const text = /\$\((.*)\)/.exec(template)[1]
+            const executeResult = await this.executeTemplate(text)
+            if(typeof executeResult==='string')
+                template = template.replace(/\$\((.*)\)/, executeResult)
+        }
+        const result=await this.execute(template, false) as Sendable
+        return result?result:template
+    }
     async execute(content: string = this.cqCode, autoReply = true):Promise<Sendable|MessageRet|boolean> {
         for (const [, command] of this.app._commands) {
             const argv = Argv.parse(content)

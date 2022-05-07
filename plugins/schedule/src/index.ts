@@ -7,7 +7,7 @@ export const using=['database'] as const
 export interface Config {
     minInterval?: number
 }
-export function install(ctx: Context, { minInterval }: Config={minInterval:1}) {
+export function install(ctx: Context, { minInterval }: Config={minInterval:60000}) {
     ctx.database.addModels(Schedule)
     async function hasSchedule(id: number) {
         const data = await Schedule.findAll({where:{id}})
@@ -20,7 +20,11 @@ export function install(ctx: Context, { minInterval }: Config={minInterval:1}) {
 
         async function executeSchedule() {
             ctx.app.logger('schedule').debug('execute %d: %s', id, command)
-            await session.execute(command)
+            try{
+                session.bot.sendMsg(session.getChannelId(),await session.executeTemplate(command) as string)
+            }catch{
+                await session.execute(command)
+            }
             if (!lastCall || !interval) return
             lastCall = new Date()
             await Schedule.update({ lastCall },{where:{id}})

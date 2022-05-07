@@ -65,9 +65,10 @@ declare module 'oitq'{
 
         private _handleShortcut;
 
+        executeTemplate(template: string): Promise<boolean | Sendable | MessageRet>;
         execute(content?: string, autoReply?: boolean): Promise<boolean | Sendable | MessageRet>;
 
-        getChannelId(): string;
+        getChannelId(): ChannelId;
 
         resolveValue<T>(source: T | ((session: Session) => T)): T;
 

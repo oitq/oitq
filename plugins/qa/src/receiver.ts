@@ -60,28 +60,12 @@ export async function triggerTeach(ctx: Context, session: NSession<'message'>) {
             dialogue.answer = dialogue?.answer.replace(reg, args[index])
         }
     }
-    let answerText=dialogue.answer.replace(/\$A/g, s('at', { type: 'all' }))
-        .replace(/\$a/g, s('at', { id: session.user_id }))
-        .replace(/\$m/g, s('at', { id: session.bot.uin }))
-        .replace(/\$s/g, () => session.sender['card']||session.sender['title']||session.sender.nickname)
+    let answerText=dialogue.answer
         .replace(/\$0/g,question)
-    const executeContent:(msg:string)=>Promise<boolean|Sendable|MessageRet> = async (msg: string) => {
-        if (msg.match(/\$\(.*\)/)) {
-            const text = /\$\((.*)\)/.exec(msg)[1]
-            const executeResult = await executeContent(text)
-            if(typeof executeResult==='string')
-            msg = msg.replace(/\$\((.*)\)/, executeResult)
-        }
-        return await session.execute(msg, false)
-    }
     try{
-        let executeResult=answerText.match(/\$\(.*\)/) ? await executeContent(answerText) : answerText
-        if(executeResult){
-            answerText=executeResult
-        }
-    }catch {}
-    if(typeof answerText==='string'){
-        session.reply(answerText)
+        session.bot.sendMsg(session.getChannelId(),await session.executeTemplate(answerText) as string)
+    }catch{
+        await session.execute(answerText)
     }
     return true
 }
