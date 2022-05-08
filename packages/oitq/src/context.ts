@@ -32,7 +32,6 @@ export interface AppEventMap extends BotEventMap,ServiceEventMap{
     'dispose'():void
     'command/before-execute'(argv: Argv): Awaitable<void | string>
     'before-parse'(content: string, session: NSession<'message'>): void
-    'before-attach'(session: NSession<'message'>): void
     'attach'(session: NSession<'message'>): void
     'bot-added'(bot: Bot): void
     'bot-removed'(bot: Bot): void

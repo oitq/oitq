@@ -118,7 +118,7 @@ export class Session {
         return answer as Prompt.Answers<Prompt.ValueType<T>>
     }
 
-    private async prefixInters(argv: Argv) {
+    private prefixInters(argv: Argv) {
         if (!argv.tokens) return
         for (const token of argv.tokens) {
             let {content} = token
@@ -145,17 +145,20 @@ export class Session {
         const result=await this.execute(template, false) as Sendable
         return result?result:template
     }
-    async execute(content: string = this.cqCode, autoReply = true):Promise<Sendable|MessageRet|boolean> {
+    execute(content: string = this.cqCode, autoReply = true):Awaitable<boolean|Sendable|void> {
         for (const [, command] of this.app._commands) {
             const argv = Argv.parse(content)
             argv.bot = this.bot
             argv.session = this as any
-            await this.prefixInters(argv)
+            this.prefixInters(argv)
             if(!command.match(this as any))continue
             let result
             try{
-                result = await command.execute(argv)
-                if (autoReply && typeof result === 'string') return await this.bot.sendMsg(this.getChannelId(),result)
+                result = command.execute(argv)
+                if (autoReply && typeof result === 'string'){
+                    this.bot.sendMsg(this.getChannelId(),result)
+                    return
+                }
             }catch{}
             if (result) return result
         }

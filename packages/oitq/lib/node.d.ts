@@ -361,10 +361,6 @@ declare module 'oitq'{
 
         'command/before-execute'(argv: Argv): Awaitable<void | string>;
 
-        'before-parse'(content: string, session: NSession<'message'>): void;
-
-        'before-attach'(session: NSession<'message'>): void;
-
         'attach'(session: NSession<'message'>): void;
 
         'bot-added'(bot: Bot): void;
