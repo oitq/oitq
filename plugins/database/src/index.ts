@@ -16,10 +16,10 @@ declare module 'oitq'{
 export const name='database'
 export function install(plugin:Plugin,config:Options){
     plugin.app.database=new Database(plugin,config)
-    plugin.on('ready',async ()=>{
+    plugin.app.on('ready',async ()=>{
         plugin.app.database.sequelize.addModels(Object.values(plugin.app.database.models))
         await plugin.app.database.sequelize.sync({alter:true})
-        plugin.emit('database.ready')
+        plugin.app.emit('database.ready')
     })
 }
 class Database{

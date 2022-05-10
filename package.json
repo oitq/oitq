@@ -9,7 +9,7 @@
     "docs:build": "vuepress build docs",
     "build": "npm run build -workspaces",
     "build:base": "npm run build -w @oitq/utis -w @oitq/loader -w oitq -w @oitq/cli",
-    "dev": "npm run build -w oitq && npm run dev -w test",
+    "dev": "npm run build:base && npm run dev -w test",
     "start": "npm start -w test",
     "pub": "npm run pub -workspaces",
     "deploy-gh": "bash ./deploy.sh",

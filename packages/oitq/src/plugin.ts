@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from 'fs'
-import {App, Bot, Dispose, NSession} from "./index";
+import {App, Bot, Dispose, Middleware, NSession} from "./index";
 import {Awaitable, createIfNotExist, readConfig, remove, writeConfig} from "@oitq/utils";
 import {Context} from "./context";
 import {Command} from "./command";
@@ -43,9 +43,11 @@ export class Plugin extends Context {
     public children:Plugin[]=[]
     private _commands:Map<string,Command>=new Map<string, Command>()
     public disposes:Dispose[]=[]
+    middlewares: Middleware[] = []
     public commandList:Command[]=[]
     readonly binds = new Set<Bot>()
     private _using: readonly (keyof App.Services)[] = []
+    disableStatus:boolean=false
     config
     public pluginManager:PluginManager
     constructor(public readonly name: string, hooks: string | PluginManager.Object) {
@@ -62,7 +64,19 @@ export class Plugin extends Context {
             this.dispatch(session.event_name,session)
         })
     }
-
+    //message处理中间件，受拦截的message不会上报到'bot.message'
+    middleware(middleware: Middleware, prepend?: boolean) {
+        const method = prepend ? 'unshift' : 'push'
+        this.middlewares[method](middleware)
+        return () => {
+            const index = this.app.middlewares.indexOf(middleware)
+            if (index >= 0) {
+                this.app.middlewares.splice(index, 1)
+                return true
+            }
+            return false
+        }
+    }
     async executeCommand(session:NSession<'message'>,content=session.cqCode||''):Promise<boolean|Sendable|void> {
         const argv = Action.parse(content)
         argv.bot = session.bot
@@ -86,6 +100,7 @@ export class Plugin extends Context {
         })
     }
     private async dispatch<K extends keyof EventMap>(name:K,session:NSession<K>){
+        if(this.disableStatus)return
         if(name&&name.startsWith('message')){
             const session1=session as NSession<'message'>
             let result=await this.executeCommand(session1)
@@ -225,7 +240,16 @@ export class Plugin extends Context {
             await res
         this.logger.info(`已成功安装`)
     }
-    async enable(bot: Bot) {
+    async enable(bot: Bot=null) {
+        if(!bot && this.disableStatus){
+            this.disableStatus=false
+            this.logger.info(`已启用`)
+            return
+        }
+        if(this.disableStatus){
+            this.logger.info(`重复启用`)
+            return
+        }
         if (this.binds.has(bot)) {
             throw new PluginError(`这个机器人实例已经启用了插件(${this.name})`)
         }
@@ -234,7 +258,16 @@ export class Plugin extends Context {
         this.logger.info(`成功对机器人${bot.uin}启用`)
     }
 
-    async disable(bot: Bot) {
+    async disable(bot: Bot=null) {
+        if(!bot && !this.disableStatus){
+            this.disableStatus=true
+            this.logger.info(`已禁用`)
+            return
+        }
+        if(this.disableStatus){
+            this.logger.info(`重复禁用`)
+            return
+        }
         if (!this.binds.has(bot)) {
             throw new PluginError(`这个机器人实例尚未启用插件(${this.name})`)
         }
@@ -243,9 +276,10 @@ export class Plugin extends Context {
         this.logger.info(`成功对机器人${bot.uin}禁用`)
     }
 
-    async destroy() {
+    async destroy(plugin:Plugin=this) {
         this.logger.info(`正在卸载...`)
-        this.dispose()
+
+        plugin.dispose()
     }
     dispose(){
         while (this.disposes.length){

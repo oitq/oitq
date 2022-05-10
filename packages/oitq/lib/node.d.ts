@@ -47,7 +47,6 @@ declare module 'oitq'{
     }
     export class App extends Plugin {
         app: this;
-        middlewares: Middleware[];
         config: App.Config;
         constructor(config?: App.Config | string);
         broadcast(msgChannelIds: MsgChannelId | MsgChannelId[], msg: Sendable): Promise<void>;
@@ -275,7 +274,6 @@ declare module 'oitq'{
     export class Context extends EventFeeder {
         app: App;
         constructor();
-        middleware(middleware: Middleware, prepend?: boolean): () => boolean;
         getLogger(name: string): import("log4js").Logger;
     }
     // event.d.ts
@@ -310,7 +308,7 @@ declare module 'oitq'{
     export interface PluginDesc {
         name: string;
         type: PluginType;
-        fullName?: string;
+        shortName?: string;
         desc?: string;
         author?: string;
         version?: string;
@@ -326,6 +324,8 @@ declare module 'oitq'{
         readonly fullpath: string;
         readonly path: string;
         protected hooks: PluginManager.Object;
+        middlewares: Middleware[];
+        disableStatus:boolean
         parent: Plugin;
         children: Plugin[];
         private _commands;
@@ -337,6 +337,7 @@ declare module 'oitq'{
         pluginManager: PluginManager;
         constructor(name: string, hooks: string | PluginManager.Object);
         executeCommand(session: NSession<'message'>, content?: string): Promise<boolean | Sendable | void>;
+        middleware(middleware: Middleware, prepend?: boolean): () => boolean;
         findCommand(argv: Pick<Action, 'name' | 'source'>, commandList?: Command[]): Command<any[], {}>;
         private dispatch;
         get commands(): Command[];
@@ -347,8 +348,8 @@ declare module 'oitq'{
         command<D extends string>(def: D, triggerEvent: keyof EventMap): Command<Action.ArgumentType<D>>;
         protected _editBotPluginCache(bot: Bot, method: "add" | "delete"): Promise<boolean>;
         install(config?: any): Promise<void>;
-        enable(bot: Bot): Promise<void>;
-        disable(bot: Bot): Promise<void>;
+        enable(bot?: Bot): Promise<void>;
+        disable(bot?: Bot): Promise<void>;
         destroy(): Promise<void>;
         dispose(): void;
         restart(): Promise<void>;

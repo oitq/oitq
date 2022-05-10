@@ -70,8 +70,8 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
             throw new Error(`command "${this.name}" 的option 缩写名重复使用 "${shortName}"`)
         }
         this.options[shortName] ||= {
-            name:shortName,
-            fullName:name,
+            name,
+            shortName,
             description: desc,
             ...config,
             declaration:argDeclaration
@@ -86,24 +86,25 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
         while (!action.error && action.argv.length) {
             const content=action.argv.shift()
             const argDecl=this.args[args.length]
-            if(content[0]!=='-' && Action.resolveConfig(argDecl?.type).greedy){
-                args.push(Action.parseValue([content,...action.argv].join(' '),'argument',action,argDecl))
+            if (content[0] !== '-' && Action.resolveConfig(argDecl?.type).greedy) {
+                args.push(Action.parseValue([content, ...action.argv].join(' '), 'argument', action, argDecl));
                 break;
             }
-            if(argDecl){
-                args.push(Action.parseValue(content,'argument',action,argDecl))
-                continue
-            }else if(content[0]!=='-')continue
-            const optionDecl=[...Object.values(this.options)].find(decl=>decl.name===content)
-            if(optionDecl && !options[optionDecl.fullName]){
+            if (content[0] !== '-' && argDecl) {
+                args.push(Action.parseValue(content, 'argument', action, argDecl));
+                continue;
+            }
+            if(!argDecl)continue
+            const optionDecl=[...Object.values(this.options)].find(decl=>decl.shortName===content)
+            if(optionDecl && !options[optionDecl.name]){
                 if(optionDecl.declaration.required && !optionDecl.initial && (!action.argv[0] || options[action.args[0]])){
-                    action.error=`option ${optionDecl.fullName} is required`
+                    action.error=`option ${optionDecl.name} is required`
                     continue
                 }else{
                     if(!options[action.argv[0]]){
-                        options[optionDecl.fullName]=Action.parseValue(action.argv.shift(),'option',action,optionDecl.declaration)
+                        options[optionDecl.name]=Action.parseValue(action.argv.shift(),'option',action,optionDecl.declaration)
                     }else if(optionDecl.initial){
-                        options[optionDecl.fullName]=optionDecl.initial
+                        options[optionDecl.name]=optionDecl.initial
                     }
                     continue
                 }
@@ -111,9 +112,9 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
         }
 
         // assign default values
-        for (const [,{fullName,initial }] of Object.entries(this.options)) {
-            if (initial !== undefined && !(fullName in options)) {
-                options[fullName] = initial
+        for (const [,{name,initial }] of Object.entries(this.options)) {
+            if (initial !== undefined && !(name in options)) {
+                options[name] = initial
             }
         }
         action.options=options as O
@@ -138,7 +139,9 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
                         }
                         if(shortcut.option){
                             Object.keys(shortcut.option).forEach(key=>{
-                                options[key]=shortcut.option[key].replace(`$${index}`,str)
+                                if(shortcut.option[key].includes(`$${index}`)){
+                                    options[key]=shortcut.option[key].replace(`$${index}`,str)
+                                }
                             })
                         }
                     })
@@ -167,7 +170,7 @@ export namespace Command{
         value?: any
         initial?: any
         name?:string
-        fullName?:string
+        shortName?:string
         type?: T
         /** hide the option by default */
         hidden?: boolean

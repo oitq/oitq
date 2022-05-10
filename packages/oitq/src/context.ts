@@ -44,19 +44,6 @@ export class Context extends EventFeeder{
         super();
     }
 
-// message处理中间件，受拦截的message不会上报到'bot.message'
-    middleware(middleware: Middleware, prepend?: boolean) {
-        const method = prepend ? 'unshift' : 'push'
-        this.app.middlewares[method](middleware)
-        return () => {
-            const index = this.app.middlewares.indexOf(middleware)
-            if (index >= 0) {
-                this.app.middlewares.splice(index, 1)
-                return true
-            }
-            return false
-        }
-    }
     getLogger(name: string) {
         const logger=getLogger(name)
         logger.level=this.app.config.logLevel

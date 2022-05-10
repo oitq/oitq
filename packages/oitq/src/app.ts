@@ -31,7 +31,6 @@ export interface App extends App.Services{
 }
 export class App extends Plugin{
     public app=this
-    middlewares: Middleware[] = []
     public config:App.Config={logLevel:process.env.OITQ_LOG_LEVEL as LogLevel||'info'}
     constructor(config:App.Config|string=path.join(dir,'oitq.json')) {
         super('app', {install(){}});

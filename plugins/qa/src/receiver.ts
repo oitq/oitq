@@ -1,5 +1,5 @@
 import {Dialogue} from './teach'
-import {NSession,Context,s} from "oitq";
+import {NSession,Plugin} from "oitq";
 import {QA} from "./models";
 
 function hasEnv(envs, type, target) {
@@ -9,7 +9,7 @@ function hasEnv(envs, type, target) {
 }
 
 
-export async function triggerTeach(ctx: Context, session: NSession<'message'>) {
+export async function triggerTeach(ctx: Plugin, session: NSession<'message'>) {
     const teaches = await QA.findAll()
     const question=session.cqCode
     const dialogues = teaches.map(teach => teach.toJSON())
@@ -69,6 +69,6 @@ export async function triggerTeach(ctx: Context, session: NSession<'message'>) {
     return true
 }
 
-export default function install(ctx: Context) {
-    ctx.middleware((session: NSession<'message'>) =>triggerTeach(ctx, session))
+export default function install(plugin: Plugin) {
+    plugin.middleware((session: NSession<'message'>) =>triggerTeach(plugin, session))
 }

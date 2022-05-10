@@ -46,14 +46,6 @@ export class Loader extends ConfigLoader<App.Config> {
         }
     }
 
-    resolvePlugin(name: string) {
-        try {
-            this.cache[name] ||= this.scope.resolve(name)
-        } catch (err) {
-            return
-        }
-        return ns.unwrapExports(require(this.cache[name]))
-    }
 
     destroyPlugin(name: string) {
         return this.app.pluginManager.destroy(name)

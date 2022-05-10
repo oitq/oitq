@@ -82,7 +82,7 @@ class Watcher {
         this.root = resolve(loader.dirname, root)
         this.watcher = watch(this.root, {
             ...this.config,
-            ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', ...makeArray(ignored)],
+            ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**','**/.idea/**', ...makeArray(ignored)],
         })
 
         // files independent from any plugins will trigger a full reload
@@ -105,7 +105,7 @@ class Watcher {
                 }
             } else {
                 if (this.externals.has(path)) {
-                    this.app.loader.fullReload()
+                    triggerLocalReload()
                 } else if (require.cache[path]) {
                     this.stashed.add(path)
                     triggerLocalReload()
