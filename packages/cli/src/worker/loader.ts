@@ -1,25 +1,24 @@
-import { App, Context, Dict, interpolate, valueMap,AppConfig } from 'oitq'
+import {App, Dict, interpolate, valueMap } from 'oitq'
 import ConfigLoader from '@oitq/loader'
 import ns from 'ns-require'
 
 declare module 'oitq' {
-    namespace Context {
+    namespace App {
         interface Services {
             loader: Loader
         }
     }
 }
 
-Context.service('loader')
 
 
 
 const context = {
     env: process.env,
 }
-export class Loader extends ConfigLoader<AppConfig> {
+export class Loader extends ConfigLoader<App.Config> {
     app: App
-    config:AppConfig
+    config:App.Config
     cache: Dict<string> = {}
     envfile: string
     scope: ns.Scope
@@ -56,8 +55,8 @@ export class Loader extends ConfigLoader<AppConfig> {
         return ns.unwrapExports(require(this.cache[name]))
     }
 
-    unloadPlugin(name: string) {
-        return this.app.pluginManager.uninstall(name)
+    destroyPlugin(name: string) {
+        return this.app.pluginManager.destroy(name)
     }
 
     reloadPlugin(name: string) {

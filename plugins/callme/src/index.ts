@@ -1,4 +1,4 @@
-import {Context,template} from "oitq";
+import {Plugin,template} from "oitq";
 import '@oitq/plugin-database'
 
 export const name = 'callme'
@@ -14,8 +14,9 @@ template.set('callme', {
     'failed': '修改称呼失败。',
 })
 
-export function install(ctx: Context) {
-    ctx.command('callme [name:text]', '修改自己的称呼')
+export function install(ctx: Plugin) {
+    ctx.command('callme [name:text]','message')
+        .desc('修改自己的称呼')
         .shortcut('叫我', { fuzzy: true})
         .shortcut(/^叫我(\S+)$/,{args:['$1']})
         .action(async ({session}, name) => {
@@ -35,7 +36,7 @@ export function install(ctx: Context) {
             }
             try {
                 user.name = name
-                await ctx.database.models.User.update({
+                await ctx.app.database.models.User.update({
                         name,
                     },
                     {
@@ -45,7 +46,7 @@ export function install(ctx: Context) {
                     })
                 return template('callme.updated', name)
             } catch (error) {
-                ctx.logger('common').warn(error)
+                ctx.getLogger('common').warn(error)
                 return template('callme.failed')
             }
         })

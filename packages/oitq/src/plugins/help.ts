@@ -1,6 +1,7 @@
-import {Context, } from "../context";
+import {App} from "../app";
 import {NSession} from '../bot'
-import {Argv, Command} from "@lc-cn/command";
+import {Command} from '../command'
+
 import {template} from "@oitq/utils";
 
 interface HelpOptions {
@@ -13,26 +14,17 @@ export function enableHelp<A extends any[], O extends {}>(cmd: Command<A, O>) {
     })
 }
 
-interface HelpOptions {
-    showHidden?: boolean
-    authority?: boolean
-}
 
-export interface HelpConfig extends Command.Config {
-    shortcut?: boolean
-    options?: boolean
-}
 
 
 export function getCommandNames(session: NSession<'message'>) {
-    return session.app._commandList
-        .filter(cmd => cmd.match(session) && !cmd.config.hidden)
-        .flatMap(cmd => cmd._aliases)
+    return [...session.app.pluginManager.plugins.values()].map(plugin=>plugin.commandList).flat()
+        .filter(cmd => cmd.match(session))
+        .flatMap(cmd => cmd.aliasNames)
 }
 
 function* getCommands(session: NSession<'message'>, commands: Command[], showHidden = false): Generator<Command> {
     for (const command of commands) {
-        if (!showHidden && command.config.hidden) continue
         if (command.match(session)) {
             yield command
         } else {
@@ -48,60 +40,48 @@ function formatCommands(path: string, session: NSession<'message'>, children: Co
     if (!commands.length) return []
 
     let hasSubcommand = false
-    const output = commands.map(({name, config, children, description}) => {
+    const output = commands.map(({name, descriptions}) => {
         let output = '    ' + name
-        if (options.authority) {
-            output += ` (${config.authority}${children.length ? (hasSubcommand = true, '*') : ''})`
-        }
-        output += '  ' + description
+        output += '  ' + descriptions.join('\n')
         return output
     })
     const hints: string[] = []
-    if (options.authority) hints.push(template('internal.hint-authority'))
     if (hasSubcommand) hints.push(template('internal.hint-subcommand'))
     output.unshift(template(path, [template.brace(hints)]))
     return output
 }
 
-function getOptionVisibility(option: Argv.OptionDeclaration, session: NSession<'message'>) {
-    return !session.resolveValue(option.hidden)
-}
 
-function getOptions(command: Command, session: NSession<'message'>, config: HelpOptions) {
-    if (command.config.hideOptions && !config.showHidden) return []
+function getOptions(command: Command,config:HelpOptions) {
     const options = config.showHidden
-        ? Object.values(command._options)
-        : Object.values(command._options).filter(option => getOptionVisibility(option, session))
+        ? Object.values(command.options)
+        : Object.values(command.options).filter(option => {
+            console.log(option)
+            return option.hidden!==true
+        })
     if (!options.length) return []
 
-    const output = config.authority && options.some(o => o.authority)
-        ? [template('internal.available-options-with-authority')]
-        : [template('internal.available-options')]
+    const output = [template('internal.available-options')]
 
     options.forEach((option) => {
-        const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
-        let line = `    ${authority}${option.description}`
-        output.push(line)
+        output.push(`${option.name},${option.description}`)
     })
 
     return output
 }
 
 async function showHelp(command: Command, session: NSession<'message'>, config: HelpOptions) {
-    const output = [command.name + command.declaration]
+    const output = [command.name +'     '+ command.descriptions.join()]
 
-    if (command.description) output.push(command.description)
-
-
-    if (command._aliases.length > 1) {
-        output.push(template('internal.command-aliases', Array.from(command._aliases.slice(1)).join('，')))
+    if (command.aliasNames.length) {
+        output.push(template('internal.command-aliases', command.aliasNames.join('，')))
     }
 
 
-    output.push(...getOptions(command, session, config))
+    output.push(...getOptions(command,config))
 
-    if (command._examples.length) {
-        output.push(template('internal.command-examples'), ...command._examples.map(example => '    ' + example))
+    if (command.examples.length) {
+        output.push(template('internal.command-examples'), ...command.examples.map(example => '    ' + example))
     }
 
     output.push(...formatCommands('internal.subcommand-prolog', session, command.children, config))
@@ -154,41 +134,30 @@ template.set('internal', {
     'command-min-interval': '距离下次调用还需：{0}/{1} 秒。',
 })
 
-export function install(ctx: Context) {
-    ctx.on('command-added', cmd => cmd.use(enableHelp))
-    // show help when use `-h, --help` or when there is no action
-    // @ts-ignore
-    ctx.before('command', async ({command, session, options}) => {
+export function install(app: App) {
+    app.on('command.add', (cmd:Command) => cmd.use(enableHelp))
+    app.before('command', async ({command, session, options}) => {
         if (!command) return
-        if (command['_actions'].length && !options['help']) return
+        if (command['actions'].length && !options['help']) return
         return await session.execute(`help ${command.name}`)
     })
-    const app = ctx.app
 
-    function findCommand(target: string) {
-        const command = app._commandList.find(cmd => cmd._aliases.includes(target))
-        if (command) return command
-        const shortcut = app._shortcuts.find(({name}) => {
-            return typeof name === 'string' ? name === target : name.test(target)
-        })
-        if (shortcut) return shortcut.command
-    }
-
-    ctx.command('help [command]', '显示帮助信息')
-        .shortcut('帮助', {fuzzy: true})
+    app.command('help [command]', 'message')
+        .desc('显示帮助信息')
+        .shortcut('帮助')
         .option('authority', '-a  显示权限设置')
         .option('showHidden', '-H  查看隐藏的选项和指令')
         .action(async ({session, options}, target) => {
             if (!target) {
-                const commands = app._commandList.filter(cmd => cmd.parent === null)
+                const commands = app.commands.filter(cmd => cmd.parent === null)
                 const output = formatCommands('internal.global-help-prolog', session, commands, options)
                 const epilog = template('internal.global-help-epilog')
                 if (epilog) output.push(epilog)
                 return output.filter(Boolean).join('\n')
             }
 
-            const command = findCommand(target)
-            if (!command?.context.match(session)) {
+            const command = app.findCommand({name:target,source:session.cqCode,},app.commands)
+            if (!command?.match(session)) {
                 return
             }
 

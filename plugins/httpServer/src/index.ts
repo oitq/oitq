@@ -1,11 +1,11 @@
-import {Context} from "oitq";
+import {Plugin,App} from "oitq";
 import Koa from 'koa'
 import {Router} from "./router";
 import {createServer, Server} from "http";
 import KoaBodyParser from "koa-bodyparser";
 import {error, success} from "@oitq/utils";
 declare module 'oitq'{
-    export namespace Context{
+    export namespace App{
         export interface Services{
             koa:Koa
             router:Router
@@ -13,9 +13,6 @@ declare module 'oitq'{
         }
     }
 }
-Context.service('koa')
-Context.service('router')
-Context.service('httpServer')
 class HttpServer extends Server{
     public port:number
 }
@@ -32,7 +29,7 @@ export interface HttpServerConfig extends KoaOptions{
     port:number
 }
 export const name='httpServer'
-export function install(context:Context,config:HttpServerConfig){
+export function install(context:App,config:HttpServerConfig){
     const koa=new Koa(config)
     const router=new Router({prefix:config.path})
     const httpServer=createServer(koa.callback()) as HttpServer
@@ -92,6 +89,6 @@ export function install(context:Context,config:HttpServerConfig){
         ctx.body= success('移除成功')
     })
     httpServer.listen(config.port,()=>{
-        context.logger('app').mark('app is listen at http://127.0.0.1:'+config.port)
+        context.getLogger('app').mark('app is listen at http://127.0.0.1:'+config.port)
     })
 }

@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-sandbox",
   "main": "lib/index.js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "sandbox plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",

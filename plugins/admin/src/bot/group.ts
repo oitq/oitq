@@ -1,8 +1,8 @@
-import {Context, NSession, Argv} from "oitq";
+import {Plugin, Action} from "oitq";
 import {AtElem} from 'oicq'
 export const name = 'admin.bot.group'
 
-function checkAdmin({session}: Argv) {
+function checkAdmin({session}: Action) {
     let result
 
     if ((!['admin', 'owner'].includes(session.sender['role']) && !session.bot.admins.includes(session.sender.user_id))
@@ -22,9 +22,11 @@ function checkAdmin({session}: Argv) {
     }
 }
 
-export function install(ctx: Context) {
-    ctx.command('admin/bot/group','群成员管理')
-    ctx.command('admin/bot/group/mute [...userIds]', '禁言群成员')
+export function install(ctx: Plugin) {
+    ctx.command('admin/bot/group','message.group')
+        .desc('群成员管理')
+    ctx.command('admin/bot/group/mute [...userIds]', 'message.group')
+        .desc('禁言群成员')
         .option('time', '-t <time:number> 禁言时长（单位：秒；默认：600）')
         .check(checkAdmin)
         .action(async ({session, bot, options}, ...user_ids) => {
@@ -49,7 +51,8 @@ export function install(ctx: Context) {
             return `已禁言:${muteUsers.join(',')}。\n禁言时长：${(options.time || 600) / 60}分钟`
         })
 
-    ctx.command('admin/bot/group/kick [...user_id]', '踢出群成员')
+    ctx.command('admin/bot/group/kick [...user_id]', 'message.group')
+        .desc('踢出群成员')
         .option('block', '-b 是否拉入黑名单(默认false)')
         .check(checkAdmin)
         .action(async ({session, bot, options}, ...user_ids) => {
@@ -72,7 +75,8 @@ export function install(ctx: Context) {
             }
             return `已踢出成员:${kickUsers.join(',')}。`
         })
-    ctx.command('admin/bot/group/invite [...user_id:number]', '邀请好友加入群')
+    ctx.command('admin/bot/group/invite [...user_id:number]', 'message.group')
+        .desc('邀请好友加入群')
         .action(async ({session, bot, options}, ...user_ids) => {
             if (!user_ids.length) {
                 const {ids} = await session.prompt({
@@ -90,7 +94,8 @@ export function install(ctx: Context) {
             }
             return `已邀请:${user_ids.join(',')}。`
         })
-    ctx.command('admin/bot/group/setAdmin [...user_id]','设置/取消群管理员')
+    ctx.command('admin/bot/group/setAdmin [...user_id]','message.group')
+        .desc('设置/取消群管理员')
         .option('cancel','-c 是否为取消(为true时即取消管理员)')
         .check(({session})=>{
             if (session.bot.master!==session.sender.user_id ||!session.bot.pickGroup(session.group_id).is_owner) {
@@ -117,7 +122,8 @@ export function install(ctx: Context) {
             }
             return `已将${admins.join(',')}${!options.cancel?'设置为':'取消'}管理员。`
         })
-    ctx.command('admin/bot/group/setTitle [title:string] [user_id]','设置群成员头衔')
+    ctx.command('admin/bot/group/setTitle [title:string] [user_id]','message.group')
+        .desc('设置群成员头衔')
         .check(({session})=>{
             if (session.bot.master!==session.sender.user_id ||!session.bot.pickGroup(session.group_id).is_owner) {
                 return '权限不足：'+(session.bot.master!==session.sender.user_id?'主人才能调用':'我不是群主')
@@ -150,7 +156,8 @@ export function install(ctx: Context) {
             await bot.pickGroup(session.group_id).setTitle(setUser,title)
             return '执行成功'
         })
-    ctx.command('admin/bot/group/setCard [card:string] [user_id]','设置群成员名片')
+    ctx.command('admin/bot/group/setCard [card:string] [user_id]','message.group')
+        .desc('设置群成员名片')
         .check(checkAdmin)
         .action(async ({session,bot},title,user_id)=>{
             let setUser:number

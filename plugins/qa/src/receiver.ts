@@ -1,7 +1,6 @@
 import {Dialogue} from './teach'
 import {NSession,Context,s} from "oitq";
 import {QA} from "./models";
-import {MessageRet, Sendable} from "oicq";
 
 function hasEnv(envs, type, target) {
     return envs.length === 0 || envs.some(item => {
@@ -65,7 +64,7 @@ export async function triggerTeach(ctx: Context, session: NSession<'message'>) {
     try{
         session.bot.sendMsg(session.getChannelId(),await session.executeTemplate(answerText) as string)
     }catch{
-        await session.execute(answerText)
+        await session.app.executeCommand(session,answerText)
     }
     return true
 }

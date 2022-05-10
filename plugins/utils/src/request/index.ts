@@ -1,4 +1,4 @@
-import {Context} from "oitq";
+import {Plugin,App} from "oitq";
 import {Requester} from "./requester";
 import {toCqcode} from "@oitq/utils";
 import {segment} from "oicq";
@@ -8,17 +8,17 @@ export interface RequestConfig extends Requester.Config{
 }
 
 declare module 'oitq'{
-    namespace Context{
+    namespace App{
         interface Services{
             axios:Requester
         }
     }
 }
-Context.service('axios')
 export const name='request'
-export function install(ctx:Context,config:RequestConfig){
-    ctx.axios=Requester.create(config)
-    ctx.command('utils/axios.get <url>','发起get请求')
+export function install(ctx:Plugin,config:RequestConfig){
+    ctx.app.axios=Requester.create(config)
+    ctx.command('utils/axios.get <url>','message')
+        .desc('发起get请求')
         .option('config','-c 配置请求config')
         .action(async ({session,options},url)=>{
             let config=undefined
@@ -32,18 +32,19 @@ export function install(ctx:Context,config:RequestConfig){
                     config=JSON.parse(c)
                 }catch {}
             }
-            const res=await ctx.axios.get(url,config)
+            const res=await ctx.app.axios.get(url,config)
             try{
                 return JSON.stringify(res,null,2)
             }catch {
                 return typeof res==='string'?res:undefined
             }
         })
-    ctx.command('utils/axios.load <url>','加载资源')
-        .option('type','-t [type] 资源类型，可选值：image,music,video，默认：image',{fallback:'image'})
+    ctx.command('utils/axios.load <url>','message')
+        .desc('加载资源')
+        .option('type','-t [type] 资源类型，可选值：image,music,video，默认：image',{initial:'image'})
         .action(async ({session,options},url)=>{
             try{
-                const res=await ctx.axios.get(encodeURI(url),{
+                const res=await ctx.app.axios.get(encodeURI(url),{
                     responseType: 'arraybuffer'
                 })
                 switch (options.type){
@@ -62,7 +63,8 @@ export function install(ctx:Context,config:RequestConfig){
                 return e.message
             }
         })
-    ctx.command('utils/axios.post <url>','发起post请求')
+    ctx.command('utils/axios.post <url>','message')
+        .desc('发起post请求')
         .option('config','-c 配置请求config')
         .option('data','-d post数据')
         .action(async ({session,options},url)=>{
@@ -88,7 +90,7 @@ export function install(ctx:Context,config:RequestConfig){
                     config=JSON.parse(c)
                 }catch {}
             }
-            const res=await ctx.axios.post(url,data,config)
+            const res=await ctx.app.axios.post(url,data,config)
             try{
                 return JSON.stringify(res,null,2)
             }catch {

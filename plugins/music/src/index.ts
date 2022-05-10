@@ -1,4 +1,4 @@
-import {Context} from "oitq";
+import {Plugin} from "oitq";
 
 import lodash from "lodash";
 import querystring from "querystring";
@@ -18,7 +18,7 @@ const m_ERR_MSG = Object.freeze({
     [m_ERR_CODE.ERR_API]: "歌曲查询出错",
 });
 
-async function musicQQ(keyword,ctx:Context) {
+async function musicQQ(keyword,ctx:Plugin) {
     const url = "https://c.y.qq.com/soso/fcgi-bin/client_search_cp";
     const query = {w: keyword};
     const headers = {
@@ -27,7 +27,7 @@ async function musicQQ(keyword,ctx:Context) {
     };
     let jbody;
     try {
-        jbody = await ctx.axios.get(`${url}?${new URLSearchParams(query)}`, {headers});
+        jbody = await ctx.app.axios.get(`${url}?${new URLSearchParams(query)}`, {headers});
     } catch (e) {
         return m_ERR_CODE.ERR_API;
     }
@@ -51,7 +51,7 @@ async function musicQQ(keyword,ctx:Context) {
     return m_ERR_CODE.ERR_404;
 }
 
-async function music163(keyword,ctx:Context) {
+async function music163(keyword,ctx:Plugin) {
     const url = "https://music.163.com/api/search/get/";
     const form = {
         s: keyword,
@@ -69,7 +69,7 @@ async function music163(keyword,ctx:Context) {
     };
     let jbody;
     try {
-        jbody = await ctx.axios.post(url,body, {headers});
+        jbody = await ctx.app.axios.post(url,body, {headers});
     } catch (e) {
         return m_ERR_CODE.ERR_API;
     }
@@ -90,13 +90,13 @@ type MusicInfo = {
     id: string
 }
 
-export function install(ctx: Context) {
+export function install(ctx: Plugin) {
     ctx
-        .group()
-        .command('music [keyword:string]', '点歌')
+        .command('music [keyword:string]', 'message')
+        .desc('点歌')
         .shortcut('点歌', {fuzzy: true})
         .shortcut(/^来一首(\S+)$/, {args:['$1']})
-        .option('platform', '-p <platform:string> 音乐平台', {fallback: '163'})
+        .option('platform', '-p <platform:string> 音乐平台', {initial: '163'})
         .action(async ({session, options}, keyword) => {
             if(!keyword){
                 const input=await session.prompt({
@@ -123,6 +123,5 @@ export function install(ctx: Context) {
                 return m_ERR_MSG[musicInfo]
             }
             await session.bot.pickGroup(session.group_id).shareMusic(musicInfo.type,musicInfo.id)
-            return true
         })
 }

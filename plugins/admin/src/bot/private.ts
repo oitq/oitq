@@ -1,7 +1,7 @@
-import {Context,NSession} from "oitq";
+import {Plugin,NSession} from "oitq";
 export const name='admin.bot.private'
-function applyAdminHandler(ctx:Context,session:NSession<'request'>){
-    const dispose=ctx.private(...session.bot.admins).middleware(async (sess)=>{
+function applyAdminHandler(ctx:Plugin,session:NSession<'request'>){
+    const dispose=ctx.middleware(async (sess)=>{
         if(['同意','拒绝','不同意'].includes(sess.cqCode)){
             await session.approve(['同意'].includes(sess.cqCode))
             await sess.reply(`已完成你的操作：【${sess.cqCode}】`)
@@ -11,7 +11,7 @@ function applyAdminHandler(ctx:Context,session:NSession<'request'>){
         }
     })
 }
-export function install(ctx:Context){
+export function install(ctx:Plugin){
 
     ctx.on('bot.request.friend.add',async (session)=>{
         if(session.bot.admins.includes(session.user_id)) return session.approve(true)

@@ -45,6 +45,7 @@ Object.defineProperty(this, "data", {
     value: {}
 })
 
+// @ts-ignore
 const error403 = this.error403 = new Error("403 forbidden")
 
 //群数据库

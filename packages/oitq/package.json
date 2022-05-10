@@ -7,7 +7,8 @@
   "dependencies": {
     "@lc-cn/command": "^0.2.1",
     "@oitq/utils": "^0.1.3",
-    "oicq": "^2.2.1"
+    "oicq": "^2.2.1",
+    "oicq2-cq-enable": "^1.0.2"
   },
   "scripts": {
     "compile": "tsc --project tsconfig.json",

@@ -1,181 +1,221 @@
-import {NSession,Bot,Context} from "./index";
-import {remove, Define, Awaitable} from "@oitq/utils";
+import {Define, Awaitable} from "@oitq/utils";
 import {Plugin} from "./plugin";
 import {EventMap, Sendable} from "oicq";
-import {exec} from "child_process";
-import removeDeclarationArgs = Command.removeDeclarationArgs;
-import findDeclarationArgs = Command.findDeclarationArgs;
+import {Action} from "./argv";
+import {NSession} from "./bot";
 
-export * from '@lc-cn/command'
-declare module '@lc-cn/command/lib/command'{
-    interface Command{
-        context:Context
-        shortcut(name: string | RegExp, config?: Command.Shortcut):Command
-        match(session?: NSession<'message'>) :boolean
+export class Command<A extends any[] = any[], O extends {} = {}>{
+    public name:string
+    args:Action.Declaration[]
+    parent:Command=null
+    children:Command[]=[]
+    private authority:number=1
+    descriptions:string[]=[]
+    shortcuts:Command.Shortcut[]=[]
+    private checkers:Command.Callback<A,O>[]=[]
+    private actions:Command.Callback<A,O>[]=[]
+    public examples:string[]=[]
+    public aliasNames:string[]=[]
+    public options:Record<string, Command.OptionConfig>={}
+    constructor(declaration:string,public plugin:Plugin,public triggerEvent:keyof EventMap) {
+        this.name=Command.removeDeclarationArgs(declaration)
+        this.args=Command.findDeclarationArgs(declaration)
     }
-}
-declare module '@lc-cn/command/lib/argv'{
-
-    interface Argv{
-        session?:NSession<'message'>
-        bot?:Bot
+    auth(authority:number){
+        this.authority=authority
+    }
+    desc(desc:string){
+        this.descriptions.push(desc)
+        return this
+    }
+    check(checker:Command.Callback<A,O>){
+        this.checkers.push(checker)
+        return this
+    }
+    example(example:string){
+        this.examples.push(example)
+        return this
+    }
+    match(session:NSession<'message'>){
+        return session.event_name===this.triggerEvent
+    }
+    alias(...name:string[]){
+        this.aliasNames.push(...name)
+        return this
+    }
+    use(callback:(cmd:Command)=>any){
+        callback(this)
+    }
+    shortcut(reg:RegExp|string,config:Command.Shortcut={}){
+        this.shortcuts.push({...config,name:reg})
+        return this
     }
 
+    subcommand<D extends string>(def: D,triggerEvent:keyof EventMap): Command<Action.ArgumentType<D>> {
+        const command=this.plugin.command(def,triggerEvent)
+        command.parent=this
+        this.children.push(command)
+        return command
+    }
+    option<K extends string,D extends string>(name:K,declaration:D,config:Command.OptionConfig={}):Command<A, Define<O, K, Command.OptionType<D>>>{
+        const decl = declaration.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
+        const shortName= Command.removeDeclarationArgs(decl);
+        const argDeclaration = Command.findDeclarationArgs(decl)[0]
+        let desc = declaration.slice(decl.length).replace(/(?<=^|\s)(<[^<]+>|\[[^[]+\]).*/, '')
+        desc = desc.trim() || '--' + name
+        if(this.options[name]){
+            throw new Error(`command "${this.name}" 的option名重复定义 "${name}"`)
+        }
+        if(Object.values(this.options).some(opt=>opt.name===shortName)){
+            throw new Error(`command "${this.name}" 的option 缩写名重复使用 "${shortName}"`)
+        }
+        this.options[shortName] ||= {
+            name:shortName,
+            fullName:name,
+            description: desc,
+            ...config,
+            declaration:argDeclaration
+        }
+        return Object.create(this)
+    }
+    action(action:Command.Callback<A,O>){
+        this.actions.push(action)
+        return this
+    }
+    parse(action:Action<A,O>, args = [], options = {}){
+        while (!action.error && action.argv.length) {
+            const content=action.argv.shift()
+            const argDecl=this.args[args.length]
+            if(content[0]!=='-' && Action.resolveConfig(argDecl?.type).greedy){
+                args.push(Action.parseValue([content,...action.argv].join(' '),'argument',action,argDecl))
+                break;
+            }
+            if(argDecl){
+                args.push(Action.parseValue(content,'argument',action,argDecl))
+                continue
+            }else if(content[0]!=='-')continue
+            const optionDecl=[...Object.values(this.options)].find(decl=>decl.name===content)
+            if(optionDecl && !options[optionDecl.fullName]){
+                if(optionDecl.declaration.required && !optionDecl.initial && (!action.argv[0] || options[action.args[0]])){
+                    action.error=`option ${optionDecl.fullName} is required`
+                    continue
+                }else{
+                    if(!options[action.argv[0]]){
+                        options[optionDecl.fullName]=Action.parseValue(action.argv.shift(),'option',action,optionDecl.declaration)
+                    }else if(optionDecl.initial){
+                        options[optionDecl.fullName]=optionDecl.initial
+                    }
+                    continue
+                }
+            }
+        }
+
+        // assign default values
+        for (const [,{fullName,initial }] of Object.entries(this.options)) {
+            if (initial !== undefined && !(fullName in options)) {
+                options[fullName] = initial
+            }
+        }
+        action.options=options as O
+        action.args=args as A
+    }
+    execute(action:Action<A, O>):Awaitable<boolean|Sendable|void>{
+        const args=[],options={}
+        for(const shortcut of this.shortcuts){
+            if(typeof shortcut.name==='string' && action.source){
+                args.push(...(shortcut.args||[]))
+                Object.assign(options,shortcut.option||{})
+            }
+            if(shortcut.name instanceof RegExp){
+                const matched=action.source.match(shortcut.name)
+                if(matched){
+                    matched.forEach((str,index)=>{
+                        if(index===0)return
+                        if(shortcut.args){
+                            shortcut.args.forEach(arg=>{
+                                args.push(arg.replace(`$${index}`,str))
+                            })
+                        }
+                        if(shortcut.option){
+                            Object.keys(shortcut.option).forEach(key=>{
+                                options[key]=shortcut.option[key].replace(`$${index}`,str)
+                            })
+                        }
+                    })
+                }
+            }
+        }
+        this.parse(action,args,options)
+        for(const callback of this.checkers){
+            const result=callback.call(this,action,...action.args)
+            if(result)return result
+        }
+        for(const callback of this.actions){
+            const result=callback.call(this,action,...action.args)
+            if(result)return result
+        }
+    }
 }
 export namespace Command{
-    export interface OptionConfig<T extends Type = Type> {
+    export interface Shortcut {
+        name?: string | RegExp;
+        fuzzy?: boolean;
+        args?: string[];
+        option?: Record<string, any>;
+    }
+    export interface OptionConfig<T extends Action.Type = Action.Type> {
         value?: any
         initial?: any
-        shortName?:string
+        name?:string
+        fullName?:string
         type?: T
         /** hide the option by default */
         hidden?: boolean
         description?:string
-        declaration?:Declaration
+        declaration?:Action.Declaration
     }
-    export type Runtime<A extends any[],O extends {},E extends keyof EventMap>={
-        session:NSession<E>
-        options:O
-        args:A
-    }
-    export type Action< A extends any[] = any[], O extends {} = {},E extends keyof EventMap='message'>
-        = (this:Runtime<A,O,E>, ...args: A) => Awaitable<Sendable|void>
-    export interface Domain {
-        string: string
-        number: number
-        boolean: boolean
-        text: string
-        integer: number
-        date: Date
-    }
-    type DomainType = keyof Domain
-    type ParamType<S extends string, F>
-        = S extends `${any}:${infer T}` ? T extends DomainType ? Domain[T] : F : F
-    type Replace<S extends string, X extends string, Y extends string>
-        = S extends `${infer L}${X}${infer R}` ? `${L}${Y}${Replace<R, X, Y>}` : S
-    type ExtractFirst<S extends string, F>
-        = S extends `${infer L}]${any}` ? ParamType<L, F> : boolean
-    export type OptionType<S extends string> = ExtractFirst<Replace<S, '>', ']'>, any>
-    export type Transform<T> = (source: string) => T
-    export type Type = DomainType | RegExp | string[] | Transform<any>
-    export interface Declaration {
-        name?: string
-        type?: Type
-        variadic?: boolean
-        required?: boolean
-    }
+    export type Callback< A extends any[] = any[], O extends {} = {},>
+        = (action:Action<A,O>, ...args: A) => Sendable|void|Promise<Sendable|void>
 
+
+    export type OptionType<S extends string> = Action.ExtractFirst<Action.Replace<S, '>', ']'>, any>
     export function removeDeclarationArgs(name: string): string {
         return name.replace(/[<[].+/, '').trim();
     }
-    export function findDeclarationArgs(name: string):Declaration[] {
-        const res:Declaration[] = [];
+    export function findDeclarationArgs(declaration: string):Action.Declaration[] {
+        const res:Action.Declaration[] = [];
         const ANGLED_BRACKET_RE_GLOBAL = /<([^>]+)>/g
         const SQUARE_BRACKET_RE_GLOBAL = /\[([^\]]+)\]/g
-
+        const BOOLEAN_BRACKET_RE_GLOBAL=/(-\S)+/g
         const parse = (match: string[]) => {
             let variadic = false;
-            let [value,type='string'] = match[1].split(':');
+            let [value,type=match[1].startsWith('-')?'boolean':'string'] = match[1].split(':');
             if (value.startsWith('...')) {
                 value = value.slice(3)
                 variadic = true
             }
             return {
                 required: match[0].startsWith('<'),
-                name,
+                name:value,
                 type,
                 variadic,
-            } as Declaration
+            } as Action.Declaration
         }
 
         let angledMatch
-        while ((angledMatch = ANGLED_BRACKET_RE_GLOBAL.exec(name))) {
+        while ((angledMatch = ANGLED_BRACKET_RE_GLOBAL.exec(declaration))) {
             res.push(parse(angledMatch))
         }
 
         let squareMatch
-        while ((squareMatch = SQUARE_BRACKET_RE_GLOBAL.exec(name))) {
+        while ((squareMatch = SQUARE_BRACKET_RE_GLOBAL.exec(declaration))) {
             res.push(parse(squareMatch))
         }
-
+        let booleanParamMatch
+        while ((booleanParamMatch=BOOLEAN_BRACKET_RE_GLOBAL.exec(declaration))){
+            res.push(parse(booleanParamMatch))
+        }
         return res;
     }
 
-}
-export class Command<A extends any[] = any[], O extends {} = {},E extends keyof EventMap='message'>{
-    public name:string
-    args:Command.Declaration[]
-    descriptions:string[]=[]
-    private triggerEvent:E
-    shortcuts:RegExp[]=[]
-    private checkers:Command.Action<A,O,E>[]=[]
-    private actions:Command.Action<A,O,E>[]=[]
-    private aliasNames:string[]=[]
-    private _options:Record<string, Command.OptionConfig>
-    constructor(declaration:string,public plugin:Plugin,triggerEvent?:E) {
-        this.name=removeDeclarationArgs(declaration)
-        this.args=findDeclarationArgs(declaration)
-        this.triggerEvent=triggerEvent||'message' as E
-    }
-    desc(desc:string){
-        this.descriptions.push(desc)
-        return this
-    }
-    private checkExist(type:'name'|'sugar',value){
-        return this.plugin.checkExist(type,value)
-    }
-    check(checker:Command.Checker){
-        this.checkers.push(checker)
-    }
-    alias(...name:string[]){
-        this.aliasNames.push(...name)
-    }
-    sugar(reg:RegExp){
-        this.shortcuts.push(reg)
-    }
-    option<K extends string,D extends string>(name:K,declaration:D,config:Command.OptionConfig={}):Command<A, Define<O, K, Command.OptionType<D>>>{
-
-        const decl = declaration.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
-        const shortName= Command.removeDeclarationArgs(decl);
-        const argDeclaration = Command.findDeclarationArgs(decl)[0]
-        let desc = declaration.slice(decl.length).replace(/(?<=^|\s)(<[^<]+>|\[[^[]+\]).*/, '')
-        desc = desc.trim() || '--' + name
-        if(this._options[name]){
-            throw new Error(`command "${this.name}" 的option名重复定义 "${name}"`)
-        }
-        if(Object.values(this._options).some(opt=>opt.shortName===shortName)){
-            throw new Error(`command "${this.name}" 的option 缩写名重复使用 "${shortName}"`)
-        }
-        const option = this._options[name] ||= {
-            shortName,
-            description: desc,
-            ...config,
-            declaration:argDeclaration
-        }
-        return this
-    }
-}
-Command.prototype.shortcut=function (this:Command,name,config:Command.Shortcut={}){
-    config.name = name
-    config.command = this
-    config.authority ||= this.config.authority
-    this.context.app._shortcuts.push(config)
-    this.context.state.disposes.push(()=>remove(this.context.app._shortcuts,config))
-    return this
-}
-Command.prototype.match=function (this:Command,session?){
-    return this.context.match(session)
-}
-const oldSubCommand=Command.prototype.subcommand
-Command.prototype.subcommand=function(this:Command,def:string,...args:any[]){
-    const command=oldSubCommand.bind(this)(def,...args)
-    command.context=this.context
-    this.context.app._commands.set(command.name,command)
-    this.context.app._commandList.push(command)
-    this.context.state.disposes.push(()=>remove(this.context.app._commandList,command),()=>{
-        this.context.app._commands.delete(command.name)
-        return true
-    })
-    this.context.emit('command.add',command)
-    return command
 }

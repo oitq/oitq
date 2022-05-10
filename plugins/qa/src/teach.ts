@@ -1,4 +1,4 @@
-import {Context,template} from "oitq";
+import {Plugin,template} from "oitq";
 import {Op} from "sequelize";
 import {QA} from "./models";
 
@@ -75,8 +75,9 @@ template.set('teach', {
 {2}`,
     '404': `{0}({1})未找到任何有关问答`
 })
-export default function install(ctx: Context) {
-    ctx.command('qa [question:string] [answer:string]', '问答管理')
+export default function install(ctx: Plugin) {
+    ctx.command('qa [question:string] [answer:string]', 'message')
+        .desc('问答管理')
         .option('list', '-l 查看问答列表')
         .option('detail', '-d <id:string> 查看指定教学详情')
         .option('search', '-s <keyword:string> 搜索关键词')
@@ -89,9 +90,9 @@ export default function install(ctx: Context) {
         .option('trigger', '-t [trigger:string] 触发环境')
         .option('page', '/ <page:number> 页码')
         .alias('#')
-        .shortcut(/^## (\S+)$/, {options: {search: '$1'},fuzzy:true})
+        .shortcut(/^## (\S+)$/, {option: {search: '$1'},fuzzy:true})
         .option('edit', '-e 是否为编辑')
-        .shortcut(/^#(\d+) -([dr])$/, {options: {id: '$1', target: '$2'}})
+        .shortcut(/^#(\d+) -([dr])$/, {option: {id: '$1', target: '$2'}})
         .example('`# -l` 查看第一页')
         .example('`# -l / 2` 查看第二页问答')
         .example('`# -s test` 搜索关键词为`test`的问答')

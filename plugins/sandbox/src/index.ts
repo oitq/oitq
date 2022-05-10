@@ -1,4 +1,4 @@
-import {Context} from "oitq";
+import {Plugin} from "oitq";
 import * as fs from 'fs'
 import * as path from 'path'
 import {ChildProcess,fork} from 'child_process'
@@ -39,15 +39,16 @@ function listener(session:NSession<any>) {
 }
 
 export const name='sandbox';
-export function install(ctx:Context){
-    ctx.command('sandbox','沙盒环境')
+export function install(ctx:Plugin){
+    ctx.command('sandbox','message')
+        .desc('沙盒环境')
         .alias('沙箱')
         .option('start','-s 启动沙箱')
         .option('restart','-r 重启沙箱')
         .option('stop','-e 停止沙箱')
-        .shortcut(/^启动(沙箱|sandbox)$/,{options:{start:true}})
-        .shortcut(/^重启(沙箱|sandbox)$/,{options:{restart:true}})
-        .shortcut(/^停止(沙箱|sandbox)$/,{options:{stop:true}})
+        .shortcut(/^启动(沙箱|sandbox)$/,{option:{start:true}})
+        .shortcut(/^重启(沙箱|sandbox)$/,{option:{restart:true}})
+        .shortcut(/^停止(沙箱|sandbox)$/,{option:{stop:true}})
         .action(({session,options})=>{
             if(options.start && options.restart){
                 return 'start 和 restart 不能同时使用'

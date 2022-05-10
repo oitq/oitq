@@ -1,4 +1,4 @@
-import {Context,Bot} from "oitq";
+import {Plugin,Bot} from "oitq";
 import {merge} from "@oitq/utils";
 import {OneBot} from "./onebot";
 import {OneBotConfig,defaultOneBotConfig} from "./config";
@@ -12,7 +12,7 @@ declare module 'oitq'{
     }
 }
 export const using=['httpServer'] as const
-export function install(ctx:Context){
+export function install(ctx:Plugin){
     ctx.on('bot.add',async (bot:Bot)=>{
         if(bot.options.oneBot){
             bot.oneBot=new OneBot(ctx.app,bot,typeof bot.options.oneBot==='boolean'?defaultOneBotConfig:merge(defaultOneBotConfig,bot.options.oneBot))

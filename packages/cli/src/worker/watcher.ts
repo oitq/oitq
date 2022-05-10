@@ -1,8 +1,9 @@
-import { Context, Dict, makeArray, Plugin } from 'oitq'
+import {  Dict, makeArray,App, Plugin } from 'oitq'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
 import ns from 'ns-require'
+import {Dispose} from "oitq/lib";
 
 function loadDependencies(filename: string, ignored: Set<string>) {
     const dependencies = new Set<string>()
@@ -69,14 +70,14 @@ class Watcher {
     /** stashed changes */
     private stashed = new Set<string>()
 
-    constructor(private ctx: Context, private config: Watcher.Config) {
-        ctx.app.watcher = this
-        ctx.on('ready', () => this.start())
-        ctx.on('dispose', () => this.stop())
+    constructor(private app: App, private config: Watcher.Config) {
+        app.watcher = this
+        app.on('ready', () => this.start())
+        app.on('dispose', () => this.stop())
     }
 
     start() {
-        const { loader } = this.ctx
+        const { loader } = this.app
         const { root = '', ignored = [] } = this.config
         this.root = resolve(loader.dirname, root)
         this.watcher = watch(this.root, {
@@ -98,13 +99,13 @@ class Watcher {
 
             if (isEntry) {
                 if (require.cache[path]) {
-                    this.ctx.loader.fullReload()
+                    this.app.loader.fullReload()
                 } else {
                     this.triggerEntryReload()
                 }
             } else {
                 if (this.externals.has(path)) {
-                    this.ctx.loader.fullReload()
+                    this.app.loader.fullReload()
                 } else if (require.cache[path]) {
                     this.stashed.add(path)
                     triggerLocalReload()
@@ -119,7 +120,7 @@ class Watcher {
 
     private triggerEntryReload() {
         // use original config
-        const { loader } = this.ctx
+        const { loader } = this.app
         const oldConfig = loader.config
         loader.readConfig()
         const newConfig = loader.config
@@ -128,7 +129,7 @@ class Watcher {
         const merged = { ...oldConfig, ...newConfig }
         delete merged.plugins
         if (Object.keys(merged).some(key => !deepEqual(oldConfig[key], newConfig[key]))) {
-            return this.ctx.loader.fullReload()
+            return this.app.loader.fullReload()
         }
 
         // check plugin changes
@@ -140,12 +141,12 @@ class Watcher {
             if (name in newPlugins) {
                 loader.reloadPlugin(name)
             } else {
-                loader.unloadPlugin(name)
+                loader.destroyPlugin(name)
             }
         }
     }
     private get logger(){
-        return this.ctx.logger('Watcher')
+        return this.app.getLogger('Watcher')
     }
     private analyzeChanges() {
         /** files pending classification */
@@ -205,7 +206,7 @@ class Watcher {
     private triggerLocalReload() {
         this.analyzeChanges()
         /** plugins pending classification */
-        const pending = new Map<string, Plugin.State>()
+        const pending = new Map<string, Dispose[]>()
 
         /** plugins that should be reloaded */
         const reloads = new Map<Plugin, string>()
@@ -215,25 +216,20 @@ class Watcher {
         for (const filename in require.cache) {
             const module = require.cache[filename]
             const plugin = ns.unwrapExports(module.exports)
-            const state = this.ctx.state
+            const state = this.app.disposes
             if (!state || this.declined.has(filename)) continue
             pending.set(filename, state)
             if (plugin && !plugin['sideEffect']) this.declined.add(filename)
         }
 
-        for (const [filename, state] of pending) {
-            // check if it is a dependent of the changed file
+        for (const [filename] of pending) {
             this.declined.delete(filename)
             const dependencies = [...loadDependencies(filename, this.declined)]
-            if (!state.plugin['sideEffect']) this.declined.add(filename)
-
-            // we only detect reloads at plugin level
-            // a plugin will be reloaded if any of its dependencies are accepted
             if (!dependencies.some(dep => this.accepted.has(dep))) continue
             dependencies.forEach(dep => this.accepted.add(dep))
 
 
-            for(const [pluginName,p] of this.ctx.pluginManager.plugins){
+            for(const [pluginName,p] of this.app.pluginManager.plugins){
                 if(filename.includes(p.fullpath) || filename.startsWith(p.path)){
                     reloads.set(p,filename)
                 }
@@ -296,6 +292,6 @@ namespace Watcher {
 
 }
 export const name='Watcher'
-export function install(ctx:Context,config:Watcher.Config){
-    new Watcher(ctx,config)
+export function install(app:App,config:Watcher.Config){
+    new Watcher(app,config)
 }

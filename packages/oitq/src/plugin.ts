@@ -1,9 +1,11 @@
-import {EventEmitter} from "events";
 import * as path from "path";
 import * as fs from 'fs'
-import {App, Bot, Dispose} from "./index";
-import {Awaitable, createIfNotExist, merge, readConfig, writeConfig} from "@oitq/utils";
+import {App, Bot, Dispose, NSession} from "./index";
+import {Awaitable, createIfNotExist, readConfig, remove, writeConfig} from "@oitq/utils";
 import {Context} from "./context";
+import {Command} from "./command";
+import {Action} from "./argv";
+import {EventMap, Sendable} from "oicq";
 
 
 class PluginError extends Error {
@@ -33,31 +35,164 @@ export interface PluginConfig {
     config?: any
 }
 
-export class Plugin extends EventEmitter {
+export class Plugin extends Context {
     public readonly fullpath: string
     public readonly path: string
     protected hooks: PluginManager.Object
+    public parent:Plugin=null
+    public children:Plugin[]=[]
+    private _commands:Map<string,Command>=new Map<string, Command>()
+    public disposes:Dispose[]=[]
+    public commandList:Command[]=[]
     readonly binds = new Set<Bot>()
-    using: readonly (keyof Context.Services)[] = []
-    private config
-    public context: Context
+    private _using: readonly (keyof App.Services)[] = []
+    config
+    public pluginManager:PluginManager
     constructor(public readonly name: string, hooks: string | PluginManager.Object) {
         super()
         if (typeof hooks === 'string') {
             this.fullpath = require.resolve(hooks)
-            this.using = require(hooks).using || []
+            this._using = require(hooks).using || []
             this.path = hooks
         } else {
-            if (hooks.using) this.using = hooks.using
+            if (hooks.using) this._using = hooks.using
             this.hooks = hooks
         }
+        this.on("bot.*",(session)=>{
+            this.dispatch(session.event_name,session)
+        })
     }
 
-    get logger(){
-        return this.context.logger(`[plugin:${this.name}]`)
+    async executeCommand(session:NSession<'message'>,content=session.cqCode||''):Promise<boolean|Sendable|void> {
+        const argv = Action.parse(content)
+        argv.bot = session.bot
+        argv.session = session
+        const command=this.findCommand(argv,this.commandList.filter(command=>command.match(session)))
+        if(command){
+            let result
+            try{
+                result = await command.execute(argv)
+            }catch (e){
+                this.logger.warn(e.message)
+            }
+            if (result) return result
+        }
     }
-    bindCtx(ctx: Context) {
-        this.context = ctx
+    findCommand(argv:Pick<Action, 'name'|'source'>,commandList:Command[]=this.commandList) {
+        return commandList.find(cmd => {
+            return cmd.name===argv.name
+                || cmd.aliasNames.includes(argv.name)
+                || cmd.shortcuts.some(({name})=>typeof name==='string'?name===argv.name:name.test(argv.source))
+        })
+    }
+    private async dispatch<K extends keyof EventMap>(name:K,session:NSession<K>){
+        if(name&&name.startsWith('message')){
+            const session1=session as NSession<'message'>
+            let result=await this.executeCommand(session1)
+            if(result){
+                if(typeof result!=='boolean'){
+                    session.reply(result)
+                }
+                return
+            }
+            for(const middleware of this.app.middlewares){
+                result =await middleware(session1)
+                if(result){
+                    if(typeof result!=='boolean'){
+                        session.reply(result)
+                    }
+                    return
+                }
+            }
+        }
+        for(const plugin of this.children){
+            plugin.emit(`bot.${name}`,session)
+        }
+    }
+    get commands():Command[]{
+        return [].concat(this.commandList,...this.children.map(plugin=>plugin.commands)).flat()
+    }
+    getCommand(name:string){
+        return this.commands.find(command=>command.name===name)
+    }
+    using<T extends PluginManager.Plugin>(using: readonly (keyof App.Services)[], plugin:T,config?:PluginManager.Option<T>) {
+        if(typeof plugin==='function'){
+            plugin={install:plugin,name:plugin.name} as T
+        }
+        return this.plugin({ using,...plugin},config)
+    }
+    plugin(name:string,config?:any):this
+    plugin<T extends PluginManager.Plugin>(plugin:T,config?:PluginManager.Option<T>):this
+    plugin(entry: string|PluginManager.Plugin, config?: any):this{
+        let plugin:Plugin
+        if(typeof entry==='string')plugin=this.app.pluginManager.import(entry)
+        else{
+            if(typeof entry==='function')entry={install:entry,name:config?.name||entry?.name||Math.random().toString()}
+            plugin=new Plugin(entry?.name||Math.random().toString(),entry)
+        }
+        const using = plugin['_using'] || []
+        this.children.push(plugin)
+        this.disposes.push(()=>{
+            plugin.dispose()
+            return remove(this.children,plugin)
+        })
+        plugin.parent=this
+        plugin.app=this.app
+        plugin.logger=this.getLogger(`[plugin:${plugin.name}]`)
+        if (using.length) {
+            this.on('service.load', async (name) => {
+                if (!using.includes(name)) return
+                callback()
+            })
+        }
+        const callback = () => {
+            if (using.some(name => !this[name])) return
+            this.app.pluginManager.install(plugin,config)
+        }
+        callback()
+        return this
+    }
+    command<D extends string>(def: D,triggerEvent:keyof EventMap): Command<Action.ArgumentType<D>> {
+        const name=Command.removeDeclarationArgs(def)
+        const segments = name.split(/(?=[./])/g)
+
+        let parent: Command, root: Command
+        segments.forEach((segment, index) => {
+            const code = segment.charCodeAt(0)
+            const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
+            let command = this._commands.get(name)
+            if (command) {
+                if (parent) {
+                    if (command === parent) {
+                        throw new Error(`cannot set a command (${command.name}) as its own subcommand`)
+                    }
+                    if (command.parent) {
+                        if (command.parent !== parent) {
+                            throw new Error(`cannot create subcommand ${path}: ${command.parent.name}/${command.name} alconnect exists`)
+                        }
+                    } else {
+                        command.parent = parent
+                        parent.children.push(command)
+                    }
+                }
+                return parent = command
+            }
+            command = new Command(def,this,triggerEvent)
+            this._commands.set(name,command)
+            this.commandList.push(command)
+            this.disposes.push(()=>remove(this.commandList,command),()=>{
+                this._commands.delete(name)
+                return true
+            })
+            this.emit('command.add',command)
+            if (!root) root = command
+            if (parent) {
+                command.parent = parent
+                parent.children.push(command)
+            }
+            parent = command
+        })
+        return Object.create(parent)
     }
 
     protected async _editBotPluginCache(bot: Bot, method: "add" | "delete") {
@@ -85,36 +220,16 @@ export class Plugin extends EventEmitter {
         if (typeof this.hooks.install !== "function") {
             throw new PluginError(`插件(${this.name})未导出install方法，无法安装。`)
         }
-        try {
-            const res = this.hooks.install(this.context, config)
-            if (res instanceof Promise)
-                await res
-            this.logger.info(`已成功安装`)
-        } catch (e) {
-            throw new PluginError(`安装插件(${this.name})时遇到错误。\n错误信息：` + e.message)
-        }
+        const res = this.hooks.install(this.app, config)
+        if (res instanceof Promise)
+            await res
+        this.logger.info(`已成功安装`)
     }
     async enable(bot: Bot) {
         if (this.binds.has(bot)) {
             throw new PluginError(`这个机器人实例已经启用了插件(${this.name})`)
         }
-        if (this.path) {
-            require(this.path)
-            const mod = require.cache[this.fullpath]
-            this.hooks = mod.exports
-        }
-        if (typeof this.hooks.enable !== "function") {
-            this.logger.warn(`插件未导出enable方法`)
-        } else {
-            try {
-                const res = this.hooks.enable(bot)
-                if (res instanceof Promise)
-                    await res
-                await this._editBotPluginCache(bot, "add")
-            } catch (e) {
-                throw new PluginError(`启用插件(${this.name})时遇到错误。\n错误信息：` + e.message)
-            }
-        }
+        await this._editBotPluginCache(bot, "add")
         this.binds.add(bot)
         this.logger.info(`成功对机器人${bot.uin}启用`)
     }
@@ -123,38 +238,28 @@ export class Plugin extends EventEmitter {
         if (!this.binds.has(bot)) {
             throw new PluginError(`这个机器人实例尚未启用插件(${this.name})`)
         }
-        if (this.path) {
-            require(this.path)
-            const mod = require.cache[this.fullpath] as { exports: PluginManager.Object }
-            this.hooks = mod.exports
-        }
-        if (typeof this.hooks.disable !== "function") {
-            this.logger.warn(`未导出disable方法，无法禁用。`)
-        } else {
-            try {
-                const res = this.hooks.disable(bot)
-                if (res instanceof Promise)
-                    await res
-                await this._editBotPluginCache(bot, "delete")
-            } catch (e) {
-                throw new PluginError(`禁用插件(${this.name})时遇到错误。\n错误信息：` + e.message)
-            }
-        }
+        await this._editBotPluginCache(bot, "delete")
         this.binds.delete(bot)
         this.logger.info(`成功对机器人${bot.uin}禁用`)
     }
 
-    async uninstall() {
-
+    async destroy() {
         this.logger.info(`正在卸载...`)
-        this.context.dispose(this)
+        this.dispose()
     }
-
+    dispose(){
+        while (this.disposes.length){
+            this.disposes.shift()()
+        }
+        if(this.parent){
+            remove(this.parent.children,this)
+        }
+    }
     async restart() {
 
         this.logger.info(`正在重新安装...`)
         try {
-            await this.uninstall()
+            await this.destroy()
             await this.install(this.config)
             for (let bot of this.binds) {
                 await this.enable(bot)
@@ -166,16 +271,17 @@ export class Plugin extends EventEmitter {
 }
 
 export class PluginManager {
-    public config: PluginManager.Config
     public plugins: Map<string, Plugin> = new Map<string, Plugin>()
-    constructor(public app: App, config: PluginManager.Config) {
-        this.config = merge(config,PluginManager.defaultConfig)
+    constructor(public app: App, public plugin_dir:string) {
     }
     get logger(){
-        return this.app.logger('pluginManager')
+        return this.app.getLogger('pluginManager')
     }
-    init() {
-        for (const [name, conf] of Object.entries(this.config.plugins)) {
+    getLogger(category:string){
+        return this.app.getLogger(category)
+    }
+    init(plugins:Record<string, boolean|Record<string, any>>) {
+        for (const [name, conf] of Object.entries(plugins)) {
             try {
                 this.app.plugin(name,conf)
             } catch (e) {
@@ -188,7 +294,6 @@ export class PluginManager {
         }
 
     }
-
     import(name: string) {
         if (this.plugins.has(name))
             return this.plugins.get(name)
@@ -200,10 +305,10 @@ export class PluginManager {
             require.resolve(path.join(__dirname,`plugins/${name}`))
             resolved=`${__dirname}/plugins/${name}`
         }catch {}
-        if(!resolved && fs.existsSync(this.config.plugin_dir)){
+        if(!resolved && fs.existsSync(this.plugin_dir)){
             try {
-                require.resolve(`${this.config.plugin_dir}/${name}`)
-                resolved = `${this.config.plugin_dir}/${name}`
+                require.resolve(`${this.plugin_dir}/${name}`)
+                resolved = `${this.plugin_dir}/${name}`
             } catch {
             }
         }
@@ -248,8 +353,8 @@ export class PluginManager {
         return this.plugins.get(name)
     }
 
-    async uninstall(name: string) {
-        await this.checkInstall(name).uninstall()
+    async destroy(name: string) {
+        await this.checkInstall(name).destroy()
         this.plugins.delete(name)
     }
 
@@ -303,12 +408,12 @@ export class PluginManager {
                 }
             }
         }
-        if (fs.existsSync(this.config.plugin_dir)) {
-            const customPlugins = fs.readdirSync(this.config.plugin_dir, {withFileTypes: true})
+        if (fs.existsSync(this.plugin_dir)) {
+            const customPlugins = fs.readdirSync(this.plugin_dir, {withFileTypes: true})
             for (let file of customPlugins) {
                 if (file.isDirectory() || file.isSymbolicLink()) {
                     try {
-                        require.resolve(`${this.config.plugin_dir}/${file.name}`)
+                        require.resolve(`${this.plugin_dir}/${file.name}`)
                         custom_plugins.push({
                             name: file.name,
                             type: PluginType.Custom
@@ -395,18 +500,13 @@ export namespace PluginManager {
         plugins: {}
     }
     export type Plugin = Function | Object
-    export type Function<T = any> = (ctx: Context, options: T) => Awaitable<any>
+    export type Function<T = any> = (app: App, config: T) => Awaitable<any>
 
     export interface Object<T = any> {
         install: Function<T>
-        using?: readonly (keyof Context.Services)[]
+        using?: readonly (keyof App.Services)[]
         name?: string
-
-        uninstall?(ctx: Context): Awaitable<any>
-
-        enable?(bot: Bot): Awaitable<any>
-
-        disable?(bot: Bot): Awaitable<any>
+        author?:string
     }
 
     export type Option<T extends Plugin> =

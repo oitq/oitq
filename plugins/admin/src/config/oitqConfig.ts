@@ -1,9 +1,9 @@
-import {Context,getAppConfigPath,dir} from 'oitq'
+import {Plugin,getAppConfigPath,dir} from 'oitq'
 import ConfigLoader from '@oitq/loader'
 export const name='admin.config.oitq'
-export function install(ctx:Context){
-    ctx.private()
-        .command('admin/config/oitq [key] [value]','更改oitq配置文件')
+export function install(ctx:Plugin){
+    ctx.command('admin/config/oitq [key] [value]','message.private')
+        .desc('更改oitq配置文件')
         .option('delete','-d 删除指定key值')
         .check(async ({session})=>{
             if(!session.bot.isMaster(session.user_id)&&!session.bot.isAdmin(session.user_id)){
@@ -13,7 +13,7 @@ export function install(ctx:Context){
         .action(async ({session,options},key,value)=>{
             const keys:string[]=[]
             if(key)keys.push(...key.split('.'))
-            const cl=new ConfigLoader(getAppConfigPath(ctx.app.options.dir))
+            const cl=new ConfigLoader(getAppConfigPath(ctx.app.config.dir))
             cl.readConfig()
             let currentValue:any=cl.config
             let pre=currentValue

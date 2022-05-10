@@ -1,11 +1,10 @@
-import axios from "axios";
 import {Choice, PromptObject} from 'prompts'
 import * as path from "path";
 import {CAC} from "cac";
 import {
     dir,
-    defaultBotConfig, BotConfig,getBotConfigPath,
-    defaultAppConfig, AppConfig,getAppConfigPath,
+    defaultBotConfig, Bot,getBotConfigPath,
+    defaultAppConfig, App,getAppConfigPath,
     readConfig, writeConfig,
 } from "oitq";
 import {createIfNotExist} from "@oitq/utils";
@@ -31,8 +30,8 @@ export async function addBot() {
     const dirReal=readConfig(path.join(dir,'configFilePath'))
     createIfNotExist(getAppConfigPath(dirReal),defaultAppConfig)
     createIfNotExist(getBotConfigPath(dirReal),defaultBotConfig)
-    const appOptions: AppConfig = readConfig(getAppConfigPath(dirReal))
-    const botOptions:BotConfig=readConfig(getBotConfigPath(dirReal))
+    const appOptions: App.Config = readConfig(getAppConfigPath(dirReal))
+    const botOptions:Bot.Config=readConfig(getBotConfigPath(dirReal))
     const botConfigQuestion:PromptObject[]=[
         {
             type: 'number',
@@ -151,7 +150,7 @@ export async function addBot() {
     } else {
         result.config = defaultBotConfig.config
     }
-    const botConfig: BotConfig = {
+    const botConfig: Bot.Config = {
         uin: result.uin,
         type: result.type,
         password: result.password,

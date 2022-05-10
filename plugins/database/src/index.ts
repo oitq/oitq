@@ -1,10 +1,10 @@
-import {Context,NSession,Dict} from "oitq";
+import {Plugin,NSession,Dict} from "oitq";
 import {ModelCtor, Sequelize} from "sequelize-typescript";
 import {Options} from "sequelize";
 export * from 'sequelize-typescript'
 import {User,UserInfo} from "./models";
 declare module 'oitq'{
-    namespace Context{
+    namespace App{
         interface Services{
             database:Database
         }
@@ -14,21 +14,21 @@ declare module 'oitq'{
     }
 }
 export const name='database'
-export function install(ctx:Context,config:Options){
-    ctx.database=new Database(ctx,config)
-    ctx.on('ready',async ()=>{
-        ctx.database.sequelize.addModels(Object.values(ctx.database.models))
-        await ctx.database.sequelize.sync({alter:true})
-        ctx.emit('database.ready')
+export function install(plugin:Plugin,config:Options){
+    plugin.app.database=new Database(plugin,config)
+    plugin.on('ready',async ()=>{
+        plugin.app.database.sequelize.addModels(Object.values(plugin.app.database.models))
+        await plugin.app.database.sequelize.sync({alter:true})
+        plugin.emit('database.ready')
     })
 }
 class Database{
     public models:Dict<ModelCtor>={}
     public sequelize:Sequelize
-    constructor(public ctx:Context,public options:Options) {
+    constructor(public plugin:Plugin,public options:Options) {
         this.addModels(User)
         this.sequelize=new Sequelize({...this.options,logging:(text)=>this.logger.debug(text)})
-        ctx.before('attach',async (session:NSession<'message'>)=>{
+        plugin.before('attach',async (session:NSession<'message'>)=>{
             const {sender:{nickname,user_id}}=session
             const [user]=await User.findOrCreate({
                 attributes:['user_id',"authority",'name'],
@@ -45,7 +45,7 @@ class Database{
         })
     }
     get logger(){
-        return this.ctx.logger('database')
+        return this.plugin.getLogger('database')
     }
     addModels(...models:ModelCtor[]){
         for(const model of models){
@@ -54,4 +54,3 @@ class Database{
         }
     }
 }
-Context.service('database')

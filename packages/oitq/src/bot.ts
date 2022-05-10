@@ -1,20 +1,15 @@
-import {Client, Config, EventMap, MessageElem, Quotable, Sendable} from 'oicq'
+import {Client, Config as ClientConfig, EventMap, Quotable, Sendable} from 'oicq'
 import {App} from './app'
 import {Session} from './session'
-import {Middleware} from './middleware'
 import {defaultBotConfig} from './static'
 import {
     merge,
     template,
     Define,
     Extend,
-    fromCqcode,
-    defineProperty,
     makeArray,
     escapeRegExp,
-    valueMap
 } from "@oitq/utils";
-import {Argv} from "@lc-cn/command";
 import {MessageRet} from "oicq/lib/events";
 
 template.set('bot', {
@@ -32,25 +27,13 @@ export type TargetType = 'group' | 'private' | 'discuss'
 export type ChannelId = `${TargetType}:${number}`
 export type LoginType = 'qrcode' | 'password'
 
-export interface BotConfig {
-    uin?: number
-    config: Config,
-    type: LoginType
-    password?: string
-    nickname?: string | string[]
-    prefix?: string | string[]
-    master?: number // 当前机器人主人
-    admins?: number[] // 当前机器人管理员
-    parent?: number // 机器人上级
-}
-
 export type ToSession<A extends any[] = []> = A extends [object, ...infer O] ? Extend<Define<Session, 'args', O>, A[0]> : Define<Session, 'args', A>
 export type NSession<E extends keyof EventMap> = ToSession<Parameters<EventMap[E]>>
 type Transform = {
     [P in keyof EventMap as `bot.${P}`]: (session: NSession<P>) => void
 }
 
-export interface BotEventMap extends Transform {
+export interface BotEventMap extends Transform,EventMap {
     'bot.add'(bot: Bot): void
 
     'bot.remove'(bot: Bot): void
@@ -61,12 +44,11 @@ function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
 }
 
 export class Bot extends Client {
-    private options: BotConfig
-    middlewares: Middleware[] = []
+    options: Bot.Config
     private _nameRE: RegExp
     admins:number[]=[]
     master:number
-    constructor(public app: App, options: BotConfig) {
+    constructor(public app: App, options: Bot.Config) {
         super(options.uin, merge(defaultBotConfig.config, {logLevel:app.config.logLevel,...options.config}));
         this.options = merge(defaultBotConfig, options)
         this.admins=options.admins||[]
@@ -81,86 +63,13 @@ export class Bot extends Client {
     isAdmin(user_id:number){
         return this.options.admins.includes(user_id)
     }
-    // message处理中间件，受拦截的message不会上报到'bot.message'
-    middleware(middleware: Middleware, prepend?: boolean) {
-        const method = prepend ? 'unshift' : 'push'
-        this.middlewares[method](middleware)
-        return () => {
-            const index = this.middlewares.indexOf(middleware)
-            if (index >= 0) {
-                this.middlewares.splice(index, 1)
-                return true
-            }
-            return false
-        }
-    }
 
-    async handleCommand(session: NSession<'message'>) {
-        return session.execute(session.cqCode)
-    }
 
-    async handleMessage(session: NSession<'message'>) {
-        let result = await this.handleCommand(session)
-        if (result) return result
-        for (const middleware of this.middlewares) {
-            result = await middleware(session)
-            if (result) return result
-        }
-    }
-
-    private handleShortcut(session: NSession<'message'>) {
-        const argv = session.argv ||= Argv.parse(session.cqCode)
-        let content = session.cqCode
-        for (const shortcut of this.app._shortcuts) {
-            const {name, fuzzy, command, options = {}, args = []} = shortcut
-            if (!command.context.match(session)) continue
-            if (typeof name === 'string') {
-                if (!fuzzy && content !== name || !content.startsWith(name)) continue
-                const message = content.slice(name.length)
-                if (fuzzy && message.match(/^\S/)) continue
-                const argv = command.parse(Argv.parse(message.trim()), [...args], {...options})
-                if(!command.match(session))continue
-                argv.command = command
-                return session.execute(argv.source,false)
-            } else {
-                const capture = name.exec(content)
-                if (!capture) continue
-
-                function escape(source: any) {
-                    if (typeof source !== 'string') return source
-                    source = source.replace(/\$\$/g, '@@__PLACEHOLDER__@@')
-                    capture.forEach((segment, index) => {
-                        if (!index || index > 9) return
-                        source = source.replace(new RegExp(`\\$${index}`, 'g'), (segment || '').replace(/\$/g, '@@__PLACEHOLDER__@@'))
-                    })
-                    return source.replace(/@@__PLACEHOLDER__@@/g, '$')
-                }
-                if(!command.match(session)) continue
-                return command.execute({
-                    ...argv,
-                    command,
-                    session,
-                    tokens:[],
-                    name: command.name,
-                    args: args.map(escape),
-                    options: valueMap(options, escape),
-                })
-            }
-        }
-    }
 
     // 重写emit，将event data封装成session，上报到app
     emit<E extends keyof EventMap>(name: E, ...args: Parameters<EventMap[E]>) {
-        const session = this.createSession(name, ...args)
-
-        if (name === 'message') {
-            this.handleMessage(<NSession<'message'>>session).then(res => {
-                if (res) return
-                else this.app.emit(`bot.${name}`, session)
-            })
-        } else {
-            this.app.emit(`bot.${name}`, session)
-        }
+        this.app.emit(`bot.${name}`,this.createSession(name,...args))
+        this.app.emit(name,...args)
         return super.emit(name, ...args)
     }
 
@@ -168,7 +77,7 @@ export class Bot extends Client {
         let data: any = typeof args[0] === "object" ? args.shift() : {}
         if (!data) data = {}
         data.args = args
-        return new Session(this.app, this, data) as unknown as NSession<E>
+        return new Session(this.app, this, data,name) as unknown as NSession<E>
     }
 
     /**
@@ -202,7 +111,21 @@ export class Bot extends Client {
     }
 
 }
+export namespace Bot{
 
+    export interface Config {
+        uin?: number
+        config: ClientConfig,
+        type: LoginType
+        password?: string
+        nickname?: string | string[]
+        prefix?: string | string[]
+        master?: number // 当前机器人主人
+        admins?: number[] // 当前机器人管理员
+        parent?: number // 机器人上级
+    }
+
+}
 export class BotList extends Array<Bot> {
     constructor(public app: App) {
         super();
@@ -212,7 +135,7 @@ export class BotList extends Array<Bot> {
         return this.find(bot => bot.uin === uin)
     }
 
-    create(options: BotConfig) {
+    create(options: Bot.Config) {
         const bot = new Bot(this.app, options)
         this.push(bot)
         this.app.emit('bot.add', bot)
