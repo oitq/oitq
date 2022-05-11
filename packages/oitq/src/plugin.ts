@@ -7,7 +7,22 @@ import {Command} from "./command";
 import {Action} from "./argv";
 import {EventMap, Sendable} from "oicq";
 
-
+export type AuthorInfo=string|{
+    name:string
+    email?:string
+    url?:string
+}
+export type RepoInfo=string|{
+    type:'git'|'svn'
+    url:string
+}
+export interface PkgInfo{
+    name:string
+    version:string
+    description:string
+    author:AuthorInfo
+    repository:RepoInfo
+}
 class PluginError extends Error {
     name = "PluginError"
 }
@@ -19,14 +34,10 @@ export enum PluginType {
     Custom = 'custom',// 自定义插件
 }
 
-export interface PluginDesc {
-    name: string
+export interface PluginDesc extends Partial<PkgInfo>{
     type: PluginType
-    fullName?: string
-    desc?: string
-    author?: string
-    version?: string
-    isInstall?: boolean
+    installed?: boolean
+    disabled:boolean
     binds?: number[]
 }
 
@@ -49,72 +60,49 @@ export class Plugin extends Context {
     private _using: readonly (keyof App.Services)[] = []
     disableStatus:boolean=false
     config
+    pkg:Partial<PkgInfo>={}
     public pluginManager:PluginManager
-    constructor(public readonly name: string, hooks: string | PluginManager.Object) {
+    constructor(hooks: string | PluginManager.Object={install(){}}) {
         super()
         if (typeof hooks === 'string') {
             this.fullpath = require.resolve(hooks)
             this._using = require(hooks).using || []
-            this.path = hooks
+            this.path = this.fullpath
+            try{
+                const pkg=require(path.join(hooks,'package.json'))
+                this.pkg={
+                    name:pkg.name,
+                    author:pkg.author,
+                    description:pkg.description,
+                    repository:pkg.repository,
+                    version:pkg.version
+                }
+            }catch {}
         } else {
             if (hooks.using) this._using = hooks.using
+            if(hooks.name)this.pkg.name=hooks.name
             this.hooks = hooks
         }
         this.on("bot.*",(session)=>{
             this.dispatch(session.event_name,session)
         })
     }
-    //message处理中间件，受拦截的message不会上报到'bot.message'
-    middleware(middleware: Middleware, prepend?: boolean) {
-        const method = prepend ? 'unshift' : 'push'
-        this.middlewares[method](middleware)
-        return () => {
-            const index = this.app.middlewares.indexOf(middleware)
-            if (index >= 0) {
-                this.app.middlewares.splice(index, 1)
-                return true
-            }
-            return false
-        }
-    }
-    async executeCommand(session:NSession<'message'>,content=session.cqCode||''):Promise<boolean|Sendable|void> {
-        const argv = Action.parse(content)
-        argv.bot = session.bot
-        argv.session = session
-        const command=this.findCommand(argv,this.commandList.filter(command=>command.match(session)))
-        if(command){
-            let result
-            try{
-                result = await command.execute(argv)
-            }catch (e){
-                this.logger.warn(e.message)
-            }
-            if (result) return result
-        }
-    }
-    findCommand(argv:Pick<Action, 'name'|'source'>,commandList:Command[]=this.commandList) {
-        return commandList.find(cmd => {
-            return cmd.name===argv.name
-                || cmd.aliasNames.includes(argv.name)
-                || cmd.shortcuts.some(({name})=>typeof name==='string'?name===argv.name:name.test(argv.source))
-        })
-    }
+
     private async dispatch<K extends keyof EventMap>(name:K,session:NSession<K>){
         if(this.disableStatus)return
-        if(name&&name.startsWith('message')){
-            const session1=session as NSession<'message'>
-            let result=await this.executeCommand(session1)
+        if(name&&name==='message'){
+            let result=await this.execute(session as NSession<'message'>)
             if(result){
                 if(typeof result!=='boolean'){
-                    session.reply(result)
+                    session.sendMsg(result)
                 }
                 return
             }
-            for(const middleware of this.app.middlewares){
-                result =await middleware(session1)
+            for(const middleware of this.middlewares){
+                result =await middleware(session as NSession<'message'>)
                 if(result){
                     if(typeof result!=='boolean'){
-                        session.reply(result)
+                        session.sendMsg(result)
                     }
                     return
                 }
@@ -130,20 +118,42 @@ export class Plugin extends Context {
     getCommand(name:string){
         return this.commands.find(command=>command.name===name)
     }
+    //message处理中间件，受拦截的message不会上报到'bot.message'
+    middleware(middleware: Middleware, prepend?: boolean) {
+        const method = prepend ? 'unshift' : 'push'
+        this.middlewares[method](middleware)
+        const dispose=() => {
+            const index = this.middlewares.indexOf(middleware)
+            if (index >= 0) {
+                this.middlewares.splice(index, 1)
+                return true
+            }
+            return false
+        }
+        this.disposes.push(dispose)
+        return dispose
+    }
     using<T extends PluginManager.Plugin>(using: readonly (keyof App.Services)[], plugin:T,config?:PluginManager.Option<T>) {
         if(typeof plugin==='function'){
-            plugin={install:plugin,name:plugin.name} as T
+            plugin={install:plugin} as T
         }
         return this.plugin({ using,...plugin},config)
     }
-    plugin(name:string,config?:any):this
-    plugin<T extends PluginManager.Plugin>(plugin:T,config?:PluginManager.Option<T>):this
-    plugin(entry: string|PluginManager.Plugin, config?: any):this{
+    // 添加子插件
+    addPlugin(plugin:Plugin,config?){
+        this.children.push(plugin)
+        plugin.install(config)
+        return this
+    }
+    // 定义子插件
+    plugin(name:string,config?:any):Plugin
+    plugin<T extends PluginManager.Plugin>(plugin:T,config?:PluginManager.Option<T>):Plugin
+    plugin(entry: string|PluginManager.Plugin, config?: any):Plugin{
         let plugin:Plugin
         if(typeof entry==='string')plugin=this.app.pluginManager.import(entry)
         else{
-            if(typeof entry==='function')entry={install:entry,name:config?.name||entry?.name||Math.random().toString()}
-            plugin=new Plugin(entry?.name||Math.random().toString(),entry)
+            if(typeof entry==='function')entry={install:entry,name:entry.name}
+            plugin=new Plugin(entry)
         }
         const using = plugin['_using'] || []
         this.children.push(plugin)
@@ -153,7 +163,7 @@ export class Plugin extends Context {
         })
         plugin.parent=this
         plugin.app=this.app
-        plugin.logger=this.getLogger(`[plugin:${plugin.name}]`)
+        plugin.logger=this.getLogger(`[plugin:${plugin.pkg.name}]`)
         if (using.length) {
             this.on('service.load', async (name) => {
                 if (!using.includes(name)) return
@@ -165,17 +175,18 @@ export class Plugin extends Context {
             this.app.pluginManager.install(plugin,config)
         }
         callback()
-        return this
+        return plugin
     }
     command<D extends string>(def: D,triggerEvent:keyof EventMap): Command<Action.ArgumentType<D>> {
-        const name=Command.removeDeclarationArgs(def)
-        const segments = name.split(/(?=[./])/g)
+        const namePath = def.split(' ', 1)[0]
+        const decl = def.slice(namePath.length)
+        const segments = namePath.split(/(?=[./])/g)
 
         let parent: Command, root: Command
         segments.forEach((segment, index) => {
             const code = segment.charCodeAt(0)
             const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
-            let command = this._commands.get(name)
+            let command = this.app.commands.find(command=>command.name==name)
             if (command) {
                 if (parent) {
                     if (command === parent) {
@@ -192,7 +203,7 @@ export class Plugin extends Context {
                 }
                 return parent = command
             }
-            command = new Command(def,this,triggerEvent)
+            command = new Command(name+decl,this,triggerEvent)
             this._commands.set(name,command)
             this.commandList.push(command)
             this.disposes.push(()=>remove(this.commandList,command),()=>{
@@ -209,7 +220,29 @@ export class Plugin extends Context {
         })
         return Object.create(parent)
     }
+    async execute(session:NSession<'message'>,content=session.cqCode||''):Promise<boolean|Sendable|void> {
+        const argv = Action.parse(content)
+        argv.bot = session.bot
+        argv.session = session
+        const command=this.findCommand(argv,this.commandList.filter(command=>command.match(session)))
+        if(command){
+            let result
+            try{
+                result = await command.execute(argv)
+            }catch (e){
+                this.logger.warn(e.message)
+            }
+            if (result) return result
+        }
+    }
 
+    findCommand(argv:Pick<Action, 'name'|'source'>,commandList:Command[]=this.commandList) {
+        return commandList.find(cmd => {
+            return cmd.name===argv.name
+                || cmd.aliasNames.includes(argv.name)
+                || cmd.shortcuts.some(({name})=>typeof name==='string'?name===argv.name:name.test(argv.source))
+        })
+    }
     protected async _editBotPluginCache(bot: Bot, method: "add" | "delete") {
         const dir = path.join(bot.dir, "plugin")
         createIfNotExist(dir, [])
@@ -220,7 +253,7 @@ export class Plugin extends Context {
         } catch {
             set = new Set
         }
-        set[method](this.name)
+        set[method](this.pkg.name||this.fullpath)
         return writeConfig(dir, Array.from(set))
     }
 
@@ -235,7 +268,7 @@ export class Plugin extends Context {
         if (typeof this.hooks.install !== "function") {
             throw new PluginError(`插件(${this.name})未导出install方法，无法安装。`)
         }
-        const res = this.hooks.install(this.app, config)
+        const res = this.hooks.install(this, config)
         if (res instanceof Promise)
             await res
         this.logger.info(`已成功安装`)
@@ -276,9 +309,8 @@ export class Plugin extends Context {
         this.logger.info(`成功对机器人${bot.uin}禁用`)
     }
 
-    async destroy(plugin:Plugin=this) {
+    destroy(plugin:Plugin=this) {
         this.logger.info(`正在卸载...`)
-
         plugin.dispose()
     }
     dispose(){
@@ -290,16 +322,38 @@ export class Plugin extends Context {
         }
     }
     async restart() {
-
         this.logger.info(`正在重新安装...`)
         try {
             await this.destroy()
-            await this.install(this.config)
-            for (let bot of this.binds) {
-                await this.enable(bot)
-            }
+            await this.install()
         } catch (e) {
             throw new PluginError(`重启插件(${this.name})时遇到错误。\n错误信息：` + e.message)
+        }
+    }
+    name(name:string){
+        this.pkg.name=name
+        return this
+    }
+    version(version:string){
+        this.pkg.version=version
+        return this
+    }
+    desc(desc:string){
+        this.pkg.description=desc
+        return this
+    }
+    repo(repoInfo:RepoInfo){
+        this.pkg.repository=repoInfo
+        return this
+    }
+    author(authorInfo:AuthorInfo){
+        this.pkg.author=authorInfo
+        return this
+    }
+    toJSON(){
+        return {
+            ...this.pkg,
+            disabled:!!this.disableStatus
         }
     }
 }
@@ -372,12 +426,14 @@ export class PluginManager {
         }
         if (!resolved)
             throw new PluginError(`插件名错误，无法找到插件(${name})`)
-        return new Plugin(name, resolved)
+        const plugin=new Plugin(resolved)
+        plugin.name(name)
+        return plugin
     }
 
     install(plugin: Plugin, config?) {
         plugin.install(config)
-        this.plugins.set(plugin.name, plugin)
+        this.plugins.set(plugin.pkg.name||Math.random().toString(),plugin)
     }
 
     checkInstall(name: string) {
@@ -396,11 +452,11 @@ export class PluginManager {
         return this.checkInstall(name).restart()
     }
 
-    enable(name: string, bot: Bot) {
+    enable(name: string, bot: Bot=null) {
         return this.checkInstall(name).enable(bot)
     }
 
-    disable(name: string, bot: Bot) {
+    disable(name: string, bot: Bot=null) {
         return this.checkInstall(name).disable(bot)
     }
 
@@ -412,9 +468,8 @@ export class PluginManager {
             }
         }
     }
-
-    loadAllPlugins(): PluginDesc[] {
-        const custom_plugins: PluginDesc[] = [], module_plugins: PluginDesc[] = [], builtin_plugins: PluginDesc[] = []
+    listAll(){
+        const pluginList:Partial<PluginDesc>[]=[]
         const modulePath = path.join(process.cwd(), "node_modules")
         const orgPath = path.join(modulePath, '@oitq')
         // 列出的插件不展示内置插件
@@ -424,9 +479,21 @@ export class PluginManager {
             if (file.isDirectory()) {
                 try {
                     require.resolve(`${builtinPath}/${file.name}`)
-                    builtin_plugins.push({
+                    let pkgInfo:Partial<PkgInfo>={}
+                    try{
+                        const pkg=require(path.join(`${builtinPath}/${file.name}`,'package.json'))
+                        pkgInfo={
+                            name:pkg.name,
+                            author:pkg.author,
+                            description:pkg.description,
+                            repository:pkg.repository,
+                            version:pkg.version
+                        }
+                    }catch {}
+                    pluginList.push({
                         name: file.name,
-                        type: PluginType.Builtin
+                        type: PluginType.Builtin,
+                        ...pkgInfo
                     })
                 } catch {
                 }
@@ -434,9 +501,9 @@ export class PluginManager {
                 const fileName = file.name.replace(/\.ts|\.js/, '')
                 try {
                     require.resolve(`${builtinPath}/${fileName}`)
-                    builtin_plugins.push({
+                    pluginList.push({
                         name: fileName,
-                        type: PluginType.Builtin
+                        type: PluginType.Builtin,
                     })
                 } catch {
                 }
@@ -448,9 +515,21 @@ export class PluginManager {
                 if (file.isDirectory() || file.isSymbolicLink()) {
                     try {
                         require.resolve(`${this.plugin_dir}/${file.name}`)
-                        custom_plugins.push({
+                        let pkgInfo:Partial<PkgInfo>={}
+                        try{
+                            const pkg=require(path.join(`${builtinPath}/${file.name}`,'package.json'))
+                            pkgInfo={
+                                name:pkg.name,
+                                author:pkg.author,
+                                description:pkg.description,
+                                repository:pkg.repository,
+                                version:pkg.version
+                            }
+                        }catch {}
+                        pluginList.push({
                             name: file.name,
-                            type: PluginType.Custom
+                            type: PluginType.Custom,
+                            ...pkgInfo
                         })
                     } catch {
                     }
@@ -462,10 +541,21 @@ export class PluginManager {
             if (file.isDirectory() && (file.name.startsWith("oitq-plugin-"))) {
                 try {
                     require.resolve(file.name)
-                    module_plugins.push({
+                    let pkgInfo:Partial<PkgInfo>={}
+                    try{
+                        const pkg=require(path.join(`${builtinPath}/${file.name}`,'package.json'))
+                        pkgInfo={
+                            name:pkg.name,
+                            author:pkg.author,
+                            description:pkg.description,
+                            repository:pkg.repository,
+                            version:pkg.version
+                        }
+                    }catch {}
+                    pluginList.push({
                         name: file.name.replace('oitq-plugin-', ''),
                         type: PluginType.Community,
-                        fullName: file.name
+                        ...pkgInfo
                     })
                 } catch {
                 }
@@ -477,32 +567,52 @@ export class PluginManager {
                 if (file.isDirectory() && file.name.startsWith('plugin-')) {
                     try {
                         require.resolve(`@oitq/${file.name}`)
-                        module_plugins.push({
+                        let pkgInfo:Partial<PkgInfo>={}
+                        try{
+                            const pkg=require(path.join(`${builtinPath}/${file.name}`,'package.json'))
+                            pkgInfo={
+                                name:pkg.name,
+                                author:pkg.author,
+                                description:pkg.description,
+                                repository:pkg.repository,
+                                version:pkg.version
+                            }
+                        }catch {}
+                        pluginList.push({
                             name: file.name.replace('plugin-', ''),
                             type: PluginType.Official,
-                            fullName: `@oitq/${file.name}`
+                            ...pkgInfo
                         })
                     } catch {
                     }
                 }
             }
         }
-        const plugins: PluginDesc[] = [...this.plugins.values()].map(plugin => {
-            return {
-                name: plugin.name,
-                type: PluginType.Custom
-            }
-        }).filter(plugin => {
-            return !custom_plugins.map(desc => desc.name).includes(plugin.name) &&
-                !module_plugins.map(desc => desc.name).includes(plugin.name) &&
-                !builtin_plugins.map(desc => desc.name).includes(plugin.name)
-        })
-        return builtin_plugins.concat(custom_plugins).concat(module_plugins).concat(plugins).map(pluginDesc => {
-            const plugin = this.plugins.get(pluginDesc.name)
+        if(this.plugins.get('CLI')){
+            pluginList.push({
+                name:'CLI',
+                type:PluginType.Official,
+                ...this.plugins.get('CLI').pkg
+            })
+        }
+        return pluginList.map(pluginDesc=>{
+            const plugin=this.plugins.get(pluginDesc.name)
             return {
                 ...pluginDesc,
-                isInstall: this.plugins.has(pluginDesc.name),
-                binds: plugin ? Array.from(plugin.binds).map(bot => bot.uin) : []
+                disabled:plugin && !!plugin.disableStatus,
+                installed:this.plugins.has(pluginDesc.name)
+            }
+        })
+    }
+    list(name='app'): Partial<PluginDesc>[] {
+        const pluginList=this.listAll()
+        return (name==='app'?this.app.children:this.plugins.get(name)?this.plugins.get(name).children:[]).map(plugin => {
+            const pluginDesc=pluginList.find(desc=>desc.name===plugin.pkg.name)||{}
+            return {
+                ...pluginDesc,
+                ...plugin.pkg,
+                disabled:!!plugin.disableStatus,
+                installed:this.plugins.has(plugin.pkg.name)
             }
         })
     }
@@ -528,19 +638,18 @@ export class PluginManager {
     }
 }
 
+export type Function<T = any> = (plugin: Plugin, config: T) => Awaitable<any>
 export namespace PluginManager {
     export const defaultConfig: Config = {
         plugin_dir: path.join(process.cwd(), 'plugins'),
         plugins: {}
     }
     export type Plugin = Function | Object
-    export type Function<T = any> = (app: App, config: T) => Awaitable<any>
 
     export interface Object<T = any> {
         install: Function<T>
+        name?:string
         using?: readonly (keyof App.Services)[]
-        name?: string
-        author?:string
     }
 
     export type Option<T extends Plugin> =
@@ -551,13 +660,5 @@ export namespace PluginManager {
     export interface Config {
         plugin_dir?: string,
         plugins?: Record<string, any>
-    }
-}
-export namespace Plugin {
-    export interface State {
-        context: Context,
-        children:Context[]
-        disposes: Dispose[]
-        plugin: Plugin
     }
 }

@@ -9,13 +9,14 @@ function handleException(error: any) {
 
 process.on('uncaughtException', handleException)
 import * as daemon from './daemon'
+
 process.on('unhandledRejection', (error) => {
     console.warn(error)
 })
 namespace addons {
     export const name = 'CLI'
 
-    export function install(plugin: Plugin,config) {
+    export function install(plugin: Plugin, config) {
         plugin.plugin(daemon, config)
 
         if (process.env.OITQ_WATCH_ROOT !== undefined) {
@@ -24,7 +25,7 @@ namespace addons {
         }
     }
 }
-const loader=new Loader();
-loader.createApp()
-    .plugin(addons,loader.config)
-    .start()
+const loader = new Loader();
+const app = loader.createApp()
+app.plugin(addons, loader.config)
+app.start()

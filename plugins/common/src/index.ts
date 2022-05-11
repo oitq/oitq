@@ -1,6 +1,7 @@
 import {Plugin,template, s, fromCqcode,Dict,sleep,noop,makeArray} from "oitq";
 import { genDmMessageId } from "oicq/lib/message/message.js";
 import {OnlineStatus, Quotable} from "oicq";
+import {NSession} from "oitq/lib";
 
 template.set('common', {
     'expect-text': '请输入要发送的文本。',
@@ -80,23 +81,24 @@ export function send(plugin: Plugin) {
             return message
         })
 }
-export function recall(plugin: Plugin, { recall = 10 }: RecallConfig) {
+export function recall(plugin: Plugin, { recall = 50 }: RecallConfig) {
     const recent: Dict<string[]> = {}
-    plugin.on('send', (session) => {
-        const list = recent[session.group_id] ||= []
-        list.unshift(session.message_id)
+    plugin.app.on('send', (messageRet,channelId) => {
+        const list = recent[channelId] ||= []
+        list.unshift(messageRet.message_id)
         if (list.length > recall) {
             list.pop()
         }
     })
     plugin
         .command('common/recall [count:number]','message')
+        .desc('撤回机器人发送的消息')
         .action(async ({ session }, count = 1) => {
-            const list = recent[session.group_id]
+            const list = recent[session.getChannelId()]
             if (!list) return '近期没有发送消息。'
             const removal = list.splice(0, count)
             const delay = plugin.app.config.delay.broadcast
-            if (!list.length) delete recent[session.group_id]
+            if (!list.length) delete recent[session.getChannelId()]
             for (let index = 0; index < removal.length; index++) {
                 if (index && delay) await sleep(delay)
                 try {
@@ -126,19 +128,18 @@ export function feedback(plugin: Plugin, operators: number[]) {
                 if (index && delay) await sleep(delay)
                 const user_id=operators[index]
                 const bot = plugin.app.bots.find(bot => bot.status===OnlineStatus.Online)
-                await bot.sendPrivateMsg(user_id, fromCqcode(message))
+                await bot.sendPrivateMsg(user_id, message)
                     .then(({message_id}) => feedbacks[message_id] = data, noop)
             }
             return template('common.feedback-success')
         })
 
-    plugin.middleware(async (session) => {
-        const { source, parsed } = session
+    plugin.middleware(async (session:NSession<'message'>) => {
+        const { source } = session
         const quote = { ...source as Quotable, flag: 1 };
-        if (!parsed.content || !source) return ''
         const data = feedbacks[genDmMessageId(quote.user_id, quote.seq, quote.rand, quote.time, quote.flag)]
         if (!data) return ''
-        await plugin.app.bots.find(bot=>bot.uin===data[0]).sendMsg(data[1], parsed.content)
+        await plugin.app.bots.find(bot=>bot.uin===data[0]).sendMsg(data[1], source.message)
     })
 }
 export function respondent(plugin: Plugin, respondents: Respondent[]) {

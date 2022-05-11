@@ -1,3 +1,4 @@
+/* eslint-disable */
 /*
  * 该文件中的所有代码必须在sandbox中执行
  */
@@ -45,7 +46,6 @@ Object.defineProperty(this, "data", {
     value: {}
 })
 
-// @ts-ignore
 const error403 = this.error403 = new Error("403 forbidden")
 
 //群数据库

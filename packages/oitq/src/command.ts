@@ -21,42 +21,51 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
         this.name=Command.removeDeclarationArgs(declaration)
         this.args=Command.findDeclarationArgs(declaration)
     }
+    // 定义指令调用所需权限
     auth(authority:number){
         this.authority=authority
     }
+    // 添加指令描述文本
     desc(desc:string){
         this.descriptions.push(desc)
         return this
     }
+    // 添加验证回调函数
     check(checker:Command.Callback<A,O>){
         this.checkers.push(checker)
         return this
     }
+    // 定义样例
     example(example:string){
         this.examples.push(example)
         return this
     }
     match(session:NSession<'message'>){
-        return session.event_name===this.triggerEvent
+        return this.triggerEvent==='message'
+        || `message.${session.message_type}`===this.triggerEvent
     }
+    // 定义别名
     alias(...name:string[]){
         this.aliasNames.push(...name)
         return this
     }
+    // 为指令添加其他选项
     use(callback:(cmd:Command)=>any){
         callback(this)
     }
+    // 添加快捷方式
     shortcut(reg:RegExp|string,config:Command.Shortcut={}){
         this.shortcuts.push({...config,name:reg})
         return this
     }
-
+    // 定义子指令
     subcommand<D extends string>(def: D,triggerEvent:keyof EventMap): Command<Action.ArgumentType<D>> {
         const command=this.plugin.command(def,triggerEvent)
         command.parent=this
         this.children.push(command)
         return command
     }
+    // 添加选项
     option<K extends string,D extends string>(name:K,declaration:D,config:Command.OptionConfig={}):Command<A, Define<O, K, Command.OptionType<D>>>{
         const decl = declaration.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
         const shortName= Command.removeDeclarationArgs(decl);
@@ -78,11 +87,15 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
         }
         return Object.create(this)
     }
+    // 添加执行的操作
     action(action:Command.Callback<A,O>){
         this.actions.push(action)
         return this
     }
-    parse(action:Action<A,O>, args = [], options = {}){
+    //匹配常规调用参数、选项
+    private parseCommand(action:Action<A,O>){
+        const args:A=action.args||=[] as A
+        const options:O=action.options||={} as O
         while (!action.error && action.argv.length) {
             const content=action.argv.shift()
             const argDecl=this.args[args.length]
@@ -91,8 +104,13 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
                 break;
             }
             if (content[0] !== '-' && argDecl) {
-                args.push(Action.parseValue(content, 'argument', action, argDecl));
-                continue;
+                if(argDecl.variadic){
+                    args.push(...[content].concat(action.argv).map(str=>Action.parseValue(str, 'argument', action, argDecl)));
+                    break;
+                }else {
+                    args.push(Action.parseValue(content, 'argument', action, argDecl));
+                    continue;
+                }
             }
             if(!argDecl)continue
             const optionDecl=[...Object.values(this.options)].find(decl=>decl.shortName===content)
@@ -101,8 +119,15 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
                     action.error=`option ${optionDecl.name} is required`
                     continue
                 }else{
-                    if(!options[action.argv[0]]){
-                        options[optionDecl.name]=Action.parseValue(action.argv.shift(),'option',action,optionDecl.declaration)
+                    if(!options[action.argv[0]] && optionDecl.declaration.type!=="boolean"){
+                        if(optionDecl.declaration.variadic){
+                            options[optionDecl.name]=Action.parseValue(action.argv.join(' '),'option',action,optionDecl.declaration)
+                            break;
+                        }else{
+                            options[optionDecl.name]=Action.parseValue(action.argv.shift(),'option',action,optionDecl.declaration)
+                        }
+                    }else if(optionDecl.declaration.type==='boolean'){
+                        options[optionDecl.name]=Action.parseValue(content,'option',action,optionDecl.declaration)
                     }else if(optionDecl.initial){
                         options[optionDecl.name]=optionDecl.initial
                     }
@@ -120,8 +145,9 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
         action.options=options as O
         action.args=args as A
     }
-    execute(action:Action<A, O>):Awaitable<boolean|Sendable|void>{
-        const args=[],options={}
+    //匹配快捷方式参数、选项
+    private parseShortcut(action:Action){
+        const args=action.args||=[],options=action.options||={}
         for(const shortcut of this.shortcuts){
             if(typeof shortcut.name==='string' && action.source){
                 args.push(...(shortcut.args||[]))
@@ -133,14 +159,16 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
                     matched.forEach((str,index)=>{
                         if(index===0)return
                         if(shortcut.args){
-                            shortcut.args.forEach(arg=>{
-                                args.push(arg.replace(`$${index}`,str))
+                            shortcut.args.forEach((arg,i)=>{
+                                if(typeof arg==='string' && arg.includes(`${index}`)){
+                                    args.push(Action.parseValue(arg.replace(`$${index}`,str),'argument',action,this.args[i]))
+                                }
                             })
                         }
                         if(shortcut.option){
                             Object.keys(shortcut.option).forEach(key=>{
-                                if(shortcut.option[key].includes(`$${index}`)){
-                                    options[key]=shortcut.option[key].replace(`$${index}`,str)
+                                if(typeof options[key]==='string' && shortcut.option[key].includes(`$${index}`)){
+                                    options[key]=Action.parseValue(shortcut.option[key].replace(`$${index}`,str),'option',action,Object.values(this.options).find(opt=>opt.name=key))
                                 }
                             })
                         }
@@ -148,13 +176,25 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
                 }
             }
         }
-        this.parse(action,args,options)
+        return {args,options}
+    }
+    // 执行指令
+    async execute(action:Action<A, O>){
+        // 匹配参数、选项
+        this.parseShortcut(action)
+        if(action.error){
+            return action.error
+        }
+        this.parseCommand(action)
+        if(action.error){
+            return action.error
+        }
         for(const callback of this.checkers){
-            const result=callback.call(this,action,...action.args)
+            const result=await callback.call(this,action,...action.args)
             if(result)return result
         }
         for(const callback of this.actions){
-            const result=callback.call(this,action,...action.args)
+            const result=await callback.call(this,action,...action.args)
             if(result)return result
         }
     }
@@ -163,7 +203,7 @@ export namespace Command{
     export interface Shortcut {
         name?: string | RegExp;
         fuzzy?: boolean;
-        args?: string[];
+        args?: any[];
         option?: Record<string, any>;
     }
     export interface OptionConfig<T extends Action.Type = Action.Type> {

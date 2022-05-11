@@ -3,7 +3,7 @@ import {Logger} from 'log4js'
 export type EventName=string
 export type EventListener=(...args:any[])=>Awaitable<any>
 
-export class EventFeeder{
+export class EventThrower{
     private _events:Record<EventName, EventListener[]>={}
     private static metaWords='./-'.split('')
     private _maxListenerCount:number=15
@@ -12,7 +12,7 @@ export class EventFeeder{
     private getListeners(name:EventName){
         return Object.keys(this._events)
             .filter(key=>{
-                return new RegExp(EventFeeder.createRegStr(name)).test(key) || new RegExp(EventFeeder.createRegStr(key)).test(name)
+                return new RegExp(EventThrower.createRegStr(name)).test(key) || new RegExp(EventThrower.createRegStr(key)).test(name)
             })
             .map(key=>this._events[key])
             .flat()

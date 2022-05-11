@@ -1,6 +1,6 @@
-import {App} from "../app";
-import {NSession} from '../bot'
-import {Command} from '../command'
+import {Plugin} from "../../plugin";
+import {NSession} from '../../bot'
+import {Command} from '../../command'
 
 import {template} from "@oitq/utils";
 
@@ -55,10 +55,7 @@ function formatCommands(path: string, session: NSession<'message'>, children: Co
 function getOptions(command: Command,config:HelpOptions) {
     const options = config.showHidden
         ? Object.values(command.options)
-        : Object.values(command.options).filter(option => {
-            console.log(option)
-            return option.hidden!==true
-        })
+        : Object.values(command.options).filter(option => option.hidden!==true)
     if (!options.length) return []
 
     const output = [template('internal.available-options')]
@@ -71,7 +68,11 @@ function getOptions(command: Command,config:HelpOptions) {
 }
 
 async function showHelp(command: Command, session: NSession<'message'>, config: HelpOptions) {
-    const output = [command.name +'     '+ command.descriptions.join()]
+    const output = [`${command.name}${
+        command.args.length?' '+command.args.map(arg=>{
+            return arg.required?`<${arg.variadic?'...':''}${arg.name}>`:`[${arg.variadic?'...':''}${arg.name}]`
+        }):''
+    }     ${command.descriptions.join()}`]
 
     if (command.aliasNames.length) {
         output.push(template('internal.command-aliases', command.aliasNames.join('，')))
@@ -134,29 +135,28 @@ template.set('internal', {
     'command-min-interval': '距离下次调用还需：{0}/{1} 秒。',
 })
 
-export function install(app: App) {
-    app.on('command.add', (cmd:Command) => cmd.use(enableHelp))
-    app.before('command', async ({command, session, options}) => {
+export function install(plugin: Plugin) {
+    plugin.on('command.add', (cmd:Command) => cmd.use(enableHelp))
+    plugin.before('command', async ({command, session, options}) => {
         if (!command) return
         if (command['actions'].length && !options['help']) return
         return await session.execute(`help ${command.name}`)
     })
-
-    app.command('help [command]', 'message')
+    plugin.command('help [command]', 'message')
         .desc('显示帮助信息')
         .shortcut('帮助')
         .option('authority', '-a  显示权限设置')
         .option('showHidden', '-H  查看隐藏的选项和指令')
         .action(async ({session, options}, target) => {
             if (!target) {
-                const commands = app.commands.filter(cmd => cmd.parent === null)
+                const commands = plugin.app.commands.filter(cmd => cmd.parent === null)
                 const output = formatCommands('internal.global-help-prolog', session, commands, options)
                 const epilog = template('internal.global-help-epilog')
                 if (epilog) output.push(epilog)
                 return output.filter(Boolean).join('\n')
             }
 
-            const command = app.findCommand({name:target,source:session.cqCode,},app.commands)
+            const command = plugin.app.findCommand({name:target,source:session.cqCode,},plugin.app.commands)
             if (!command?.match(session)) {
                 return
             }

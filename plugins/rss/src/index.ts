@@ -95,7 +95,7 @@ export function install(ctx: Plugin, config: Config) {
 
     async function validate(url: string, session: NSession<'message'>) {
         if (validators[url]) {
-            await session.reply('正在尝试连接……')
+            await session.sendMsg('正在尝试连接……')
             return validators[url]
         }
 

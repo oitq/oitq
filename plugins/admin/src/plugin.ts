@@ -14,10 +14,11 @@ export function install(ctx:Plugin){
             if(actions.length===0)actions.push('list')
             switch (actions[0]){
                 case 'list':
-                    return JSON.stringify(ctx.pluginManager.loadAllPlugins(),null,2)
+                    if(name)return JSON.stringify(ctx.app.pluginManager.list(name),null,2)
+                    return JSON.stringify(ctx.app.pluginManager.listAll(),null,2)
                 case 'disable':
-                    if(name)await ctx.pluginManager.disable(name,session.bot)
-                    else await ctx.pluginManager.disableAll(session.bot)
+                    if(name)await ctx.app.pluginManager.disable(name)
+                    else await ctx.app.pluginManager.disableAll(session.bot)
                     break;
                 case 'enable':
                     if(!name){
@@ -25,13 +26,12 @@ export function install(ctx:Plugin){
                             name:'pluginName',
                             message:'请选择你要启用的插件',
                             type:'select',
-                            choices:ctx.pluginManager.loadAllPlugins().filter(plugin=>plugin.isInstall && !plugin.binds.includes(session.bot.uin))
-                                .map((plugin)=>({title:plugin.fullName,value:plugin.name}))
+                            choices:ctx.app.pluginManager.listAll().filter(plugin=>plugin.installed && plugin.disabled)
                         })
                         if(!pluginName)return ''
                         name=pluginName
                     }
-                    await ctx.pluginManager.enable(name,session.bot)
+                    await ctx.app.pluginManager.enable(name)
                     break;
                 case 'install':
                     if(!name){
@@ -39,7 +39,7 @@ export function install(ctx:Plugin){
                             name:'pluginName',
                             message:'请选择你要安装的插件',
                             type:'select',
-                            choices:ctx.pluginManager.loadAllPlugins().filter(plugin=>!plugin.isInstall)
+                            choices:ctx.app.pluginManager.listAll().filter(plugin=>!plugin.installed)
                                 .map((plugin)=>({title:plugin.fullName,value:plugin.name}))
                         })
                         if(!pluginName)return ''
@@ -53,13 +53,13 @@ export function install(ctx:Plugin){
                             name:'pluginName',
                             message:'请选择你要卸载的插件',
                             type:'select',
-                            choices:ctx.pluginManager.loadAllPlugins().filter(plugin=>plugin.isInstall)
+                            choices:ctx.app.pluginManager.listAll().filter(plugin=>plugin.installed)
                                 .map((plugin)=>({title:plugin.fullName,value:plugin.name}))
                         })
                         if(!pluginName)return ''
                         name=pluginName
                     }
-                    await ctx.pluginManager.uninstall(name)
+                    await ctx.app.pluginManager.uninstall(name)
                     break;
                 case 'restart':
                     if(!name){
@@ -67,13 +67,13 @@ export function install(ctx:Plugin){
                             name:'pluginName',
                             message:'请选择你要重启的插件',
                             type:'select',
-                            choices:ctx.pluginManager.loadAllPlugins().filter(plugin=>plugin.isInstall)
+                            choices:ctx.app.pluginManager.listAll().filter(plugin=>plugin.installed)
                                 .map((plugin)=>({title:plugin.fullName,value:plugin.name}))
                         })
                         if(!pluginName)return ''
                         name=pluginName
                     }
-                    await ctx.pluginManager.restart(name)
+                    await ctx.app.pluginManager.restart(name)
                     break;
             }
             return '操作已执行'

@@ -16,8 +16,7 @@ interface Message {
     type: 'send'
     body: any
 }
-
-export const name = 'daemon'
+export const name='daemon'
 export function install(plugin: Plugin, config: Config = {}) {
     const { exitCommand, autoRestart = true } = config
 
@@ -28,6 +27,7 @@ export function install(plugin: Plugin, config: Config = {}) {
 
     exitCommand && plugin
         .command(exitCommand === true ? 'exit' : exitCommand, 'message.private')
+        .desc('关闭bot')
         .check(async ({session})=>{
             if(!session.bot.isMaster(session.user_id)&&!session.bot.isAdmin(session.user_id)){
                 return '权限不足'
@@ -39,11 +39,11 @@ export function install(plugin: Plugin, config: Config = {}) {
         .action(async ({ options, session }) => {
             const channelId = [session.message_type,session.group_id||session.discuss_id||session.user_id].join(':');
             if (!options.restart) {
-                await session.reply(template('daemon.exiting')).catch(noop)
+                await session.sendMsg(template('daemon.exiting')).catch(noop)
                 process.exit()
             }
             process.send({ type: 'queue', body: { channelId,sid:session.bot.uin, message: template('daemon.restarted') } })
-            await session.reply(template('daemon.restarting')).catch(noop)
+            await session.sendMsg(template('daemon.restarting')).catch(noop)
             process.exit(51)
         })
 

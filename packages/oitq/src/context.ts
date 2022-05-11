@@ -1,11 +1,11 @@
-import {Bot, BotEventMap, TargetType} from "./bot";
+import {Bot, BotEventMap, ChannelId, NSession, TargetType} from "./bot";
 import {App} from "./app";
-import {Plugin, PluginManager} from "./plugin";
+import {Plugin} from "./plugin";
 import {Action} from "./argv";
 import {getLogger} from 'log4js'
 import {Awaitable} from "@oitq/utils";
-import {EventFeeder} from "./event";
-import {Middleware} from "./middleware";
+import {EventThrower} from "./event";
+import {MessageRet} from "oicq";
 type ServiceAction="load"|'change'|'destroy'|'enable'|'disable'
 type ServiceListener<K extends keyof App.Services = keyof App.Services>=(key:K,service:App.Services[K])=>void
 type ServiceEventMap = {
@@ -15,6 +15,7 @@ type ServiceEventMap = {
 export interface AppEventMap extends BotEventMap,ServiceEventMap{
     'start'():void
     'stop'():void
+    'send'(messageRet:MessageRet,channelId:ChannelId):void
     'command.execute.before'(argv: Action): Awaitable<void | string>
     'command.execute.after'(argv: Action): Awaitable<void | string>
     'bot.add'(bot: Bot): void
@@ -38,9 +39,9 @@ export interface Context{
     emit<E extends keyof AppEventMap>(name:E,...args:Parameters<AppEventMap[E]>):boolean
     emit<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,...args:any[]):boolean
 }
-export class Context extends EventFeeder{
+export class Context extends EventThrower{
     public app:App
-    constructor() {
+    constructor(filter:Context.Filter=()=>true) {
         super();
     }
 
@@ -49,4 +50,7 @@ export class Context extends EventFeeder{
         logger.level=this.app.config.logLevel
         return logger
     }
+}
+export namespace Context{
+    export type Filter=(session:NSession<'message'>)=>boolean
 }

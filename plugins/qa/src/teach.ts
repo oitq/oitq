@@ -229,7 +229,7 @@ export default function install(ctx: Plugin) {
                 let [dialogue] = dialogues
                 if (options.edit) {
                     if (dialogues.length > 1) {
-                        await session.reply(template('teach.list', filterResult(dialogues).rows.join('\n'), '请输入要编辑的问答索引'))
+                        await session.sendMsg(template('teach.list', filterResult(dialogues).rows.join('\n'), '请输入要编辑的问答索引'))
                         const {index} = await session.prompt({
                             type:'select',
                             name:'index',
@@ -237,7 +237,7 @@ export default function install(ctx: Plugin) {
                             choices:filterResult(dialogues).rows.map((item,i)=>({title:item,value:i}))
                         })
                         if (index < 1 || index > dialogues.length) {
-                            await session.reply('输入错误')
+                            await session.sendMsg('输入错误')
                             return
                         }
                         dialogue = dialogues[index - 1]

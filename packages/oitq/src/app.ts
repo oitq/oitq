@@ -7,7 +7,6 @@ import {Plugin, PluginManager} from './plugin'
 import {Computed} from "./session";
 import {defaultAppConfig, dir} from './static'
 import * as path from "path";
-import {Middleware} from "./middleware";
 export namespace App{
     export interface Config extends PluginManager.Config{
         start?:boolean,
@@ -33,7 +32,7 @@ export class App extends Plugin{
     public app=this
     public config:App.Config={logLevel:process.env.OITQ_LOG_LEVEL as LogLevel||'info'}
     constructor(config:App.Config|string=path.join(dir,'oitq.json')) {
-        super('app', {install(){}});
+        super({install(){},name:'app'});
         this.logger=this.getLogger('app')
         if(typeof config==='string'){
             createIfNotExist(config,defaultAppConfig)
@@ -71,7 +70,6 @@ export class App extends Plugin{
             const config=this.config.bots||=[]
             const option:Bot.Config=config.find(botOption=>botOption.uin===bot.uin) ||{} as any
             await bot.login(option.password)
-            await this.pluginManager.restore(bot)
             await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
         }
         this.emit('ready')

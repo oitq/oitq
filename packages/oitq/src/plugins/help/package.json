@@ -1,0 +1,14 @@
+{
+  "name": "help",
+  "version": "0.0.1",
+  "main": "index.js",
+  "author": {
+    "name": "凉菜",
+    "email": "admin@liucl.cn"
+  },
+  "description": "帮助插件",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oitq/oitq.git"
+  }
+}

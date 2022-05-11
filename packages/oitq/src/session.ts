@@ -122,9 +122,15 @@ export class Session {
                 template = template.replace(/\$\((.*)\)/, executeResult)
             }
         }
-        return this.app.executeCommand(this as any,template)
+        return this.app.execute(this as any,template)
     }
-
+    async sendMsg(content:Sendable,channelId?:ChannelId){
+        if(!channelId && this.post_type!=='message')throw new Error('非message会话发送消息需要提供ChannelId')
+        if(!channelId)channelId=this.getChannelId()
+        const result=await this.bot.sendMsg(channelId,content)
+        this.app.emit('send',result,channelId)
+        return result
+    }
     getChannelId(): ChannelId {
         return [
             this.message_type,

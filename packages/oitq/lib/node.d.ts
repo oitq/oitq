@@ -248,6 +248,7 @@ declare module 'oitq'{
     export interface AppEventMap extends BotEventMap, ServiceEventMap {
         'start'(): void;
         'stop'(): void;
+        'send'(messageRet:MessageRet,channelId:ChannelId):void
         'command.execute.before'(argv: Action): Awaitable<void | string>;
         'command.execute.after'(argv: Action): Awaitable<void | string>;
         'bot.add'(bot: Bot): void;
@@ -297,22 +298,36 @@ declare module 'oitq'{
     }
     // middleware.d.ts
     export type Middleware = (session: NSession<'message'>) => Awaitable<boolean | Sendable | void>;
+
     // plugin.d.ts
 
+
+    export type AuthorInfo = string | {
+        name: string;
+        email?: string;
+        url?: string;
+    };
+    export type RepoInfo = string | {
+        type: 'git' | 'svn';
+        url: string;
+    };
+    export interface PkgInfo {
+        name: string;
+        version: string;
+        description: string;
+        author: AuthorInfo;
+        repository: RepoInfo;
+    }
     export enum PluginType {
         Builtin = "builtin",
         Official = "official",
         Community = "community",
         Custom = "custom"
     }
-    export interface PluginDesc {
-        name: string;
+    export interface PluginDesc extends Partial<PkgInfo> {
         type: PluginType;
-        shortName?: string;
-        desc?: string;
-        author?: string;
-        version?: string;
-        isInstall?: boolean;
+        installed?: boolean;
+        disabled: boolean;
         binds?: number[];
     }
     export interface PluginConfig {
@@ -320,39 +335,53 @@ declare module 'oitq'{
         config?: any;
     }
     export class Plugin extends Context {
-        readonly name: string;
         readonly fullpath: string;
         readonly path: string;
         protected hooks: PluginManager.Object;
-        middlewares: Middleware[];
-        disableStatus:boolean
         parent: Plugin;
         children: Plugin[];
         private _commands;
         disposes: Dispose[];
+        middlewares: Middleware[];
         commandList: Command[];
         readonly binds: Set<Bot>;
         private _using;
+        disableStatus: boolean;
         config: any;
+        pkg: Partial<PkgInfo>;
         pluginManager: PluginManager;
-        constructor(name: string, hooks: string | PluginManager.Object);
-        executeCommand(session: NSession<'message'>, content?: string): Promise<boolean | Sendable | void>;
-        middleware(middleware: Middleware, prepend?: boolean): () => boolean;
-        findCommand(argv: Pick<Action, 'name' | 'source'>, commandList?: Command[]): Command<any[], {}>;
+        constructor(hooks?: string | PluginManager.Object);
         private dispatch;
         get commands(): Command[];
         getCommand(name: string): Command<any[], {}>;
-        using<T extends PluginManager.Plugin>(using: readonly (keyof App.Services)[], plugin: T, config?: PluginManager.Option<T>): this;
-        plugin(name: string, config?: any): this;
-        plugin<T extends PluginManager.Plugin>(plugin: T, config?: PluginManager.Option<T>): this;
+        middleware(middleware: Middleware, prepend?: boolean): () => boolean;
+        using<T extends PluginManager.Plugin>(using: readonly (keyof App.Services)[], plugin: T, config?: PluginManager.Option<T>): Plugin;
+        addPlugin(plugin: Plugin, config?: any): this;
+        plugin(name: string, config?: any): Plugin;
+        plugin<T extends PluginManager.Plugin>(plugin: T, config?: PluginManager.Option<T>): Plugin;
         command<D extends string>(def: D, triggerEvent: keyof EventMap): Command<Action.ArgumentType<D>>;
+        execute(session: NSession<'message'>, content?: string): Promise<boolean | Sendable | void>;
+        findCommand(argv: Pick<Action, 'name' | 'source'>, commandList?: Command[]): Command<any[], {}>;
         protected _editBotPluginCache(bot: Bot, method: "add" | "delete"): Promise<boolean>;
         install(config?: any): Promise<void>;
         enable(bot?: Bot): Promise<void>;
         disable(bot?: Bot): Promise<void>;
-        destroy(): Promise<void>;
+        destroy(plugin?: Plugin): void;
         dispose(): void;
         restart(): Promise<void>;
+        name(name: string): this;
+        version(version: string): this;
+        desc(desc: string): this;
+        repo(repoInfo: RepoInfo): this;
+        author(authorInfo: AuthorInfo): this;
+        toJSON(): {
+            disabled: boolean;
+            name?: string;
+            version?: string;
+            description?: string;
+            author?: AuthorInfo;
+            repository?: RepoInfo;
+        };
     }
     export class PluginManager {
         app: App;
@@ -367,25 +396,35 @@ declare module 'oitq'{
         checkInstall(name: string): Plugin;
         destroy(name: string): Promise<void>;
         restart(name: string): Promise<void>;
-        enable(name: string, bot: Bot): Promise<void>;
-        disable(name: string, bot: Bot): Promise<void>;
+        enable(name: string, bot?: Bot): Promise<void>;
+        disable(name: string, bot?: Bot): Promise<void>;
         disableAll(bot: Bot): Promise<void>;
-        loadAllPlugins(): PluginDesc[];
+        listAll(): {
+            disabled: boolean;
+            installed: boolean;
+            type?: PluginType;
+            binds?: number[];
+            name?: string;
+            version?: string;
+            description?: string;
+            author?: AuthorInfo;
+            repository?: RepoInfo;
+        }[];
+        list(name?: string): Partial<PluginDesc>[];
         /**
          * 恢复bot的插件服务
          * @param {Bot} bot
          */
         restore(bot: Bot): Promise<Map<string, Plugin>>;
     }
+    export type Function<T = any> = (plugin: Plugin, config: T) => Awaitable<any>;
     export namespace PluginManager {
         const defaultConfig: Config;
         type Plugin = Function | Object;
-        type Function<T = any> = (app: App, config: T) => Awaitable<any>;
         interface Object<T = any> {
             install: Function<T>;
-            using?: readonly (keyof App.Services)[];
             name?: string;
-            author?: string;
+            using?: readonly (keyof App.Services)[];
         }
         type Option<T extends Plugin> = T extends Function<infer U> ? U : T extends Object<infer U> ? U : never;
         interface Config {
@@ -393,6 +432,7 @@ declare module 'oitq'{
             plugins?: Record<string, any>;
         }
     }
+
 
     // prompt.d.ts
 
@@ -486,6 +526,7 @@ declare module 'oitq'{
         executeTemplate(template: string): Promise<boolean | void | Sendable>;
         getChannelId(): ChannelId;
         getFromUrl(): string;
+        sendMsg(content: Sendable, channelId?: ChannelId): Promise<MessageRet>;
         resolveValue<T>(source: T | ((session: Session) => T)): T;
         text(path: string | string[], params?: object): string;
         toJSON(...besides: string[]): {
