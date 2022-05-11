@@ -81,7 +81,7 @@ export function send(plugin: Plugin) {
             return message
         })
 }
-export function recall(plugin: Plugin, { recall = 50 }: RecallConfig) {
+export function recall(plugin: Plugin, { recall = 10 }: RecallConfig) {
     const recent: Dict<string[]> = {}
     plugin.app.on('send', (messageRet,channelId) => {
         const list = recent[channelId] ||= []
