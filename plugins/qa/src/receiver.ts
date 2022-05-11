@@ -64,7 +64,7 @@ export async function triggerTeach(ctx: Plugin, session: NSession<'message'>) {
     try{
         session.bot.sendMsg(session.getChannelId(),await session.executeTemplate(answerText) as string)
     }catch{
-        await session.app.executeCommand(session,answerText)
+        await session.app.execute(session,answerText)
     }
     return true
 }

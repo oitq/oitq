@@ -138,7 +138,7 @@ export function feedback(plugin: Plugin, operators: number[]) {
         const { source } = session
         const quote = { ...source as Quotable, flag: 1 };
         const data = feedbacks[genDmMessageId(quote.user_id, quote.seq, quote.rand, quote.time, quote.flag)]
-        if (!data) return ''
+        if (!data) return
         await plugin.app.bots.find(bot=>bot.uin===data[0]).sendMsg(data[1], source.message)
     })
 }
