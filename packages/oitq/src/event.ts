@@ -31,6 +31,7 @@ export class EventThrower{
         return name.replace('*','.*')
     }
     async parallel<K extends EventName>(name: K, ...args: any[]): Promise<void>{
+        if(!name.startsWith('before-'))await this.parallel(`before-${name}`,...args)
         const tasks: Promise<any>[] = []
         const listeners=this.getListeners(name)
         for (let listener of listeners) {
@@ -60,9 +61,10 @@ export class EventThrower{
             return this.off(name, listener)
         }
     }
-
-    before<K extends string>(name: K, listener: (...args:any)=>void) {
-        return this.on(name,listener,true)
+    before<K extends string>(name: K, listener: (...args:any)=>void, append = false) {
+        const seg = name.split('.')
+        seg[seg.length - 1] = 'before-' + seg[seg.length - 1]
+        return this.on(seg.join('.') as EventName, listener, !append)
     }
 
     off<K extends EventName>(name: K, listener: (...args:any[])=>void) {

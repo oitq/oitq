@@ -33,7 +33,6 @@
   },
   "homepage": "https://github.com/oitq/oitq#readme",
   "dependencies": {
-    "mysql2": "^2.3.3",
     "sequelize": "^6.17.0",
     "sequelize-typescript": "^2.1.3"
   }

@@ -25,24 +25,15 @@ export namespace App{
         bots:BotList
     }
 }
-export interface App extends App.Services{
+export interface App{
     start(...args:any[]):Awaitable<void>
 }
 export class App extends Plugin{
     public app=this
-    public config:App.Config={logLevel:process.env.OITQ_LOG_LEVEL as LogLevel||'info'}
-    constructor(config:App.Config|string=path.join(dir,'oitq.json')) {
+    constructor(public config:App.Config) {
         super({install(){},name:'app'});
         this.logger=this.getLogger('app')
-        if(typeof config==='string'){
-            createIfNotExist(config,defaultAppConfig)
-            try{
-                config=readConfig(config) as App.Config
-            }catch {
-                config={}
-            }
-        }
-        this.config=merge(defaultAppConfig,config)
+
         this.bots=new BotList(this)
         this.pluginManager=new PluginManager(this,this.config.plugin_dir)
         this.pluginManager.init(this.config.plugins)
@@ -78,7 +69,15 @@ export class App extends Plugin{
 export const getAppConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'oitq.config.json')
 export const getBotConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'bot.default.json')
 export function createApp(config:string|App.Config=getAppConfigPath(dir)){
-    return new App(config)
+    if(typeof config==='string'){
+        createIfNotExist(config,defaultAppConfig)
+        try{
+            config=readConfig(config) as App.Config
+        }catch {
+            config={}
+        }
+    }
+    return new App(merge(defaultAppConfig,config))
 }
 export function defineConfig(config:App.Config){
     return config

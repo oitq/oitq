@@ -14,6 +14,7 @@ import {Awaitable, Define, Dict, Extend} from '@oitq/utils'
 import { Logger } from 'log4js';
 import {Config as ClientConfig} from "oicq/lib/client";
 import 'oicq2-cq-enable'
+import {EventThrower} from "../src/event";
 export * from '@oitq/utils';
 declare module 'oitq'{
     // app.d.ts
@@ -139,8 +140,8 @@ declare module 'oitq'{
         [P in keyof EventMap as `bot.${P}`]: (session: NSession<P>) => void;
     };
     export interface BotEventMap extends Transform, EventMap {
-        'bot.add'(bot: Bot): void;
-        'bot.remove'(bot: Bot): void;
+        'bot-add'(bot: Bot): void;
+        'bot-remove'(bot: Bot): void;
     }
     export class Bot extends Client {
         app: App;
@@ -240,19 +241,24 @@ declare module 'oitq'{
 
     // context.d.ts
 
+
     type ServiceAction = "load" | 'change' | 'destroy' | 'enable' | 'disable';
     type ServiceListener<K extends keyof App.Services = keyof App.Services> = (key: K, service: App.Services[K]) => void;
+    type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never;
     type ServiceEventMap = {
         [P in ServiceAction as `service.${P}`]: ServiceListener;
+    };
+    export type BeforeEventMap = {
+        [E in keyof AppEventMap & string as OmitSubstring<E, 'before-'>]: AppEventMap[E];
     };
     export interface AppEventMap extends BotEventMap, ServiceEventMap {
         'start'(): void;
         'stop'(): void;
-        'send'(messageRet:MessageRet,channelId:ChannelId):void
-        'command.execute.before'(argv: Action): Awaitable<void | string>;
-        'command.execute.after'(argv: Action): Awaitable<void | string>;
-        'bot.add'(bot: Bot): void;
-        'bot.remove'(bot: Bot): void;
+        'send'(messageRet: MessageRet, channelId: ChannelId): void;
+        'command.execute'(argv: Action): Awaitable<void | string>;
+        'command.execute'(argv: Action): Awaitable<void | string>;
+        'bot-add'(bot: Bot): void;
+        'bot-remove'(bot: Bot): void;
         'plugin.install'(plugin: Plugin): void;
         'plugin.enable'(plugin: Plugin): void;
         'plugin.disable'(plugin: Plugin): void;
@@ -263,8 +269,8 @@ declare module 'oitq'{
     export interface Context {
         on<E extends keyof AppEventMap>(name: E, listener: AppEventMap[E], prepend?: boolean): Dispose;
         on<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, listener: (...args: any) => void, prepend?: boolean): Dispose;
-        before<E extends keyof AppEventMap>(name: E, listener: AppEventMap[E], append?: boolean): Dispose;
-        before<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, listener: (...args: any) => void, append?: boolean): Dispose;
+        before<E extends keyof BeforeEventMap>(name: E, listener: BeforeEventMap[E], append?: boolean): Dispose;
+        before<S extends string | symbol>(name: S & Exclude<S, keyof BeforeEventMap>, listener: (...args: any) => void, append?: boolean): Dispose;
         once<E extends keyof AppEventMap>(name: E, listener: AppEventMap[E], prepend?: boolean): Dispose;
         once<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, listener: (...args: any) => void, prepend?: boolean): Dispose;
         addEventListener<E extends keyof AppEventMap>(name: E, listener: AppEventMap[E], prepend?: boolean): Dispose;
@@ -272,15 +278,18 @@ declare module 'oitq'{
         emit<E extends keyof AppEventMap>(name: E, ...args: Parameters<AppEventMap[E]>): boolean;
         emit<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, ...args: any[]): boolean;
     }
-    export class Context extends EventFeeder {
+    export class Context extends EventThrower {
         app: App;
-        constructor();
+        constructor(filter?: Context.Filter);
         getLogger(name: string): import("log4js").Logger;
+    }
+    export namespace Context {
+        type Filter = (session: NSession<'message'>) => boolean;
     }
     // event.d.ts
     export type EventName = string;
     export type EventListener = (...args: any[]) => Awaitable<any>;
-    export class EventFeeder {
+    export class EventThrower {
         private _events;
         private static metaWords;
         private _maxListenerCount;
@@ -293,7 +302,7 @@ declare module 'oitq'{
         parallel<K extends EventName>(name: K, ...args: any[]): Promise<void>;
         emit<K extends EventName>(name: K, ...args: any[]): void;
         on<K extends EventName>(name: K, listener: (...args: any[]) => void, prepend?: boolean): () => boolean;
-        before<K extends string>(name: K, listener: (...args: any) => void): () => boolean;
+        before<K extends string>(name: K, listener: (...args: any) => void, append?: boolean): () => boolean;
         off<K extends EventName>(name: K, listener: (...args: any[]) => void): boolean;
     }
     // middleware.d.ts

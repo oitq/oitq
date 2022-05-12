@@ -172,7 +172,9 @@ export class Plugin extends Context {
         }
         const callback = () => {
             if (using.some(name => !this[name])) return
-            this.app.pluginManager.install(plugin,config)
+            this.app.pluginManager.install(plugin,config).catch(e=>{
+                this.logger.warn(`安装${plugin.pkg.name}时遇到错误，错误信息：${e.message}`)
+            })
         }
         callback()
         return plugin
@@ -208,6 +210,7 @@ export class Plugin extends Context {
             this.commandList.push(command)
             this.disposes.push(()=>remove(this.commandList,command),()=>{
                 this._commands.delete(name)
+                this.emit('command.remove',command)
                 return true
             })
             this.emit('command.add',command)
@@ -266,52 +269,58 @@ export class Plugin extends Context {
             this.hooks = mod.exports
         }
         if (typeof this.hooks.install !== "function") {
-            throw new PluginError(`插件(${this.name})未导出install方法，无法安装。`)
+            throw new PluginError(`插件(${this.pkg.name})未导出install方法，无法安装。`)
         }
         const res = this.hooks.install(this, config)
-        if (res instanceof Promise)
-            await res
-        this.logger.info(`已成功安装`)
+        try{
+            if (res instanceof Promise)
+                await res
+        }catch (e){
+            throw new PluginError(e.message)
+        }
+        this.parent.emit('plugin.install',this)
+        return `已安装插件(${this.pkg.name})${this.disableStatus!==true?',默认启用':''}`
     }
     async enable(bot: Bot=null) {
         if(!bot && this.disableStatus){
             this.disableStatus=false
-            this.logger.info(`已启用`)
-            return
+            this.parent.emit('plugin.enable',this)
+            return `已启用插件${this.pkg.name}`
         }
         if(this.disableStatus){
-            this.logger.info(`重复启用`)
-            return
+            throw new PluginError(`重复启用插件(${this.pkg.name})`)
         }
         if (this.binds.has(bot)) {
-            throw new PluginError(`这个机器人实例已经启用了插件(${this.name})`)
+            throw new PluginError(`这个机器人实例已经启用了插件(${this.pkg.name})`)
         }
         await this._editBotPluginCache(bot, "add")
         this.binds.add(bot)
-        this.logger.info(`成功对机器人${bot.uin}启用`)
+        this.parent.emit('plugin.enable',this)
+        return `已对Bot(${bot.uin})启用插件(${this.pkg.name})`
     }
 
     async disable(bot: Bot=null) {
         if(!bot && !this.disableStatus){
             this.disableStatus=true
-            this.logger.info(`已禁用`)
-            return
+            this.parent.emit('plugin.disable',this)
+            return `已启用插件${this.pkg.name}`
         }
         if(this.disableStatus){
             this.logger.info(`重复禁用`)
             return
         }
         if (!this.binds.has(bot)) {
-            throw new PluginError(`这个机器人实例尚未启用插件(${this.name})`)
+            throw new PluginError(`这个机器人实例尚未启用插件(${this.pkg.name})`)
         }
         await this._editBotPluginCache(bot, "delete")
         this.binds.delete(bot)
         this.logger.info(`成功对机器人${bot.uin}禁用`)
+        this.parent.emit('plugin.disable',this)
+        return `已对Bot(${bot.uin})禁用插件(${this.pkg.name})`
     }
 
     destroy(plugin:Plugin=this) {
-        this.logger.info(`正在卸载...`)
-        plugin.dispose()
+        return plugin.dispose()
     }
     dispose(){
         while (this.disposes.length){
@@ -319,16 +328,15 @@ export class Plugin extends Context {
         }
         if(this.parent){
             remove(this.parent.children,this)
+            this.parent.emit('plugin.install',this)
         }
+        return `以卸载插件(${this.pkg.name})`
     }
     async restart() {
         this.logger.info(`正在重新安装...`)
-        try {
-            await this.destroy()
-            await this.install()
-        } catch (e) {
-            throw new PluginError(`重启插件(${this.name})时遇到错误。\n错误信息：` + e.message)
-        }
+        this.destroy()
+        await this.install()
+        return `已重启插件(${this.pkg.name})`
     }
     name(name:string){
         this.pkg.name=name
@@ -373,11 +381,7 @@ export class PluginManager {
             try {
                 this.app.plugin(name,conf)
             } catch (e) {
-                if (e instanceof PluginError) {
-                    this.logger.warn(e.message)
-                } else {
-                    throw e
-                }
+                this.logger.warn(e.message)
             }
         }
 
@@ -431,9 +435,10 @@ export class PluginManager {
         return plugin
     }
 
-    install(plugin: Plugin, config?) {
-        plugin.install(config)
+    async install(plugin: Plugin, config?) {
+        const result=await plugin.install(config)
         this.plugins.set(plugin.pkg.name||Math.random().toString(),plugin)
+        return result
     }
 
     checkInstall(name: string) {
@@ -444,8 +449,9 @@ export class PluginManager {
     }
 
     async destroy(name: string) {
-        await this.checkInstall(name).destroy()
+        const result=this.checkInstall(name).destroy()
         this.plugins.delete(name)
+        return result
     }
 
     restart(name: string) {
@@ -461,12 +467,16 @@ export class PluginManager {
     }
 
     async disableAll(bot: Bot) {
+        const success:string[]=[],error:string[]=[]
         for (let [_, plugin] of this.plugins) {
-            try {
+            try{
                 await plugin.disable(bot)
-            } catch {
+                success.push(plugin.pkg.name)
+            }catch (e){
+                error.push(`${plugin.pkg.name}:${e.message}`)
             }
         }
+        return `调用成功，禁用成功${success.length}个插件\n禁用失败${error.length}个插件${error.length?`错误信息:\n${error.join('\n')}`:''}`
     }
     listAll(){
         const pluginList:Partial<PluginDesc>[]=[]

@@ -8,18 +8,19 @@ import {EventThrower} from "./event";
 import {MessageRet} from "oicq";
 type ServiceAction="load"|'change'|'destroy'|'enable'|'disable'
 type ServiceListener<K extends keyof App.Services = keyof App.Services>=(key:K,service:App.Services[K])=>void
+type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
 type ServiceEventMap = {
     [P in ServiceAction as `service.${P}`]: ServiceListener;
 };
 
+export type BeforeEventMap = { [E in keyof AppEventMap & string as OmitSubstring<E, 'before-'>]: AppEventMap[E] }
 export interface AppEventMap extends BotEventMap,ServiceEventMap{
     'start'():void
     'stop'():void
     'send'(messageRet:MessageRet,channelId:ChannelId):void
-    'command.execute.before'(argv: Action): Awaitable<void | string>
-    'command.execute.after'(argv: Action): Awaitable<void | string>
-    'bot.add'(bot: Bot): void
-    'bot.remove'(bot: Bot): void
+    'attach'(session:NSession<'message'>):Awaitable<void|string>
+    'bot-add'(bot: Bot): void
+    'bot-remove'(bot: Bot): void
     'plugin.install'(plugin: Plugin): void
     'plugin.enable'(plugin: Plugin): void
     'plugin.disable'(plugin: Plugin): void
@@ -27,11 +28,11 @@ export interface AppEventMap extends BotEventMap,ServiceEventMap{
 }
 export type Dispose=()=>boolean
 export type MsgChannelId=`${number}-${TargetType}:${number}`
-export interface Context{
+export interface Context extends App.Services{
     on<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):Dispose;
     on<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):Dispose;
-    before<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],append?:boolean):Dispose
-    before<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,append?:boolean):Dispose
+    before<E extends keyof BeforeEventMap>(name:E,listener:BeforeEventMap[E],append?:boolean):Dispose
+    before<S extends string|symbol>(name:S & Exclude<S, keyof BeforeEventMap>,listener:(...args:any)=>void,append?:boolean):Dispose
     once<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):Dispose;
     once<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):Dispose;
     addEventListener<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):Dispose;

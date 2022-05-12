@@ -1,9 +1,10 @@
 import {  Dict, makeArray,App, Plugin } from 'oitq'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
+import moment from 'moment'
 import { debounce } from 'throttle-debounce'
 import ns from 'ns-require'
-import {Dispose} from "oitq/lib";
+import {Dispose} from "oitq";
 
 function loadDependencies(filename: string, ignored: Set<string>) {
     const dependencies = new Set<string>()
@@ -294,4 +295,34 @@ namespace Watcher {
 export const name='Watcher'
 export function install(app:App,config:Watcher.Config){
     new Watcher(app,config)
+}
+class Timer{
+    time
+    constructor(timeStr=moment().format('YYYY-MM-DD hh:mm:ss')) {
+        this.time=moment(timeStr)
+    }
+    get now(){
+        return moment().format('YYYY-MM-DD')
+    }
+    get year(){
+        return this.time.year()
+    }
+    get month(){
+        return this.time.month()+1
+    }
+    get day(){
+        return this.time.days()+1
+    }
+    get days(){
+        return this.time.daysInMonth()
+    }
+    get hour(){
+        return this.time.hour()
+    }
+    get minute(){
+        return this.time.minute()
+    }
+    get second(){
+        return this.time.second()
+    }
 }

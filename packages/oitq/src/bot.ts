@@ -11,7 +11,6 @@ import {
     escapeRegExp,
 } from "@oitq/utils";
 import {MessageRet} from "oicq/lib/events";
-
 template.set('bot', {
     system: {
         login: {
@@ -34,9 +33,9 @@ type Transform = {
 }
 
 export interface BotEventMap extends Transform,EventMap {
-    'bot.add'(bot: Bot): void
+    'bot-add'(bot: Bot): void
 
-    'bot.remove'(bot: Bot): void
+    'bot-remove'(bot: Bot): void
 }
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
@@ -138,7 +137,7 @@ export class BotList extends Array<Bot> {
     create(options: Bot.Config) {
         const bot = new Bot(this.app, options)
         this.push(bot)
-        this.app.emit('bot.add', bot)
+        this.app.emit('bot-add', bot)
         return bot
     }
 
@@ -148,7 +147,7 @@ export class BotList extends Array<Bot> {
             return false
         }
         const bot = this[index]
-        this.app.emit('bot.remove', bot)
+        this.app.emit('bot-remove', bot)
         this.splice(index, 1)
         return true
     }

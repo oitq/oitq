@@ -112,7 +112,6 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
                     continue;
                 }
             }
-            if(!argDecl)continue
             const optionDecl=[...Object.values(this.options)].find(decl=>decl.shortName===content)
             if(optionDecl && !options[optionDecl.name]){
                 if(optionDecl.declaration.required && !optionDecl.initial && (!action.argv[0] || options[action.args[0]])){

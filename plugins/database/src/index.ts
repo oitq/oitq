@@ -28,7 +28,7 @@ class Database{
     constructor(public plugin:Plugin,public options:Options) {
         this.addModels(User)
         this.sequelize=new Sequelize({...this.options,logging:(text)=>this.logger.debug(text)})
-        plugin.before('attach',async (session:NSession<'message'>)=>{
+        plugin.before('attach',async (session)=>{
             const {sender:{nickname,user_id}}=session
             const [user]=await User.findOrCreate({
                 attributes:['user_id',"authority",'name'],

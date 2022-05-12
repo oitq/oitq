@@ -13,7 +13,7 @@ declare module 'oitq'{
 }
 export const using=['httpServer'] as const
 export function install(plugin:Plugin){
-    plugin.on('bot.add',async (bot:Bot)=>{
+    plugin.on('bot-add',async (bot:Bot)=>{
         if(bot.options.oneBot){
             bot.oneBot=new OneBot(plugin.app,bot,typeof bot.options.oneBot==='boolean'?defaultOneBotConfig:merge(defaultOneBotConfig,bot.options.oneBot))
             bot.on('message',(data)=>bot.oneBot.dispatch(data))
@@ -23,7 +23,7 @@ export function install(plugin:Plugin){
             await bot.oneBot.start()
         }
     })
-    plugin.on('bot.remove',(bot:Bot)=>{
+    plugin.on('bot-remove',(bot:Bot)=>{
         if(bot.oneBot){
             bot.oneBot.stop()
         }

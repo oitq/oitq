@@ -23,7 +23,7 @@ export function install(ctx: Plugin, { minInterval }: Config={minInterval:60000}
             try{
                 session.bot.sendMsg(session.getChannelId(),await session.executeTemplate(command) as string)
             }catch{
-                await ctx.executeCommand(session,command)
+                await ctx.execute(session,command)
             }
             if (!lastCall || !interval) return
             lastCall = new Date()
