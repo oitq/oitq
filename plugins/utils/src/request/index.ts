@@ -1,4 +1,4 @@
-import {Plugin,App} from "oitq";
+import {Plugin} from "oitq";
 import {Requester} from "./requester";
 import {toCqcode} from "@oitq/utils";
 import {segment} from "oicq";
@@ -8,7 +8,7 @@ export interface RequestConfig extends Requester.Config{
 }
 
 declare module 'oitq'{
-    namespace App{
+    namespace Plugin{
         interface Services{
             axios:Requester
         }
@@ -16,7 +16,7 @@ declare module 'oitq'{
 }
 export const name='request'
 export function install(ctx:Plugin,config:RequestConfig){
-    ctx.app.axios=Requester.create(config)
+    ctx.axios=Requester.create(config)
     ctx.command('utils/axios.get <url>','message')
         .desc('发起get请求')
         .option('config','-c 配置请求config')
@@ -99,3 +99,4 @@ export function install(ctx:Plugin,config:RequestConfig){
         })
 
 }
+Plugin.service('axios')

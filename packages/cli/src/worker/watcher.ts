@@ -35,7 +35,7 @@ function deepEqual(a: any, b: any) {
     return Object.keys({ ...a, ...b }).every(key => deepEqual(a[key], b[key]))
 }
 declare module 'oitq'{
-    interface App{
+    interface Plugin{
         watcher:Watcher
     }
 }
@@ -295,34 +295,4 @@ namespace Watcher {
 export const name='Watcher'
 export function install(app:App,config:Watcher.Config){
     new Watcher(app,config)
-}
-class Timer{
-    time
-    constructor(timeStr=moment().format('YYYY-MM-DD hh:mm:ss')) {
-        this.time=moment(timeStr)
-    }
-    get now(){
-        return moment().format('YYYY-MM-DD')
-    }
-    get year(){
-        return this.time.year()
-    }
-    get month(){
-        return this.time.month()+1
-    }
-    get day(){
-        return this.time.days()+1
-    }
-    get days(){
-        return this.time.daysInMonth()
-    }
-    get hour(){
-        return this.time.hour()
-    }
-    get minute(){
-        return this.time.minute()
-    }
-    get second(){
-        return this.time.second()
-    }
 }

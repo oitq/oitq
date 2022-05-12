@@ -4,7 +4,7 @@ function applyAdminHandler(ctx:Plugin,session:NSession<'request'>){
     const dispose=ctx.middleware(async (sess)=>{
         if(['同意','拒绝','不同意'].includes(sess.cqCode)){
             await session.approve(['同意'].includes(sess.cqCode))
-            await sess.reply(`已完成你的操作：【${sess.cqCode}】`)
+            await sess.sendMsg(`已完成你的操作：【${sess.cqCode}】`)
             const otherAdmin=session.bot.admins.filter(admin=>admin!==sess.user_id)
             await session.bot.broadcast(otherAdmin,`管理员【${sess.user_id}】已处理`)
             dispose()

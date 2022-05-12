@@ -136,13 +136,13 @@ template.set('internal', {
 })
 
 export function install(plugin: Plugin) {
-    plugin.on('command.add', (cmd:Command) => cmd.use(enableHelp))
-    plugin.before('command', async ({command, session, options}) => {
+    plugin.app.on('command.add', (cmd:Command) => cmd.use(enableHelp))
+    plugin.app.before('command', async ({command, session, options}) => {
         if (!command) return
         if (command['actions'].length && !options['help']) return
         return await session.execute(`help ${command.name}`)
     })
-    plugin.command('help [command]', 'message')
+    plugin.app.command('help [command]', 'message')
         .desc('显示帮助信息')
         .shortcut('帮助')
         .option('authority', '-a  显示权限设置')

@@ -19,45 +19,37 @@ export * from '@oitq/utils';
 declare module 'oitq'{
     // app.d.ts
     import { LogLevel, Sendable } from "oicq";
-    import { BotList, Bot } from "./bot";
     import { Dict, Awaitable } from "@oitq/utils";
-    import { MsgChannelId } from './context';
-    import { Plugin, PluginManager } from './plugin';
-    import { Computed } from "./session";
-    import { Middleware } from "./middleware";
+    export interface App {
+        start(...args: any[]): Awaitable<void>;
+    }
+    export class App extends Plugin {
+        config: App.Config;
+        app: this;
+        constructor(config: App.Config);
+        broadcast(msgChannelIds: MsgChannelId | MsgChannelId[], msg: Sendable): Promise<void>;
+        addBot(config: Bot.Config): Bot;
+        removeBot(uin: number): boolean;
+    }
     export namespace App {
         interface Config extends PluginManager.Config {
             start?: boolean;
             prefix?: Computed<string | string[]>;
             minSimilarity?: number;
             bots?: Bot.Config[];
-            plugins?:Record<string, any>
+            plugins?: Record<string, any>;
             delay?: Dict<number>;
             token?: string;
             dir?: string;
             logLevel?: LogLevel;
             maxListeners?: number;
         }
-        interface Services {
-            pluginManager: PluginManager;
-            bots: BotList;
-        }
-    }
-    export interface App extends App.Services {
-        start(...args: any[]): Awaitable<void>;
-    }
-    export class App extends Plugin {
-        app: this;
-        config: App.Config;
-        constructor(config?: App.Config | string);
-        broadcast(msgChannelIds: MsgChannelId | MsgChannelId[], msg: Sendable): Promise<void>;
-        addBot(config: Bot.Config): Bot;
-        removeBot(uin: number): boolean;
     }
     export const getAppConfigPath: (baseDir?: string) => string;
     export const getBotConfigPath: (baseDir?: string) => string;
     export function createApp(config?: string | App.Config): App;
     export function defineConfig(config: App.Config): App.Config;
+
 
 
     // argv.d.ts
@@ -126,7 +118,6 @@ declare module 'oitq'{
             values?: Record<string, any>;
         }
         export type OptionDeclarationMap = Record<string, OptionDeclaration>;
-        export {};
     }
 
 
@@ -145,7 +136,7 @@ declare module 'oitq'{
     }
     export class Bot extends Client {
         app: App;
-        options:Bot.Config;
+        options: Bot.Config;
         private _nameRE;
         admins: number[];
         master: number;
@@ -185,6 +176,7 @@ declare module 'oitq'{
     }
     // command.d.ts
 
+
     export class Command<A extends any[] = any[], O extends {} = {}> {
         plugin: Plugin;
         triggerEvent: keyof EventMap;
@@ -212,21 +204,22 @@ declare module 'oitq'{
         subcommand<D extends string>(def: D, triggerEvent: keyof EventMap): Command<Action.ArgumentType<D>>;
         option<K extends string, D extends string>(name: K, declaration: D, config?: Command.OptionConfig): Command<A, Define<O, K, Command.OptionType<D>>>;
         action(action: Command.Callback<A, O>): this;
-        parse(action: Action<A, O>, args?: any[], options?: {}): void;
-        execute(action: Action<A, O>): Awaitable<boolean | Sendable | void>;
+        private parseCommand;
+        private parseShortcut;
+        execute(action: Action<A, O>): Promise<any>;
     }
     export namespace Command {
         interface Shortcut {
             name?: string | RegExp;
             fuzzy?: boolean;
-            args?: string[];
+            args?: any[];
             option?: Record<string, any>;
         }
         interface OptionConfig<T extends Action.Type = Action.Type> {
             value?: any;
             initial?: any;
             name?: string;
-            fullName?: string;
+            shortName?: string;
             type?: T;
             /** hide the option by default */
             hidden?: boolean;
@@ -239,11 +232,12 @@ declare module 'oitq'{
         function findDeclarationArgs(declaration: string): Action.Declaration[];
     }
 
+
     // context.d.ts
 
 
     type ServiceAction = "load" | 'change' | 'destroy' | 'enable' | 'disable';
-    type ServiceListener<K extends keyof App.Services = keyof App.Services> = (key: K, service: App.Services[K]) => void;
+    type ServiceListener<K extends keyof Plugin.Services = keyof Plugin.Services> = (key: K, service: Plugin.Services[K]) => void;
     type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never;
     type ServiceEventMap = {
         [P in ServiceAction as `service.${P}`]: ServiceListener;
@@ -255,8 +249,7 @@ declare module 'oitq'{
         'start'(): void;
         'stop'(): void;
         'send'(messageRet: MessageRet, channelId: ChannelId): void;
-        'command.execute'(argv: Action): Awaitable<void | string>;
-        'command.execute'(argv: Action): Awaitable<void | string>;
+        'attach'(session: NSession<'message'>): Awaitable<void | string>;
         'bot-add'(bot: Bot): void;
         'bot-remove'(bot: Bot): void;
         'plugin.install'(plugin: Plugin): void;
@@ -266,7 +259,7 @@ declare module 'oitq'{
     }
     export type Dispose = () => boolean;
     export type MsgChannelId = `${number}-${TargetType}:${number}`;
-    export interface Context {
+    export interface Context extends Plugin.Services {
         on<E extends keyof AppEventMap>(name: E, listener: AppEventMap[E], prepend?: boolean): Dispose;
         on<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, listener: (...args: any) => void, prepend?: boolean): Dispose;
         before<E extends keyof BeforeEventMap>(name: E, listener: BeforeEventMap[E], append?: boolean): Dispose;
@@ -287,6 +280,7 @@ declare module 'oitq'{
         type Filter = (session: NSession<'message'>) => boolean;
     }
     // event.d.ts
+
     export type EventName = string;
     export type EventListener = (...args: any[]) => Awaitable<any>;
     export class EventThrower {
@@ -305,6 +299,7 @@ declare module 'oitq'{
         before<K extends string>(name: K, listener: (...args: any) => void, append?: boolean): () => boolean;
         off<K extends EventName>(name: K, listener: (...args: any[]) => void): boolean;
     }
+
     // middleware.d.ts
     export type Middleware = (session: NSession<'message'>) => Awaitable<boolean | Sendable | void>;
 
@@ -317,7 +312,8 @@ declare module 'oitq'{
         url?: string;
     };
     export type RepoInfo = string | {
-        type: 'git' | 'svn';
+        type?: 'git' | 'svn';
+        directory?: string;
         url: string;
     };
     export interface PkgInfo {
@@ -364,7 +360,7 @@ declare module 'oitq'{
         get commands(): Command[];
         getCommand(name: string): Command<any[], {}>;
         middleware(middleware: Middleware, prepend?: boolean): () => boolean;
-        using<T extends PluginManager.Plugin>(using: readonly (keyof App.Services)[], plugin: T, config?: PluginManager.Option<T>): Plugin;
+        using<T extends PluginManager.Plugin>(using: readonly (keyof Plugin.Services)[], plugin: T, config?: PluginManager.Option<T>): Plugin;
         addPlugin(plugin: Plugin, config?: any): this;
         plugin(name: string, config?: any): Plugin;
         plugin<T extends PluginManager.Plugin>(plugin: T, config?: PluginManager.Option<T>): Plugin;
@@ -372,12 +368,12 @@ declare module 'oitq'{
         execute(session: NSession<'message'>, content?: string): Promise<boolean | Sendable | void>;
         findCommand(argv: Pick<Action, 'name' | 'source'>, commandList?: Command[]): Command<any[], {}>;
         protected _editBotPluginCache(bot: Bot, method: "add" | "delete"): Promise<boolean>;
-        install(config?: any): Promise<void>;
-        enable(bot?: Bot): Promise<void>;
-        disable(bot?: Bot): Promise<void>;
-        destroy(plugin?: Plugin): void;
-        dispose(): void;
-        restart(): Promise<void>;
+        install(config?: any): Promise<string>;
+        enable(bot?: Bot): Promise<string>;
+        disable(bot?: Bot): Promise<string>;
+        destroy(plugin?: Plugin): string;
+        dispose(): string;
+        restart(): Promise<string>;
         name(name: string): this;
         version(version: string): this;
         desc(desc: string): this;
@@ -392,6 +388,13 @@ declare module 'oitq'{
             repository?: RepoInfo;
         };
     }
+    export namespace Plugin {
+        interface Services {
+            pluginManager: PluginManager;
+            bots: BotList;
+        }
+        function service<K extends keyof Services>(key: K): void;
+    }
     export class PluginManager {
         app: App;
         plugin_dir: string;
@@ -401,13 +404,13 @@ declare module 'oitq'{
         getLogger(category: string): import("log4js").Logger;
         init(plugins: Record<string, boolean | Record<string, any>>): void;
         import(name: string): Plugin;
-        install(plugin: Plugin, config?: any): void;
+        install(plugin: Plugin, config?: any): Promise<string>;
         checkInstall(name: string): Plugin;
-        destroy(name: string): Promise<void>;
-        restart(name: string): Promise<void>;
-        enable(name: string, bot?: Bot): Promise<void>;
-        disable(name: string, bot?: Bot): Promise<void>;
-        disableAll(bot: Bot): Promise<void>;
+        destroy(name: string): Promise<string>;
+        restart(name: string): Promise<string>;
+        enable(name: string, bot?: Bot): Promise<string>;
+        disable(name: string, bot?: Bot): Promise<string>;
+        disableAll(bot: Bot): Promise<string>;
         listAll(): {
             disabled: boolean;
             installed: boolean;
@@ -433,7 +436,7 @@ declare module 'oitq'{
         interface Object<T = any> {
             install: Function<T>;
             name?: string;
-            using?: readonly (keyof App.Services)[];
+            using?: readonly (keyof Plugin.Services)[];
         }
         type Option<T extends Plugin> = T extends Function<infer U> ? U : T extends Object<infer U> ? U : never;
         interface Config {
@@ -442,9 +445,7 @@ declare module 'oitq'{
         }
     }
 
-
     // prompt.d.ts
-
 
     export namespace Prompt {
         export interface Options<T extends keyof TypeKV> {
@@ -491,8 +492,8 @@ declare module 'oitq'{
         export {};
     }
 
-    // session.d.ts
 
+    // session.d.ts
 
     export interface Session {
         self_id?: number;
@@ -532,10 +533,10 @@ declare module 'oitq'{
         middleware(middleware: Middleware): () => boolean;
         private promptReal;
         prompt<T extends keyof Prompt.TypeKV>(options: Prompt.Options<T> | Array<Prompt.Options<T>>): Promise<Prompt.Answers<Prompt.ValueType<T>>>;
-        executeTemplate(template: string): Promise<boolean | void | Sendable>;
+        executeTemplate(template: string): Promise<Sendable>;
+        sendMsg(content: Sendable, channelId?: ChannelId): Promise<MessageRet>;
         getChannelId(): ChannelId;
         getFromUrl(): string;
-        sendMsg(content: Sendable, channelId?: ChannelId): Promise<MessageRet>;
         resolveValue<T>(source: T | ((session: Session) => T)): T;
         text(path: string | string[], params?: object): string;
         toJSON(...besides: string[]): {

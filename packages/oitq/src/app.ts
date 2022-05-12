@@ -7,24 +7,6 @@ import {Plugin, PluginManager} from './plugin'
 import {Computed} from "./session";
 import {defaultAppConfig, dir} from './static'
 import * as path from "path";
-export namespace App{
-    export interface Config extends PluginManager.Config{
-        start?:boolean,
-        prefix?: Computed<string | string[]>
-        minSimilarity?:number,
-        bots?:Bot.Config[]
-        plugins?:Record<string, any>
-        delay?:Dict<number>
-        token?:string
-        dir?:string
-        logLevel?:LogLevel
-        maxListeners?:number,
-    }
-    export interface Services{
-        pluginManager:PluginManager
-        bots:BotList
-    }
-}
 export interface App{
     start(...args:any[]):Awaitable<void>
 }
@@ -38,6 +20,7 @@ export class App extends Plugin{
         this.pluginManager=new PluginManager(this,this.config.plugin_dir)
         this.pluginManager.init(this.config.plugins)
     }
+
     async broadcast(msgChannelIds:MsgChannelId|MsgChannelId[],msg:Sendable){
         msgChannelIds=[].concat(msgChannelIds)
         for(const msgChannelId of msgChannelIds){
@@ -65,6 +48,21 @@ export class App extends Plugin{
         }
         this.emit('ready')
     }
+}
+export namespace App{
+    export interface Config extends PluginManager.Config{
+        start?:boolean,
+        prefix?: Computed<string | string[]>
+        minSimilarity?:number,
+        bots?:Bot.Config[]
+        plugins?:Record<string, any>
+        delay?:Dict<number>
+        token?:string
+        dir?:string
+        logLevel?:LogLevel
+        maxListeners?:number,
+    }
+
 }
 export const getAppConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'oitq.config.json')
 export const getBotConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'bot.default.json')

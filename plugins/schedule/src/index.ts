@@ -21,9 +21,12 @@ export function install(ctx: Plugin, { minInterval }: Config={minInterval:60000}
         async function executeSchedule() {
             ctx.app.getLogger('schedule').debug('execute %d: %s', id, command)
             try{
-                session.bot.sendMsg(session.getChannelId(),await session.executeTemplate(command) as string)
+                await session.sendMsg(await session.executeTemplate(command) as string)
+                let result=await session.executeTemplate(command)
+                if(result && typeof result!=='boolean')await session.sendMsg(result)
             }catch{
-                await ctx.execute(session,command)
+                let result=await ctx.app.execute(session,command)
+                if(result && typeof result!=='boolean')await session.sendMsg(result)
             }
             if (!lastCall || !interval) return
             lastCall = new Date()

@@ -7,7 +7,7 @@ import {Awaitable} from "@oitq/utils";
 import {EventThrower} from "./event";
 import {MessageRet} from "oicq";
 type ServiceAction="load"|'change'|'destroy'|'enable'|'disable'
-type ServiceListener<K extends keyof App.Services = keyof App.Services>=(key:K,service:App.Services[K])=>void
+type ServiceListener<K extends keyof Plugin.Services = keyof Plugin.Services>=(key:K,service:Plugin.Services[K])=>void
 type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
 type ServiceEventMap = {
     [P in ServiceAction as `service.${P}`]: ServiceListener;
@@ -28,7 +28,7 @@ export interface AppEventMap extends BotEventMap,ServiceEventMap{
 }
 export type Dispose=()=>boolean
 export type MsgChannelId=`${number}-${TargetType}:${number}`
-export interface Context extends App.Services{
+export interface Context extends Plugin.Services{
     on<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):Dispose;
     on<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):Dispose;
     before<E extends keyof BeforeEventMap>(name:E,listener:BeforeEventMap[E],append?:boolean):Dispose

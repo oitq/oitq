@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from 'fs'
-import {App, Bot, Dispose, Middleware, NSession} from "./index";
+import {App, Bot, BotList, Dispose, Middleware, NSession} from "./index";
 import {Awaitable, createIfNotExist, readConfig, remove, writeConfig} from "@oitq/utils";
 import {Context} from "./context";
 import {Command} from "./command";
@@ -13,7 +13,8 @@ export type AuthorInfo=string|{
     url?:string
 }
 export type RepoInfo=string|{
-    type:'git'|'svn'
+    type?:'git'|'svn'
+    directory?:string
     url:string
 }
 export interface PkgInfo{
@@ -57,7 +58,7 @@ export class Plugin extends Context {
     middlewares: Middleware[] = []
     public commandList:Command[]=[]
     readonly binds = new Set<Bot>()
-    private _using: readonly (keyof App.Services)[] = []
+    private _using: readonly (keyof Plugin.Services)[] = []
     disableStatus:boolean=false
     config
     pkg:Partial<PkgInfo>={}
@@ -133,7 +134,7 @@ export class Plugin extends Context {
         this.disposes.push(dispose)
         return dispose
     }
-    using<T extends PluginManager.Plugin>(using: readonly (keyof App.Services)[], plugin:T,config?:PluginManager.Option<T>) {
+    using<T extends PluginManager.Plugin>(using: readonly (keyof Plugin.Services)[], plugin:T,config?:PluginManager.Option<T>) {
         if(typeof plugin==='function'){
             plugin={install:plugin} as T
         }
@@ -171,7 +172,10 @@ export class Plugin extends Context {
             })
         }
         const callback = () => {
-            if (using.some(name => !this[name])) return
+            if (using.some(n => {
+                console.log(n,this[n])
+                return !this[n]
+            })) return
             this.app.pluginManager.install(plugin,config).catch(e=>{
                 this.logger.warn(`安装${plugin.pkg.name}时遇到错误，错误信息：${e.message}`)
             })
@@ -278,13 +282,15 @@ export class Plugin extends Context {
         }catch (e){
             throw new PluginError(e.message)
         }
-        this.parent.emit('plugin.install',this)
+        this.app.emit('plugin.install',this)
+        this.logger.info(`已安装插件(${this.pkg.name})${this.disableStatus!==true?',默认启用':''}`)
         return `已安装插件(${this.pkg.name})${this.disableStatus!==true?',默认启用':''}`
     }
     async enable(bot: Bot=null) {
         if(!bot && this.disableStatus){
             this.disableStatus=false
             this.parent.emit('plugin.enable',this)
+            this.logger.info(`已启用插件${this.pkg.name}`)
             return `已启用插件${this.pkg.name}`
         }
         if(this.disableStatus){
@@ -296,6 +302,7 @@ export class Plugin extends Context {
         await this._editBotPluginCache(bot, "add")
         this.binds.add(bot)
         this.parent.emit('plugin.enable',this)
+        this.logger.info(`已对Bot(${bot.uin})启用插件(${this.pkg.name})`)
         return `已对Bot(${bot.uin})启用插件(${this.pkg.name})`
     }
 
@@ -316,6 +323,7 @@ export class Plugin extends Context {
         this.binds.delete(bot)
         this.logger.info(`成功对机器人${bot.uin}禁用`)
         this.parent.emit('plugin.disable',this)
+        this.logger.info(`已对Bot(${bot.uin})禁用插件(${this.pkg.name})`)
         return `已对Bot(${bot.uin})禁用插件(${this.pkg.name})`
     }
 
@@ -330,6 +338,7 @@ export class Plugin extends Context {
             remove(this.parent.children,this)
             this.parent.emit('plugin.install',this)
         }
+        this.logger.info(`以卸载插件(${this.pkg.name})`)
         return `以卸载插件(${this.pkg.name})`
     }
     async restart() {
@@ -365,7 +374,33 @@ export class Plugin extends Context {
         }
     }
 }
-
+export namespace Plugin{
+    export interface Services{
+        pluginManager:PluginManager
+        bots:BotList
+    }
+    export function service<K extends keyof Services>(key: K) {
+        if (Object.prototype.hasOwnProperty.call(Plugin.prototype, key)) return
+        const privateKey = Symbol(key)
+        Object.defineProperty(Plugin.prototype, key, {
+            get(this: Plugin) {
+                const value:Services[K] = this.app[privateKey]
+                if (!value) return
+                return value
+            },
+            set(this: Plugin, value:Services[K]) {
+                const oldValue:Services[K] = this.app[privateKey]
+                if (oldValue === value) return
+                this.app[privateKey] = value
+                const action = value ? oldValue ? 'change' : 'load' : 'destroy'
+                this.emit(`service.${action}`, key,value)
+                this.logger.debug(key, action)
+            },
+        })
+    }
+    service('bots')
+    service('pluginManager')
+}
 export class PluginManager {
     public plugins: Map<string, Plugin> = new Map<string, Plugin>()
     constructor(public app: App, public plugin_dir:string) {
@@ -659,7 +694,7 @@ export namespace PluginManager {
     export interface Object<T = any> {
         install: Function<T>
         name?:string
-        using?: readonly (keyof App.Services)[]
+        using?: readonly (keyof Plugin.Services)[]
     }
 
     export type Option<T extends Plugin> =

@@ -62,11 +62,10 @@ export async function triggerTeach(ctx: Plugin, session: NSession<'message'>) {
     let answerText=dialogue.answer
         .replace(/\$0/g,question)
     try{
-        session.bot.sendMsg(session.getChannelId(),await session.executeTemplate(answerText) as string)
+        return await session.executeTemplate(answerText) as string
     }catch{
-        await session.app.execute(session,answerText)
+        return await session.app.execute(session,answerText)
     }
-    return true
 }
 
 export default function install(plugin: Plugin) {

@@ -3,7 +3,7 @@ import {QAInfo,QA} from "./models";
 import teach from './teach'
 import receiver from './receiver'
 declare module 'oitq'{
-    namespace App{
+    namespace Plugin{
         interface Services{
             qa:QAManager
         }
@@ -12,13 +12,13 @@ declare module 'oitq'{
 export const name='qa'
 export const using=['database'] as const
 export function install(ctx:Plugin){
-    ctx.app.qa=new QAManager(ctx)
-    ctx.plugin(teach, {name:'question'})
-        .plugin(receiver, {name:'answer'})
+    ctx.qa=new QAManager(ctx)
+    ctx.plugin({install:teach,name:'teach'})
+        .plugin({install: receiver, name: 'answer'})
 }
 class QAManager{
     constructor(public ctx:Plugin) {
-        ctx.app.database.addModels(QA)
+        ctx.database.addModels(QA)
     }
     get logger(){
         return this.ctx.getLogger('database')

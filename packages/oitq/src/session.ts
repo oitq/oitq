@@ -59,7 +59,7 @@ export class Session {
         if (!options.type) return
         if (['select', 'multipleSelect'].includes(options.type as keyof Prompt.TypeKV) && !options.choices) throw new Error('choices is required')
         return new Promise<Prompt.ValueType<T> | void>(resolve => {
-            this.reply(Prompt.formatOutput(prev, answer, options))
+            this.sendMsg(Prompt.formatOutput(prev, answer, options))
             const dispose = this.middleware((session) => {
                 const cb = () => {
                     let result = Prompt.formatValue(prev, answer, options, session.message)
@@ -76,9 +76,9 @@ export class Session {
                     try {
                         let result = options.validate(session.cqCode)
                         if (result && typeof result === "boolean") cb()
-                        else this.reply(options.errorMsg)
+                        else this.sendMsg(options.errorMsg)
                     } catch (e) {
-                        this.reply(e.message)
+                        this.sendMsg(e.message)
                     }
                 }
             })
@@ -103,7 +103,7 @@ export class Session {
                 answer[option.name] = prev
             }
         } catch (e) {
-            this.reply(e.message)
+            this.sendMsg(e.message)
             return
         }
         return answer as Prompt.Answers<Prompt.ValueType<T>>
@@ -122,7 +122,9 @@ export class Session {
                 template = template.replace(/\$\((.*)\)/, executeResult)
             }
         }
-        return this.app.execute(this as any,template)
+        const result=await this.app.execute(this as any,template)
+        if(result && typeof result!=="boolean")return result
+        return template
     }
     async sendMsg(content:Sendable,channelId?:ChannelId){
         if(!channelId && this.post_type!=='message')throw new Error('非message会话发送消息需要提供ChannelId')

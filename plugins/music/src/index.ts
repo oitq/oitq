@@ -5,7 +5,7 @@ import querystring from "querystring";
 import {MusicPlatform} from "oicq";
 import '@oitq/plugin-utils'
 export const name = 'music'
-export const using=['utils'] as const
+export const using=['axios'] as const
 const m_ERR_CODE = Object.freeze({
     ERR_SRC: "1",
     ERR_404: "2",
@@ -122,6 +122,15 @@ export function install(ctx: Plugin) {
             if(typeof musicInfo==='string'){
                 return m_ERR_MSG[musicInfo]
             }
-            await session.bot.pickGroup(session.group_id).shareMusic(musicInfo.type,musicInfo.id)
+            switch (session.message_type){
+                case 'private':
+                    await session.bot.pickFriend(session.sender.user_id).shareMusic(musicInfo.type,musicInfo.id)
+                    break;
+                case 'group':
+                    await session.bot.pickGroup(session.group_id).shareMusic(musicInfo.type,musicInfo.id)
+                    break;
+                default:
+                    break;
+            }
         })
 }

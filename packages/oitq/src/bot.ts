@@ -96,7 +96,7 @@ export class Bot extends Client {
                 return this.pickGroup(Number(id)).sendMsg(content, source)
             case 'private':
                 if (!this.fl.get(Number(id))) throw new Error(`我没有添加用户:${id}`)
-                return this.pickUser(Number(id)).sendMsg(content, source)
+                return this.pickFriend(Number(id)).sendMsg(content, source)
         }
         throw new Error('无效的通道Id')
     }

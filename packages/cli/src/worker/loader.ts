@@ -1,9 +1,9 @@
-import {App, Dict, interpolate, valueMap } from 'oitq'
+import {Plugin,App, Dict, interpolate, valueMap } from 'oitq'
 import ConfigLoader from '@oitq/loader'
 import ns from 'ns-require'
 
 declare module 'oitq' {
-    namespace App {
+    namespace Plugin {
         interface Services {
             loader: Loader
         }

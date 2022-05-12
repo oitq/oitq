@@ -1,10 +1,10 @@
-import {Plugin,NSession,Dict} from "oitq";
+import {Plugin,Dict} from "oitq";
 import {ModelCtor, Sequelize} from "sequelize-typescript";
 import {Options} from "sequelize";
 export * from 'sequelize-typescript'
 import {User,UserInfo} from "./models";
 declare module 'oitq'{
-    namespace App{
+    namespace Plugin{
         interface Services{
             database:Database
         }
@@ -15,7 +15,7 @@ declare module 'oitq'{
 }
 export const name='database'
 export function install(plugin:Plugin,config:Options){
-    plugin.app.database=new Database(plugin,config)
+    plugin.database=new Database(plugin,config)
     plugin.app.on('ready',async ()=>{
         plugin.app.database.sequelize.addModels(Object.values(plugin.app.database.models))
         await plugin.app.database.sequelize.sync({alter:true})
@@ -54,3 +54,4 @@ class Database{
         }
     }
 }
+Plugin.service('database')

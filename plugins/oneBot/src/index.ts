@@ -2,13 +2,15 @@ import {Plugin,Bot} from "oitq";
 import {error, merge, success} from "@oitq/utils";
 import {OneBot} from "./onebot";
 import {OneBotConfig,defaultOneBotConfig} from "./config";
-import '@oitq/plugin-http-server'
+import {} from '@oitq/plugin-http-server'
 declare module 'oitq'{
     interface Bot{
         oneBot?:OneBot
     }
-    interface BotConfig{
-        oneBot?:boolean|OneBotConfig
+    namespace Bot{
+        interface Config{
+            oneBot?:boolean|OneBotConfig
+        }
     }
 }
 export const using=['httpServer'] as const
@@ -29,18 +31,18 @@ export function install(plugin:Plugin){
         }
     })
 
-    plugin.app.router.get('',(ctx)=>{
+    plugin.router.get('',(ctx)=>{
         ctx.body='this is oicq-bots api\n' +
             'use post request to visit `/${uin}/method` to apply bot method,post data will used by method params\n' +
             'use websocket to connect `/uin` to listen bot request/notice'
     })
-    plugin.app.router.post('/add',async (ctx,next)=>{
+    plugin.router.post('/add',async (ctx,next)=>{
         if(!ctx.request.body || Object.keys(ctx.request.body).length==0) return ctx.body=error('请输入完整bot配置，具体配置见github（BotOptions）')
         await plugin.app.addBot(ctx.request.body as Bot.Config)
         ctx.body=success('添加成功')
         await next()
     })
-    plugin.app.router.post('/submitSlider/:uin',async (ctx,next)=>{
+    plugin.router.post('/submitSlider/:uin',async (ctx,next)=>{
         const {uin}=ctx.params
         const {ticket}=ctx.request.body
         if(!ticket) ctx.body=error('请输入需要提交的ticket')
@@ -50,7 +52,7 @@ export function install(plugin:Plugin){
         ctx.body=success('提交SliderTicket成功')
         next()
     })
-    plugin.app.router.post('/submitSmsCode/:uin',async (ctx,next )=>{
+    plugin.router.post('/submitSmsCode/:uin',async (ctx,next )=>{
         const {uin}=ctx.params
         const {sms}=ctx.request.body
         if(!sms) ctx.body=error('请输入需要提交的短信验证码')
@@ -60,7 +62,7 @@ export function install(plugin:Plugin){
         ctx.body=success('提交短信验证码成功')
         next()
     })
-    plugin.app.router.post('/login/:uin',async (ctx,next )=>{
+    plugin.router.post('/login/:uin',async (ctx,next )=>{
         const {uin}=ctx.params
         const {password}=ctx.request.body
         const bot=plugin.app.bots.get(Number(uin))
@@ -69,7 +71,7 @@ export function install(plugin:Plugin){
         ctx.body=success('调用登录方法成功')
         next()
     })
-    plugin.app.router.get('/remove',async (ctx,next)=>{
+    plugin.router.get('/remove',async (ctx,next)=>{
         const {uin}=ctx.query
         if(!uin) ctx.body=error('请输入uin')
         plugin.app.removeBot(Number(uin))
