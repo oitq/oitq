@@ -65,7 +65,7 @@ declare module 'oitq'{
         session?: NSession<'message'>;
         bot?: Bot;
     }
-    export namespace Action {
+    export declare namespace Action {
         export interface Domain {
             string: string;
             number: number;
@@ -119,6 +119,7 @@ declare module 'oitq'{
         }
         export type OptionDeclarationMap = Record<string, OptionDeclaration>;
     }
+
 
 
     // bot.d.ts
@@ -177,7 +178,7 @@ declare module 'oitq'{
     // command.d.ts
 
 
-    export class Command<A extends any[] = any[], O extends {} = {}> {
+    export declare class Command<A extends any[] = any[], O extends {} = {}> {
         plugin: Plugin;
         triggerEvent: keyof EventMap;
         name: string;
@@ -208,7 +209,7 @@ declare module 'oitq'{
         private parseShortcut;
         execute(action: Action<A, O>): Promise<any>;
     }
-    export namespace Command {
+    export declare namespace Command {
         interface Shortcut {
             name?: string | RegExp;
             fuzzy?: boolean;
@@ -306,12 +307,12 @@ declare module 'oitq'{
     // plugin.d.ts
 
 
-    export type AuthorInfo = string | {
+    export declare type AuthorInfo = string | {
         name: string;
         email?: string;
         url?: string;
     };
-    export type RepoInfo = string | {
+    export declare type RepoInfo = string | {
         type?: 'git' | 'svn';
         directory?: string;
         url: string;
@@ -323,7 +324,7 @@ declare module 'oitq'{
         author: AuthorInfo;
         repository: RepoInfo;
     }
-    export enum PluginType {
+    export declare enum PluginType {
         Builtin = "builtin",
         Official = "official",
         Community = "community",
@@ -339,7 +340,7 @@ declare module 'oitq'{
         name: string;
         config?: any;
     }
-    export class Plugin extends Context {
+    export declare class Plugin extends Context {
         readonly fullpath: string;
         readonly path: string;
         protected hooks: PluginManager.Object;
@@ -356,7 +357,7 @@ declare module 'oitq'{
         pkg: Partial<PkgInfo>;
         pluginManager: PluginManager;
         constructor(hooks?: string | PluginManager.Object);
-        private dispatch;
+        dispatch(name: string, ...args: any[]): Promise<void>;
         get commands(): Command[];
         getCommand(name: string): Command<any[], {}>;
         middleware(middleware: Middleware, prepend?: boolean): () => boolean;
@@ -388,14 +389,14 @@ declare module 'oitq'{
             repository?: RepoInfo;
         };
     }
-    export namespace Plugin {
+    export declare namespace Plugin {
         interface Services {
             pluginManager: PluginManager;
             bots: BotList;
         }
         function service<K extends keyof Services>(key: K): void;
     }
-    export class PluginManager {
+    export declare class PluginManager {
         app: App;
         plugin_dir: string;
         plugins: Map<string, Plugin>;
@@ -429,8 +430,8 @@ declare module 'oitq'{
          */
         restore(bot: Bot): Promise<Map<string, Plugin>>;
     }
-    export type Function<T = any> = (plugin: Plugin, config: T) => Awaitable<any>;
-    export namespace PluginManager {
+    export declare type Function<T = any> = (plugin: Plugin, config: T) => Awaitable<any>;
+    export declare namespace PluginManager {
         const defaultConfig: Config;
         type Plugin = Function | Object;
         interface Object<T = any> {
