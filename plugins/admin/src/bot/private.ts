@@ -1,5 +1,5 @@
 import {Plugin,NSession} from "oitq";
-export const name='admin.bot.private'
+export const name='admin.private'
 function applyAdminHandler(ctx:Plugin,session:NSession<'request'>){
     const dispose=ctx.middleware(async (sess)=>{
         if(['同意','拒绝','不同意'].includes(sess.cqCode)){

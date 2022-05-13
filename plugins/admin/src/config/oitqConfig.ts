@@ -2,7 +2,7 @@ import {Plugin,getAppConfigPath,dir} from 'oitq'
 import ConfigLoader from '@oitq/loader'
 export const name='admin.config.oitq'
 export function install(ctx:Plugin){
-    ctx.command('admin/config/oitq [key] [value]','message.private')
+    ctx.command('admin/config/oitq [key] [value]','message')
         .desc('更改oitq配置文件')
         .option('delete','-d 删除指定key值')
         .check(async ({session})=>{

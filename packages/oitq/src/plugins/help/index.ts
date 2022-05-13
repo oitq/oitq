@@ -60,7 +60,7 @@ function getOptions(command: Command,config:HelpOptions) {
 
     const output = [template('internal.available-options')]
 
-    options.forEach((option) => {
+    options.filter((option,index)=>options.findIndex(opt=>opt.shortName===option.shortName)===index).forEach((option) => {
         output.push(`${option.shortName},--${option.name}${option.declaration.type==='boolean'?'':option.declaration.required?` <${option.name}>`:` [${option.name}]`} ${option.description}`)
     })
 

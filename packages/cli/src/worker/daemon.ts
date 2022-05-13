@@ -26,7 +26,7 @@ export function install(plugin: Plugin, config: Config = {}) {
     }
 
     exitCommand && plugin
-        .command(exitCommand === true ? 'exit' : exitCommand, 'message.private')
+        .command(exitCommand === true ? 'exit' : exitCommand, 'message')
         .desc('关闭bot')
         .check(async ({session})=>{
             if(!session.bot.isMaster(session.user_id)&&!session.bot.isAdmin(session.user_id)){

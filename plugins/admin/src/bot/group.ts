@@ -1,6 +1,6 @@
 import {Plugin, Action} from "oitq";
 import {AtElem} from 'oicq'
-export const name = 'admin.bot.group'
+export const name = 'admin.group'
 
 function checkAdmin({session}: Action) {
     let result
@@ -23,9 +23,9 @@ function checkAdmin({session}: Action) {
 }
 
 export function install(ctx: Plugin) {
-    ctx.command('admin/bot/group','message.group')
+    ctx.command('admin/group','message.group')
         .desc('群成员管理')
-    ctx.command('admin/bot/group/mute [...userIds]', 'message.group')
+    ctx.command('admin/group/mute [...userIds]', 'message.group')
         .desc('禁言群成员')
         .option('time', '-t <time:number> 禁言时长（单位：秒；默认：600）')
         .check(checkAdmin)
@@ -51,7 +51,7 @@ export function install(ctx: Plugin) {
             return `已禁言:${muteUsers.join(',')}。\n禁言时长：${(options.time || 600) / 60}分钟`
         })
 
-    ctx.command('admin/bot/group/kick [...user_id]', 'message.group')
+    ctx.command('admin/group/kick [...user_id]', 'message.group')
         .desc('踢出群成员')
         .option('block', '-b 是否拉入黑名单(默认false)')
         .check(checkAdmin)
@@ -75,7 +75,7 @@ export function install(ctx: Plugin) {
             }
             return `已踢出成员:${kickUsers.join(',')}。`
         })
-    ctx.command('admin/bot/group/invite [...user_id:number]', 'message.group')
+    ctx.command('admin/group/invite [...user_id:number]', 'message.group')
         .desc('邀请好友加入群')
         .action(async ({session, bot, options}, ...user_ids) => {
             if (!user_ids.length) {
@@ -94,7 +94,7 @@ export function install(ctx: Plugin) {
             }
             return `已邀请:${user_ids.join(',')}。`
         })
-    ctx.command('admin/bot/group/setAdmin [...user_id]','message.group')
+    ctx.command('admin/group/setAdmin [...user_id]','message.group')
         .desc('设置/取消群管理员')
         .option('cancel','-c 是否为取消(为true时即取消管理员)')
         .check(({session})=>{

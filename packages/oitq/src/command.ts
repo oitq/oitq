@@ -110,7 +110,7 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
                 args.push(Action.parseValue([content, ...action.argv].join(' '), 'argument', action, argDecl));
                 break;
             }
-            if (content[0] !== '-' && argDecl) {
+            if (content[0] !== '-' && !Object.values(this.options).find(opt=>opt.shortName===content) && argDecl) {
                 if(argDecl.variadic){
                     args.push(...[content].concat(action.argv).map(str=>Action.parseValue(str, 'argument', action, argDecl)));
                     break;
