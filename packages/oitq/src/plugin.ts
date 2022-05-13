@@ -46,7 +46,7 @@ export interface PluginConfig {
     name: string,
     config?: any
 }
-
+type EventName<K extends `bot.${keyof EventMap}`>=K extends `bot.${infer R}`?R:K
 export class Plugin extends Context {
     public readonly fullpath: string
     public readonly path: string
@@ -85,14 +85,17 @@ export class Plugin extends Context {
             this.hooks = hooks
         }
         this.on("bot.*",(session)=>{
-            this.dispatch(session.event_name,session)
+            this.dispatch(`bot.${session.event_name as keyof EventMap}`,session)
         })
+        this.on('attach',session => {this.dispatch('attach',session)})
+        this.before('attach',session => {this.dispatch('before-attach',session)})
     }
 
-    private async dispatch<K extends keyof EventMap>(name:K,session:NSession<K>){
+    async dispatch(name:string,...args){
         if(this.disableStatus)return
-        if(name&&name==='message'){
-            let result=await this.execute(session as NSession<'message'>)
+        if(name&&name==='bot.message'){
+            const session=args[0] as NSession<'message'>
+            let result=await this.execute(session)
             if(result){
                 if(typeof result!=='boolean'){
                     session.sendMsg(result)
@@ -110,7 +113,7 @@ export class Plugin extends Context {
             }
         }
         for(const plugin of this.children){
-            plugin.emit(`bot.${name}`,session)
+            await plugin.parallel(name,...args)
         }
     }
     get commands():Command[]{
@@ -228,7 +231,7 @@ export class Plugin extends Context {
         const argv = Action.parse(content)
         argv.bot = session.bot
         argv.session = session
-        const command=this.findCommand(argv,this.commandList.filter(command=>command.match(session)))
+        const command=this.findCommand(argv,this.commands.filter(command=>command.match(session)))
         if(command){
             let result
             try{

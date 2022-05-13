@@ -75,10 +75,17 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
         if(this.options[name]){
             throw new Error(`command "${this.name}" 的option名重复定义 "${name}"`)
         }
-        if(Object.values(this.options).some(opt=>opt.name===shortName)){
+        if(this.options[argDeclaration.name]){
             throw new Error(`command "${this.name}" 的option 缩写名重复使用 "${shortName}"`)
         }
         this.options[shortName] ||= {
+            name,
+            shortName,
+            description: desc,
+            ...config,
+            declaration:argDeclaration
+        }
+        this.options[name] ||= {
             name,
             shortName,
             description: desc,
@@ -166,7 +173,7 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
                         }
                         if(shortcut.option){
                             Object.keys(shortcut.option).forEach(key=>{
-                                if(typeof this.options[key]==='string' && shortcut.option[key].includes(`$${index}`)){
+                                if(this.options[key] && typeof shortcut.option[key]==='string' && shortcut.option[key].includes(`$${index}`)){
                                     options[key]=Action.parseValue(shortcut.option[key].replace(`$${index}`,str),'option',action,Object.values(this.options).find(opt=>opt.name=key))
                                 }
                             })

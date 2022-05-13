@@ -1,16 +1,5 @@
-import {Command} from "./command";
 import {Bot, NSession} from "./bot";
 
-export interface Token {
-    rest?: string
-    content: string
-    quoted: boolean
-    terminator: string
-    inters: Action[]
-}
-
-const leftQuotes = `"'“‘`
-const rightQuotes = `"'”’`
 export interface Action<A extends any[] = any[], O = {}> {
     name:string//指令名称
     argv:string[]
@@ -104,12 +93,12 @@ export namespace Action{
         const args:string[]=[]
         const message=content.split(' ')
         const name=message.shift()
-        function mergeQuote(quote:'"'|"'",list:string[],start){
+        function mergeQuote(quote:'"'|"'"|')',list:string[],start){
             let end=list.slice(start).findIndex(str=>str.endsWith(quote))
             end=end===-1?list.length:start+end+1
             const mergeList=message.slice(start,end)
             list.splice(start,end-start)
-            list.push(mergeList.join(' '))
+            list.push(quote===')'?mergeList.join(' '):mergeList.join(' ').replace(new RegExp(`${quote}`,'g'),''))
         }
         message.forEach((msg,start)=>{
             if(msg.startsWith('"')){
@@ -117,6 +106,9 @@ export namespace Action{
             }
             if(msg.startsWith("'")){
                 mergeQuote("'",message,start)
+            }
+            if(msg.startsWith("$(")){
+                mergeQuote(")",message,start)
             }
         })
         return {

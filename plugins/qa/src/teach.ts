@@ -79,9 +79,9 @@ export default function install(ctx: Plugin) {
     ctx.command('qa [question:string] [answer:string]', 'message')
         .desc('问答管理')
         .option('list', '-l 查看问答列表')
-        .option('detail', '-d <id:string> 查看指定教学详情')
+        .option('detail', '-d 查看指定教学详情')
         .option('search', '-s <keyword:string> 搜索关键词')
-        .option('remove', '-r <id:string> 删除指定id的教学')
+        .option('remove', '-r 删除指定id的教学')
         .option('target', '-T <type> 操作类型', {hidden: true})
         .option('id', '-i <id:string> 操作id', {hidden: true})
         .option('regexp', '-x 是否为正则匹配')
@@ -104,9 +104,9 @@ export default function install(ctx: Plugin) {
             }
             if (options.id && options.target) {
                 if (options.target === 'r') {
-                    options.remove = options.id
+                    options.remove = true
                 } else {
-                    options.detail = options.id
+                    options.detail = true
                 }
             }
             function filterResult(list) {
@@ -170,23 +170,23 @@ export default function install(ctx: Plugin) {
                 const teach = await QA.findOne({
                     attributes: ['id', 'question', 'answer', 'isReg', 'redirect', 'probability', 'belongs'],
                     where: {
-                        id: options.detail
+                        id: options.id
                     }
                 })
                 if (!teach) {
-                    return template('teach.404', 'ID', options.detail)
+                    return template('teach.404', 'ID', options.id)
                 }
                 const dialogue = teach.toJSON()
-                return template('teach.detail', options.detail, transformDialogue(dialogue))
+                return template('teach.detail', options.id, transformDialogue(dialogue))
             }
             if (options.remove) {
                 const dialogue = await QA.destroy({
                     where: {
-                        id: options.remove
+                        id: options.id
                     }
                 })
                 if (dialogue) {
-                    return template('teach.remove', options.remove)
+                    return template('teach.remove', options.id)
                 }
             }
             if (q) {

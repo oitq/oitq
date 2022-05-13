@@ -67,7 +67,14 @@ export class Bot extends Client {
 
     // 重写emit，将event data封装成session，上报到app
     emit<E extends keyof EventMap>(name: E, ...args: Parameters<EventMap[E]>) {
-        this.app.emit(`bot.${name}`,this.createSession(name,...args))
+        const session=this.createSession(name,...args)
+        if(name.startsWith('message')){
+            this.app.dispatch('attach',session).finally(()=>{
+                this.app.emit(`bot.${name}`,session)
+            })
+        }else {
+            this.app.emit(`bot.${name}`,session)
+        }
         this.app.emit(name,...args)
         return super.emit(name, ...args)
     }
