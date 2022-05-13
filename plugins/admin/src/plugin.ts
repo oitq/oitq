@@ -26,7 +26,9 @@ export function install(ctx:Plugin){
                             name:'pluginName',
                             message:'请选择你要启用的插件',
                             type:'select',
-                            choices:ctx.app.pluginManager.listAll().filter(plugin=>plugin.installed && plugin.disabled)
+                            choices:ctx.app.pluginManager.listAll()
+                                .filter(plugin=>plugin.installed && plugin.disabled)
+                                .map(plugin=>({title:`${plugin.name}:${plugin.description}`,value:plugin.name}))
                         })
                         if(!pluginName)return ''
                         name=pluginName
@@ -40,7 +42,7 @@ export function install(ctx:Plugin){
                             message:'请选择你要安装的插件',
                             type:'select',
                             choices:ctx.app.pluginManager.listAll().filter(plugin=>!plugin.installed)
-                                .map((plugin)=>({title:plugin.fullName,value:plugin.name}))
+                                .map((plugin)=>({title:`${plugin.name}:${plugin.description}`,value:plugin.name}))
                         })
                         if(!pluginName)return ''
                         name=pluginName
@@ -54,12 +56,12 @@ export function install(ctx:Plugin){
                             message:'请选择你要卸载的插件',
                             type:'select',
                             choices:ctx.app.pluginManager.listAll().filter(plugin=>plugin.installed)
-                                .map((plugin)=>({title:plugin.fullName,value:plugin.name}))
+                                .map((plugin)=>({title:`${plugin.name}:${plugin.description}`,value:plugin.name}))
                         })
                         if(!pluginName)return ''
                         name=pluginName
                     }
-                    await ctx.app.pluginManager.uninstall(name)
+                    await ctx.app.pluginManager.destroy(name)
                     break;
                 case 'restart':
                     if(!name){
@@ -68,7 +70,7 @@ export function install(ctx:Plugin){
                             message:'请选择你要重启的插件',
                             type:'select',
                             choices:ctx.app.pluginManager.listAll().filter(plugin=>plugin.installed)
-                                .map((plugin)=>({title:plugin.fullName,value:plugin.name}))
+                                .map((plugin)=>({title:`${plugin.name}:${plugin.description}`,value:plugin.name}))
                         })
                         if(!pluginName)return ''
                         name=pluginName

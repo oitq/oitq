@@ -1,7 +1,6 @@
 import {  Dict, makeArray,App, Plugin } from 'oitq'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
-import moment from 'moment'
 import { debounce } from 'throttle-debounce'
 import ns from 'ns-require'
 import {Dispose} from "oitq";
@@ -70,11 +69,12 @@ class Watcher {
 
     /** stashed changes */
     private stashed = new Set<string>()
-
-    constructor(private app: App, private config: Watcher.Config) {
-        app.watcher = this
-        app.on('ready', () => this.start())
-        app.on('dispose', () => this.stop())
+    private app:App
+    constructor(plugin: Plugin, private config: Watcher.Config) {
+        this.app=plugin.app
+        plugin.watcher = this
+        this.app.on('ready', () => this.start())
+        this.app.on('dispose', () => this.stop())
     }
 
     start() {
@@ -106,7 +106,7 @@ class Watcher {
                 }
             } else {
                 if (this.externals.has(path)) {
-                    triggerLocalReload()
+                    this.app.loader.fullReload()
                 } else if (require.cache[path]) {
                     this.stashed.add(path)
                     triggerLocalReload()

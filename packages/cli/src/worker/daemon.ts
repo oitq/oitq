@@ -47,7 +47,7 @@ export function install(plugin: Plugin, config: Config = {}) {
             process.exit(51)
         })
 
-    plugin.on('ready', () => {
+    plugin.app.on('ready', () => {
         process.send({ type: 'start', body: { autoRestart } })
         process.on('SIGINT', handleSignal)
         process.on('SIGTERM', handleSignal)

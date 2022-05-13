@@ -1,4 +1,4 @@
-import {Define, Awaitable} from "@oitq/utils";
+import {Define} from "@oitq/utils";
 import {Plugin} from "./plugin";
 import {EventMap, Sendable} from "oicq";
 import {Action} from "./argv";
@@ -166,7 +166,7 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
                         }
                         if(shortcut.option){
                             Object.keys(shortcut.option).forEach(key=>{
-                                if(typeof options[key]==='string' && shortcut.option[key].includes(`$${index}`)){
+                                if(typeof this.options[key]==='string' && shortcut.option[key].includes(`$${index}`)){
                                     options[key]=Action.parseValue(shortcut.option[key].replace(`$${index}`,str),'option',action,Object.values(this.options).find(opt=>opt.name=key))
                                 }
                             })

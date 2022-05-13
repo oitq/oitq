@@ -172,10 +172,7 @@ export class Plugin extends Context {
             })
         }
         const callback = () => {
-            if (using.some(n => {
-                console.log(n,this[n])
-                return !this[n]
-            })) return
+            if (using.some(n => !this[n])) return
             this.app.pluginManager.install(plugin,config).catch(e=>{
                 this.logger.warn(`安装${plugin.pkg.name}时遇到错误，错误信息：${e.message}`)
             })

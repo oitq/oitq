@@ -18,7 +18,7 @@ const m_ERR_MSG = Object.freeze({
     [m_ERR_CODE.ERR_API]: "歌曲查询出错",
 });
 
-async function musicQQ(keyword,ctx:Plugin) {
+async function musicQQ(keyword,plugin:Plugin) {
     const url = "https://c.y.qq.com/soso/fcgi-bin/client_search_cp";
     const query = {w: keyword};
     const headers = {
@@ -27,7 +27,7 @@ async function musicQQ(keyword,ctx:Plugin) {
     };
     let jbody;
     try {
-        jbody = await ctx.app.axios.get(`${url}?${new URLSearchParams(query)}`, {headers});
+        jbody = await plugin.axios.get(`${url}?${new URLSearchParams(query)}`, {headers});
     } catch (e) {
         return m_ERR_CODE.ERR_API;
     }
@@ -51,7 +51,7 @@ async function musicQQ(keyword,ctx:Plugin) {
     return m_ERR_CODE.ERR_404;
 }
 
-async function music163(keyword,ctx:Plugin) {
+async function music163(keyword,plugin:Plugin) {
     const url = "https://music.163.com/api/search/get/";
     const form = {
         s: keyword,
@@ -69,7 +69,7 @@ async function music163(keyword,ctx:Plugin) {
     };
     let jbody;
     try {
-        jbody = await ctx.app.axios.post(url,body, {headers});
+        jbody = await plugin.axios.post(url,body, {headers});
     } catch (e) {
         return m_ERR_CODE.ERR_API;
     }

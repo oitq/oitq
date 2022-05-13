@@ -1,7 +1,6 @@
 import {Plugin,template, s, fromCqcode,Dict,sleep,noop,makeArray} from "oitq";
 import { genDmMessageId } from "oicq/lib/message/message.js";
 import {OnlineStatus, Quotable} from "oicq";
-import {NSession} from "oitq/lib";
 
 template.set('common', {
     'expect-text': '请输入要发送的文本。',
@@ -30,9 +29,12 @@ export function echo(plugin:Plugin){
         .desc('输出当前会话中的变量值')
         .action(async ({session},varName)=>{
             let result:any=session
-            if(!varName)return
-            const varArr=varName.split('.')
-                .filter(name=>!['options','config','password'].includes(name))
+            if(!varName)return '请输入变量名'
+            if(varName.endsWith(')') && !session.bot.isMaster(session.user_id)) return `禁止调用函数:this.${varName}`
+            let varArr=varName.split('.')
+            if(!session.bot.isMaster(session.user_id) && varArr.some(name=>['options','bot','app','config','password'].includes(name))){
+                return `不可达的位置：${varName}`
+            }
             try{
                 const func=new Function(`return this.${varArr.join('.')}`)
                 result =func.apply(session)
@@ -134,7 +136,7 @@ export function feedback(plugin: Plugin, operators: number[]) {
             return template('common.feedback-success')
         })
 
-    plugin.middleware(async (session:NSession<'message'>) => {
+    plugin.middleware(async (session) => {
         const { source } = session
         const quote = { ...source as Quotable, flag: 1 };
         const data = feedbacks[genDmMessageId(quote.user_id, quote.seq, quote.rand, quote.time, quote.flag)]

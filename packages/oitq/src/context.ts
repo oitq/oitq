@@ -48,7 +48,7 @@ export class Context extends EventThrower{
 
     getLogger(name: string) {
         const logger=getLogger(name)
-        logger.level=this.app.config.logLevel
+        logger.level=process.env.OITQ_LOG_LEVEL||this.app.config.logLevel||'off'
         return logger
     }
 }
