@@ -61,7 +61,7 @@ function getOptions(command: Command,config:HelpOptions) {
     const output = [template('internal.available-options')]
 
     options.filter((option,index)=>options.findIndex(opt=>opt.shortName===option.shortName)===index).forEach((option) => {
-        output.push(`${option.shortName},--${option.name}${option.declaration.type==='boolean'?'':option.declaration.required?` <${option.name}>`:` [${option.name}]`} ${option.description}`)
+        output.push(`${option.shortName},--${option.name}${option.declaration.type==='boolean'?'':option.declaration.required?` <${option.name}:${option.declaration.type}>`:` [${option.name}:${option.declaration.type}]`} ${option.description}`)
     })
 
     return output
@@ -70,7 +70,7 @@ function getOptions(command: Command,config:HelpOptions) {
 async function showHelp(command: Command, session: NSession<'message'>, config: HelpOptions) {
     const output = [`${command.name}${
         command.args.length?' '+command.args.map(arg=>{
-            return arg.required?`<${arg.variadic?'...':''}${arg.name}>`:`[${arg.variadic?'...':''}${arg.name}]`
+            return arg.required?`<${arg.variadic?'...':''}${arg.name}:${arg.type}>`:`[${arg.variadic?'...':''}${arg.name}:${arg.type}]`
         }):''
     }     ${command.descriptions.join()}`]
 

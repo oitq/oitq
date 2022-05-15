@@ -88,7 +88,7 @@ export default function install(ctx: Plugin) {
         .option('redirect', '=> <question:string> 重定向到问题')
         .option('probability', '-p <probability:number> 触发概率')
         .option('trigger', '-t [trigger:string] 触发环境')
-        .option('page', '/ <page:number> 页码')
+        .option('page', '/ <page:integer> 页码')
         .alias('#')
         .shortcut(/^## (\S+)$/, {option: {search: '$1'},fuzzy:true})
         .option('edit', '-e 是否为编辑')

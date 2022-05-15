@@ -6,6 +6,7 @@ import {getLogger} from 'log4js'
 import {Awaitable} from "@oitq/utils";
 import {EventThrower} from "./event";
 import {MessageRet} from "oicq";
+import {Command} from "./command";
 type ServiceAction="load"|'change'|'destroy'|'enable'|'disable'
 type ServiceListener<K extends keyof Plugin.Services = keyof Plugin.Services>=(key:K,service:Plugin.Services[K])=>void
 type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
@@ -18,9 +19,12 @@ export interface AppEventMap extends BotEventMap,ServiceEventMap{
     'start'():void
     'stop'():void
     'send'(messageRet:MessageRet,channelId:ChannelId):void
+    'continue'(session:NSession<'message'>):Promise<string|boolean|void>
     'attach'(session:NSession<'message'>):Awaitable<void|string>
     'bot-add'(bot: Bot): void
     'bot-remove'(bot: Bot): void
+    'command-add'(command: Command): void
+    'command-remove'(command: Command): void
     'plugin.install'(plugin: Plugin): void
     'plugin.enable'(plugin: Plugin): void
     'plugin.disable'(plugin: Plugin): void

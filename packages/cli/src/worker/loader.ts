@@ -63,6 +63,7 @@ export class Loader extends ConfigLoader<App.Config> {
 
     fullReload() {
         console.info('trigger full reload')
+        this.app.dispose()
         process.exit(51)
     }
 }

@@ -50,7 +50,7 @@ type EventName<K extends `bot.${keyof EventMap}`>=K extends `bot.${infer R}`?R:K
 export class Plugin extends Context {
     public readonly fullpath: string
     public readonly path: string
-    protected hooks: PluginManager.Object
+    protected hooks: PluginManager.ObjectHook
     public parent:Plugin=null
     public children:Plugin[]=[]
     private _commands:Map<string,Command>=new Map<string, Command>()
@@ -63,7 +63,7 @@ export class Plugin extends Context {
     config
     pkg:Partial<PkgInfo>={}
     public pluginManager:PluginManager
-    constructor(hooks: string | PluginManager.Object={install(){}}) {
+    constructor(hooks: string | PluginManager.ObjectHook={install(){}}) {
         super()
         if (typeof hooks === 'string') {
             this.fullpath = require.resolve(hooks)
@@ -88,13 +88,19 @@ export class Plugin extends Context {
             this.dispatch(`bot.${session.event_name as keyof EventMap}`,session)
         })
         this.on('attach',session => {this.dispatch('attach',session)})
-        this.before('attach',session => {this.dispatch('before-attach',session)})
     }
 
     async dispatch(name:string,...args){
         if(this.disableStatus)return
         if(name&&name==='bot.message'){
             const session=args[0] as NSession<'message'>
+            const continueResult=await this.app.bail('continue',session)
+            if(continueResult){
+                if(typeof continueResult!=='boolean'){
+                    session.sendMsg(continueResult)
+                }
+                return
+            }
             let result=await this.execute(session)
             if(result){
                 if(typeof result!=='boolean'){
@@ -137,7 +143,7 @@ export class Plugin extends Context {
         this.disposes.push(dispose)
         return dispose
     }
-    using<T extends PluginManager.Plugin>(using: readonly (keyof Plugin.Services)[], plugin:T,config?:PluginManager.Option<T>) {
+    using<T extends PluginManager.PluginHook>(using: readonly (keyof Plugin.Services)[], plugin:T,config?:PluginManager.Option<T>) {
         if(typeof plugin==='function'){
             plugin={install:plugin} as T
         }
@@ -150,14 +156,14 @@ export class Plugin extends Context {
         return this
     }
     // 定义子插件
-    plugin(name:string,config?:any):Plugin
-    plugin<T extends PluginManager.Plugin>(plugin:T,config?:PluginManager.Option<T>):Plugin
-    plugin(entry: string|PluginManager.Plugin, config?: any):Plugin{
+    async plugin(name:string,config?:any):Promise<Plugin>
+    async plugin<T extends PluginManager.PluginHook>(plugin:T,config?:PluginManager.Option<T>):Promise<Plugin>
+    async plugin(entry: string|PluginManager.PluginHook, config?: any):Promise<Plugin>{
         let plugin:Plugin
         if(typeof entry==='string')plugin=this.app.pluginManager.import(entry)
         else{
-            if(typeof entry==='function')entry={install:entry,name:entry.name}
-            plugin=new Plugin(entry)
+            if(typeof entry!=='function') plugin=new Plugin(entry)
+            else plugin=new Plugin({install:entry,name:entry.name})
         }
         const using = plugin['_using'] || []
         this.children.push(plugin)
@@ -169,18 +175,18 @@ export class Plugin extends Context {
         plugin.app=this.app
         plugin.logger=this.getLogger(`[plugin:${plugin.pkg.name}]`)
         if (using.length) {
-            this.on('service.load', async (name) => {
+            this.app.on('service.load', async (name) => {
                 if (!using.includes(name)) return
-                callback()
+                await callback()
             })
         }
-        const callback = () => {
+        const callback = async () => {
             if (using.some(n => !this[n])) return
-            this.app.pluginManager.install(plugin,config).catch(e=>{
+            await this.app.pluginManager.install(plugin,config).catch(e=>{
                 this.logger.warn(`安装${plugin.pkg.name}时遇到错误，错误信息：${e.message}`)
             })
         }
-        callback()
+        await callback()
         return plugin
     }
     command<D extends string>(def: D,triggerEvent:keyof EventMap): Command<Action.ArgumentType<D>> {
@@ -214,10 +220,10 @@ export class Plugin extends Context {
             this.commandList.push(command)
             this.disposes.push(()=>remove(this.commandList,command),()=>{
                 this._commands.delete(name)
-                this.emit('command.remove',command)
+                this.app.emit('command-remove',command)
                 return true
             })
-            this.emit('command.add',command)
+            this.app.emit('command-add',command)
             if (!root) root = command
             if (parent) {
                 command.parent = parent
@@ -272,13 +278,19 @@ export class Plugin extends Context {
             const mod = require.cache[this.fullpath]
             this.hooks = mod.exports
         }
-        if (typeof this.hooks.install !== "function") {
+        if (typeof this.hooks.install !== "function" && !this.hooks['default']) {
             throw new PluginError(`插件(${this.pkg.name})未导出install方法，无法安装。`)
         }
-        const res = this.hooks.install(this, config)
+        let Hook:PluginManager.ConstructorHook|PluginManager.FunctionHook=this.hooks.install
+        if(!Hook && this.hooks['default']){
+            Hook=this.hooks['default']
+        }
+        // @ts-ignore
+        const res = Plugin.isConstructor(Hook)?new Hook(this,config):Hook(this,config)
         try{
             if (res instanceof Promise)
                 await res
+            this.emit('ready')
         }catch (e){
             throw new PluginError(e.message)
         }
@@ -338,8 +350,9 @@ export class Plugin extends Context {
             remove(this.parent.children,this)
             this.parent.emit('plugin.install',this)
         }
-        this.logger.info(`以卸载插件(${this.pkg.name})`)
-        return `以卸载插件(${this.pkg.name})`
+        this.logger.info(`已卸载插件(${this.pkg.name})`)
+        this.emit('dispose')
+        return `已卸载插件(${this.pkg.name})`
     }
     async restart() {
         this.logger.info(`正在重新安装...`)
@@ -379,8 +392,18 @@ export namespace Plugin{
         pluginManager:PluginManager
         bots:BotList
     }
+    export const Services: (keyof Services)[] = []
+    export function isConstructor(func: Function) {
+        // async function or arrow function
+        if (!func.prototype) return false
+        // generator function or malformed definition
+        return func.prototype.constructor === func;
+
+    }
+
     export function service<K extends keyof Services>(key: K) {
         if (Object.prototype.hasOwnProperty.call(Plugin.prototype, key)) return
+        Services.push(key)
         const privateKey = Symbol(key)
         Object.defineProperty(Plugin.prototype, key, {
             get(this: Plugin) {
@@ -393,7 +416,7 @@ export namespace Plugin{
                 if (oldValue === value) return
                 this.app[privateKey] = value
                 const action = value ? oldValue ? 'change' : 'load' : 'destroy'
-                this.emit(`service.${action}`, key,value)
+                this.app.emit(`service.${action}`, key,value)
                 this.logger.debug(key, action)
             },
         })
@@ -411,10 +434,10 @@ export class PluginManager {
     getLogger(category:string){
         return this.app.getLogger(category)
     }
-    init(plugins:Record<string, boolean|Record<string, any>>) {
+    async init(plugins:Record<string, boolean|Record<string, any>>) {
         for (const [name, conf] of Object.entries(plugins)) {
             try {
-                this.app.plugin(name,conf)
+                await this.app.plugin(name,conf)
             } catch (e) {
                 this.logger.warn(e.message)
             }
@@ -683,27 +706,52 @@ export class PluginManager {
     }
 }
 
-export type Function<T = any> = (plugin: Plugin, config: T) => Awaitable<any>
 export namespace PluginManager {
     export const defaultConfig: Config = {
         plugin_dir: path.join(process.cwd(), 'plugins'),
         plugins: {}
     }
-    export type Plugin = Function | Object
 
-    export interface Object<T = any> {
-        install: Function<T>
+    export type FunctionHook<T = any> = (parent: Plugin, options: T) => Awaitable<any>
+    export type ConstructorHook<T = any> = new (parent: Plugin, options: T) => void
+    export type PluginHook = FunctionHook | ObjectHook | ConstructorHook
+
+    export interface ObjectHook<T = any> {
+        install: FunctionHook<T>|ConstructorHook<T>
         name?:string
         using?: readonly (keyof Plugin.Services)[]
     }
 
-    export type Option<T extends Plugin> =
-        | T extends Function<infer U> ? U
-            : T extends Object<infer U> ? U
+    export type Option<T extends PluginHook> =
+        T extends ConstructorHook<infer U> ? U
+        : T extends FunctionHook<infer U> ? U
+            : T extends ObjectHook<infer U> ? U
                 : never
 
     export interface Config {
         plugin_dir?: string,
         plugins?: Record<string, any>
+    }
+}
+
+export abstract class Service {
+    protected start(): Awaitable<void> {}
+    protected stop(): Awaitable<void> {}
+
+    constructor(protected plugin: Plugin, public name: keyof Plugin.Services) {
+        Plugin.service(name)
+        plugin.on('ready', async () => {
+            await this.start()
+            plugin[name] = this as never
+        })
+
+        plugin.on('dispose', async () => {
+            if (plugin[name] === this as never) plugin[name] = null
+            await this.stop()
+        })
+
+    }
+    get caller(): Context {
+        return this.plugin
     }
 }

@@ -1,7 +1,9 @@
 import {Plugin,template, s, fromCqcode,Dict,sleep,noop,makeArray} from "oitq";
 import { genDmMessageId } from "oicq/lib/message/message.js";
-import {OnlineStatus, Quotable} from "oicq";
-
+import {OnlineStatus, Quotable, segment} from "oicq";
+import * as callme from './callme'
+import * as music from './music'
+import {ChannelId} from "oitq/lib";
 template.set('common', {
     'expect-text': '请输入要发送的文本。',
     'expect-command': '请输入要触发的指令。',
@@ -21,7 +23,10 @@ export interface Respondent {
 export interface BasicConfig extends RecallConfig {
     echo?:boolean
     send?: boolean
-    operator?: number | number[]
+    feedback?: number | number[]|{
+        operator:number|number[]
+        timeout?:number
+    }
     respondent?: Respondent | Respondent[]
 }
 export function echo(plugin:Plugin){
@@ -111,38 +116,34 @@ export function recall(plugin: Plugin, { recall = 10 }: RecallConfig) {
             }
         })
 }
-export function feedback(plugin: Plugin, operators: number[]) {
-    type FeedbackData = [self_id: number, channelId: string]
-    const feedbacks: Record<number, FeedbackData> = {}
-
-
+export function feedback(plugin: Plugin, {operators,timeout=1000*60*60}: { operators:number[],timeout?:number }) {
+    async function createReplyCallback(session,user_id){
+        const sess=await session.bot.waitMessage((temp)=>temp.message_type==='private' && temp.user_id===user_id,timeout)
+        if(!sess)return
+        session.reply(['来自作者的回复：\n',...sess.message],true)
+    }
     plugin.command('common/feedback <message:text>', 'message')
         .desc('发送反馈信息给作者')
         .action(async ({ session }, text) => {
             if (!text) return template('common.expect-text')
             const name=session.sender['card']||session.sender['title']||session.sender.nickname||session.nickname
-            const { user_id } = session
-            const nickname = name === '' + user_id ? user_id : `${name} (${user_id})`
-            const message = template('common.feedback-receive', nickname, text)
+
+            const fromCN={
+                group:()=>`群：${session['group_name']}(${session.group_id})的${name}(${session.user_id})`,
+                discuss:()=>`讨论组：${session['discuss_name']}(${session.discuss_id})的${name}(${session.user_id})`,
+                private:()=>`用户：${name}(${session.user_id})`
+            }
+            const message = template('common.feedback-receive',`${fromCN[session.message_type]()}` , text)
             const delay = plugin.app.config.delay.broadcast
-            const data: FeedbackData = [session.self_id, `${session.message_type}:${session.group_id||session.discuss_id||session.user_id}`]
             for (let index = 0; index < operators.length; ++index) {
                 if (index && delay) await sleep(delay)
                 const user_id=operators[index]
                 const bot = plugin.app.bots.find(bot => bot.status===OnlineStatus.Online)
-                await bot.sendPrivateMsg(user_id, message)
-                    .then(({message_id}) => feedbacks[message_id] = data, noop)
+                await bot.sendPrivateMsg(user_id, message,session)
+                createReplyCallback(session,user_id)
             }
             return template('common.feedback-success')
         })
-
-    plugin.middleware(async (session) => {
-        const { source } = session
-        const quote = { ...source as Quotable, flag: 1 };
-        const data = feedbacks[genDmMessageId(quote.user_id, quote.seq, quote.rand, quote.time, quote.flag)]
-        if (!data) return
-        await plugin.app.bots.find(bot=>bot.uin===data[0]).sendMsg(data[1], source.message)
-    })
 }
 export function respondent(plugin: Plugin, respondents: Respondent[]) {
     plugin.middleware((session) => {
@@ -154,13 +155,15 @@ export function respondent(plugin: Plugin, respondents: Respondent[]) {
         return ''
     })
 }
-export function basic(plugin: Plugin, config: BasicConfig = {}) {
+export function basic(plugin: Plugin, config: BasicConfig = {feedback:[]}) {
     if(config.echo!==false)plugin.plugin(echo)
     if (config.send !== false) plugin.plugin(send)
     if (!(config.recall <= 0)) plugin.plugin(recall, config)
-
-    const operators = makeArray(config.operator).map(op=>Number(op))
-    if (operators.length) plugin.plugin(feedback, operators)
+    function noTimeout(feedback:BasicConfig['feedback']){
+        return typeof feedback==='number'||Array.isArray(feedback)
+    }
+    const operators = makeArray(noTimeout(config.feedback)?config.feedback:config.feedback['operator']).map(op=>Number(op))
+    if (operators.length) plugin.plugin(feedback, {operators,timeout:noTimeout(config.feedback)?plugin.app.config.delay.prompt:config.feedback['timeout']})
 
     const respondents = makeArray(config.respondent).filter(Boolean)
     if (respondents.length) plugin.plugin(respondent, respondents)
@@ -173,4 +176,6 @@ export function install(plugin:Plugin,config:Config){
     plugin.command('common','message')
         .desc('基础功能')
     plugin.plugin(basic,{...config,name:'basic'} as Config)
+    plugin.plugin(callme)
+    plugin.plugin(music)
 }

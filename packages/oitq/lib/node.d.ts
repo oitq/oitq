@@ -20,6 +20,7 @@ declare module 'oitq'{
     // app.d.ts
     import { LogLevel, Sendable } from "oicq";
     import { Dict, Awaitable } from "@oitq/utils";
+
     export interface App {
         start(...args: any[]): Awaitable<void>;
     }
@@ -52,6 +53,7 @@ declare module 'oitq'{
 
 
 
+
     // argv.d.ts
 
 
@@ -73,6 +75,7 @@ declare module 'oitq'{
             text: string;
             integer: number;
             date: Date;
+            qq: number;
         }
         type DomainType = keyof Domain;
         type ParamType<S extends string, F> = S extends `${any}:${infer T}` ? T extends DomainType ? Domain[T] : F : F;
@@ -118,7 +121,9 @@ declare module 'oitq'{
             values?: Record<string, any>;
         }
         export type OptionDeclarationMap = Record<string, OptionDeclaration>;
+        export {};
     }
+
 
 
 
@@ -146,6 +151,7 @@ declare module 'oitq'{
         isAdmin(user_id: number): boolean;
         emit<E extends keyof EventMap>(name: E, ...args: Parameters<EventMap[E]>): boolean;
         createSession<E extends keyof EventMap>(name: E, ...args: Parameters<EventMap[E]>): ToSession<Parameters<EventMap<any>[E]>>;
+        waitMessage(filter: Context.Filter, timout?: number): Promise<NSession<'message'> | void>;
         /**
          * 发送消息
          * @param channelId 通道id
@@ -178,7 +184,7 @@ declare module 'oitq'{
     // command.d.ts
 
 
-    export declare class Command<A extends any[] = any[], O extends {} = {}> {
+    export class Command<A extends any[] = any[], O extends {} = {}> {
         plugin: Plugin;
         triggerEvent: keyof EventMap;
         name: string;
@@ -194,7 +200,7 @@ declare module 'oitq'{
         aliasNames: string[];
         options: Record<string, Command.OptionConfig>;
         constructor(declaration: string, plugin: Plugin, triggerEvent: keyof EventMap);
-        auth(authority: number): void;
+        auth(authority: number): this;
         desc(desc: string): this;
         check(checker: Command.Callback<A, O>): this;
         example(example: string): this;
@@ -209,7 +215,7 @@ declare module 'oitq'{
         private parseShortcut;
         execute(action: Action<A, O>): Promise<any>;
     }
-    export declare namespace Command {
+    export namespace Command {
         interface Shortcut {
             name?: string | RegExp;
             fuzzy?: boolean;
@@ -227,7 +233,7 @@ declare module 'oitq'{
             description?: string;
             declaration?: Action.Declaration;
         }
-        type Callback<A extends any[] = any[], O extends {} = {}> = (action: Action<A, O>, ...args: A) => Sendable | void | Promise<Sendable | void>;
+        type Callback<A extends any[] = any[], O extends {} = {}> = (action: Action<A, O>, ...args: A) => boolean|Sendable | void | Promise<Sendable | void|boolean>;
         type OptionType<S extends string> = Action.ExtractFirst<Action.Replace<S, '>', ']'>, any>;
         function removeDeclarationArgs(name: string): string;
         function findDeclarationArgs(declaration: string): Action.Declaration[];
@@ -250,9 +256,10 @@ declare module 'oitq'{
         'start'(): void;
         'stop'(): void;
         'send'(messageRet: MessageRet, channelId: ChannelId): void;
+        'continue'(session: NSession<'message'>): Promise<string | boolean | void>;
         'attach'(session: NSession<'message'>): Awaitable<void | string>;
-        'bot-add'(bot: Bot): void;
-        'bot-remove'(bot: Bot): void;
+        'command-add'(command: Command): void
+        'command-remove'(command: Command): void
         'plugin.install'(plugin: Plugin): void;
         'plugin.enable'(plugin: Plugin): void;
         'plugin.disable'(plugin: Plugin): void;
@@ -296,6 +303,7 @@ declare module 'oitq'{
         private static createRegStr;
         parallel<K extends EventName>(name: K, ...args: any[]): Promise<void>;
         emit<K extends EventName>(name: K, ...args: any[]): void;
+        bail<K extends EventName>(name: K, ...args: any[]): Promise<string | boolean | void>;
         on<K extends EventName>(name: K, listener: (...args: any[]) => void, prepend?: boolean): () => boolean;
         before<K extends string>(name: K, listener: (...args: any) => void, append?: boolean): () => boolean;
         off<K extends EventName>(name: K, listener: (...args: any[]) => void): boolean;
@@ -306,13 +314,12 @@ declare module 'oitq'{
 
     // plugin.d.ts
 
-
-    export declare type AuthorInfo = string | {
+    export type AuthorInfo = string | {
         name: string;
         email?: string;
         url?: string;
     };
-    export declare type RepoInfo = string | {
+    export type RepoInfo = string | {
         type?: 'git' | 'svn';
         directory?: string;
         url: string;
@@ -324,7 +331,7 @@ declare module 'oitq'{
         author: AuthorInfo;
         repository: RepoInfo;
     }
-    export declare enum PluginType {
+    export enum PluginType {
         Builtin = "builtin",
         Official = "official",
         Community = "community",
@@ -340,10 +347,10 @@ declare module 'oitq'{
         name: string;
         config?: any;
     }
-    export declare class Plugin extends Context {
+    export class Plugin extends Context {
         readonly fullpath: string;
         readonly path: string;
-        protected hooks: PluginManager.Object;
+        protected hooks: PluginManager.ObjectHook;
         parent: Plugin;
         children: Plugin[];
         private _commands;
@@ -356,15 +363,15 @@ declare module 'oitq'{
         config: any;
         pkg: Partial<PkgInfo>;
         pluginManager: PluginManager;
-        constructor(hooks?: string | PluginManager.Object);
+        constructor(hooks?: string | PluginManager.ObjectHook);
         dispatch(name: string, ...args: any[]): Promise<void>;
         get commands(): Command[];
         getCommand(name: string): Command<any[], {}>;
         middleware(middleware: Middleware, prepend?: boolean): () => boolean;
-        using<T extends PluginManager.Plugin>(using: readonly (keyof Plugin.Services)[], plugin: T, config?: PluginManager.Option<T>): Plugin;
+        using<T extends PluginManager.PluginHook>(using: readonly (keyof Plugin.Services)[], plugin: T, config?: PluginManager.Option<T>): Plugin;
         addPlugin(plugin: Plugin, config?: any): this;
         plugin(name: string, config?: any): Plugin;
-        plugin<T extends PluginManager.Plugin>(plugin: T, config?: PluginManager.Option<T>): Plugin;
+        plugin<T extends PluginManager.PluginHook>(plugin: T, config?: PluginManager.Option<T>): Plugin;
         command<D extends string>(def: D, triggerEvent: keyof EventMap): Command<Action.ArgumentType<D>>;
         execute(session: NSession<'message'>, content?: string): Promise<boolean | Sendable | void>;
         findCommand(argv: Pick<Action, 'name' | 'source'>, commandList?: Command[]): Command<any[], {}>;
@@ -389,14 +396,16 @@ declare module 'oitq'{
             repository?: RepoInfo;
         };
     }
-    export declare namespace Plugin {
+    export namespace Plugin {
         interface Services {
             pluginManager: PluginManager;
             bots: BotList;
         }
+        const Services: (keyof Services)[];
+        function isConstructor(func: Function): boolean;
         function service<K extends keyof Services>(key: K): void;
     }
-    export declare class PluginManager {
+    export class PluginManager {
         app: App;
         plugin_dir: string;
         plugins: Map<string, Plugin>;
@@ -430,21 +439,31 @@ declare module 'oitq'{
          */
         restore(bot: Bot): Promise<Map<string, Plugin>>;
     }
-    export declare type Function<T = any> = (plugin: Plugin, config: T) => Awaitable<any>;
-    export declare namespace PluginManager {
+    export namespace PluginManager {
         const defaultConfig: Config;
-        type Plugin = Function | Object;
-        interface Object<T = any> {
-            install: Function<T>;
+        type FunctionHook<T = any> = (parent: Plugin, options: T) => Awaitable<any>;
+        type ConstructorHook<T = any> = new (parent: Plugin, options: T) => void;
+        type PluginHook = FunctionHook | ObjectHook | ConstructorHook;
+        interface ObjectHook<T = any> {
+            install: FunctionHook<T> | ConstructorHook<T>;
             name?: string;
             using?: readonly (keyof Plugin.Services)[];
         }
-        type Option<T extends Plugin> = T extends Function<infer U> ? U : T extends Object<infer U> ? U : never;
+        type Option<T extends PluginHook> = T extends ConstructorHook<infer U> ? U : T extends FunctionHook<infer U> ? U : T extends ObjectHook<infer U> ? U : never;
         interface Config {
             plugin_dir?: string;
             plugins?: Record<string, any>;
         }
     }
+    export abstract class Service {
+        protected plugin: Plugin;
+        name: keyof Plugin.Services;
+        protected start(): Awaitable<void>;
+        protected stop(): Awaitable<void>;
+        constructor(plugin: Plugin, name: keyof Plugin.Services);
+        get caller(): Context;
+    }
+
 
     // prompt.d.ts
 

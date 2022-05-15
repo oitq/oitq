@@ -1,0 +1,39 @@
+{
+  "name": "@oitq/client",
+  "main": "client/index.ts",
+  "version": "2.0.1-alpha",
+  "description": "client for oitq",
+  "scripts": {
+    "build": "echo skip",
+    "pub": "npm publish --access public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oitq/oitq.git"
+  },
+  "keywords": [
+    "client",
+    "plugin",
+    "oitq"
+  ],
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
+    "lib/**/LICENSE",
+    "global.d.ts",
+    "dist/**/*"
+  ],
+  "author": "凉菜 <admin@liucl.cn>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/oitq/oitq/issues"
+  },
+  "homepage": "https://github.com/oitq/oitq#readme",
+  "dependencies": {
+    "@vueuse/core": "^7.7.1",
+    "element-plus": "^2.2.0",
+    "sass": "^1.51.0",
+    "vue": "^3.2.33",
+    "vue-router": "^4.0.15"
+  }
+}

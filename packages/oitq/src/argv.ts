@@ -17,7 +17,8 @@ export namespace Action{
         boolean: boolean
         text: string
         integer: number
-        date: Date
+        date: Date,
+        qq:number
     }
     type DomainType = keyof Domain
 
@@ -33,7 +34,6 @@ export namespace Action{
         ? [...ExtractAll<L, string>, ...ExtractFirst<R, string>[]]
         : [...ExtractAll<S, string>, ...string[]]
     export type ArgumentType<S extends string> = ExtractSpread<Replace<S, '>', ']'>>
-    export type OptionType<S extends string> = ExtractFirst<Replace<S, '>', ']'>, any>
     export type Type = DomainType | RegExp | string[] | Transform<any>
     export interface Declaration {
         name?: string
@@ -80,6 +80,16 @@ export namespace Action{
         if (value * 0 === 0 && Math.floor(value) === value) return value
         throw new Error('无效的整数')
     })
+    createDomain('qq',(source)=>{
+        const atMsg = /\[CQ:at,type=at,qq=(\d+).*]/;
+        if (atMsg.test(source)) {
+            source=atMsg.exec(source)[1]
+        }
+        const value = +source
+        if (value * 0 === 0 && Math.floor(value) === value) return value
+        throw new Error('无效的用户qq')
+
+    })
     createDomain('date', (source) => {
         const timestamp = new Date(source)
         if (+timestamp) return timestamp
@@ -90,30 +100,36 @@ export namespace Action{
         stripped: string
     }
     export function parse(content:string):Action{
-        const args:string[]=[]
         const message=content.split(' ')
         const name=message.shift()
-        function mergeQuote(quote:'"'|"'"|')',list:string[],start){
-            let end=list.slice(start).findIndex(str=>str.endsWith(quote))
-            end=end===-1?list.length:start+end+1
-            const mergeList=message.slice(start,end)
-            list.splice(start,end-start)
-            list.push(quote===')'?mergeList.join(' '):mergeList.join(' ').replace(new RegExp(`${quote}`,'g'),''))
+        function mergeQuote(quote, list, start) {
+            let end = list.slice(start).findIndex(str => str.endsWith(quote));
+            end = end === -1 ? list.length : start + end + 1;
+            const mergeList = message.slice(start, end);
+            list.splice(start, end - start);
+            let result:string=mergeList.join(' ')
+            if(['"',"'"].includes(quote)){
+                result=result.replace(new RegExp(`${quote}`, 'g'), '')
+            }
+            list.splice(start,0,result);
         }
-        message.forEach((msg,start)=>{
-            if(msg.startsWith('"')){
-                mergeQuote('"',message,start)
+        message.forEach((msg, start) => {
+            if (msg.startsWith('"')) {
+                mergeQuote('"', message, start);
             }
-            if(msg.startsWith("'")){
-                mergeQuote("'",message,start)
+            if (msg.startsWith("'")) {
+                mergeQuote("'", message, start);
             }
-            if(msg.startsWith("$(")){
-                mergeQuote(")",message,start)
+            if (msg.startsWith("$(")) {
+                mergeQuote(")", message, start);
             }
-        })
+            if(msg.startsWith('[CQ')){
+                mergeQuote(']',message,start)
+            }
+        });
         return {
             name,
-            argv:message,
+            argv:message.filter(Boolean),
             source:content
         }
     }

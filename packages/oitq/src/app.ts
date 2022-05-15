@@ -18,7 +18,6 @@ export class App extends Plugin{
 
         this.bots=new BotList(this)
         this.pluginManager=new PluginManager(this,this.config.plugin_dir)
-        this.pluginManager.init(this.config.plugins)
     }
 
     async broadcast(msgChannelIds:MsgChannelId|MsgChannelId[],msg:Sendable){
@@ -35,6 +34,8 @@ export class App extends Plugin{
         return this.bots.remove(uin)
     }
     async start(){
+        await this.pluginManager.init(this.config.plugins)
+        await this.parallel('before-ready')
         if(this.config.bots){
             for(const config of this.config.bots){
                 this.bots.create(config)
@@ -62,7 +63,6 @@ export namespace App{
         logLevel?:LogLevel
         maxListeners?:number,
     }
-
 }
 export const getAppConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'oitq.config.json')
 export const getBotConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'bot.default.json')

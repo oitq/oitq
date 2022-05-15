@@ -19,7 +19,7 @@ export interface RssModel {
         target_type: string,
         target_id: number
 }
-@Table
+@Table({modelName:'Rss'})
 export class Rss extends Model {
     @Comment('属于哪个bot')
     @Column(DataType.INTEGER)

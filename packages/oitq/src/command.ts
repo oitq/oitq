@@ -24,6 +24,7 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
     // 定义指令调用所需权限
     auth(authority:number){
         this.authority=authority
+        return this
     }
     // 添加指令描述文本
     desc(desc:string){
@@ -123,11 +124,11 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
             if(optionDecl && !options[optionDecl.name]){
                 if(optionDecl.declaration.required && !optionDecl.initial && (!action.argv[0] || options[action.args[0]])){
                     action.error=`option ${optionDecl.name} is required`
-                    continue
+                    break
                 }else{
                     if(!options[action.argv[0]] && optionDecl.declaration.type!=="boolean"){
                         if(optionDecl.declaration.variadic){
-                            options[optionDecl.name]=Action.parseValue(action.argv.join(' '),'option',action,optionDecl.declaration)
+                            options[optionDecl.name]=action.argv.map(arg=>Action.parseValue(arg,'option',action,optionDecl.declaration))
                             break;
                         }else{
                             options[optionDecl.name]=Action.parseValue(action.argv.shift(),'option',action,optionDecl.declaration)
@@ -224,7 +225,7 @@ export namespace Command{
         declaration?:Action.Declaration
     }
     export type Callback< A extends any[] = any[], O extends {} = {},>
-        = (action:Action<A,O>, ...args: A) => Sendable|void|Promise<Sendable|void>
+        = (action:Action<A,O>, ...args: A) => Sendable|void|boolean|Promise<Sendable|void|boolean>
 
 
     export type OptionType<S extends string> = Action.ExtractFirst<Action.Replace<S, '>', ']'>, any>

@@ -9,7 +9,7 @@
     "docs:build": "vuepress build docs",
     "build": "npm run build -workspaces",
     "build:base": "npm run build -w @oitq/utis -w @oitq/loader -w oitq -w @oitq/cli",
-    "dev": "npm run build:base && npm run dev -w test",
+    "dev": "npm run build -w @oitq/plugin-database && npm run dev -w test",
     "start": "npm start -w test",
     "pub": "npm run pub -workspaces",
     "deploy-gh": "bash ./deploy.sh",
@@ -18,6 +18,8 @@
   "workspaces": [
     "packages/*",
     "plugins/*",
+    "plugins/games/*",
+    "plugins/services/*",
     "test",
     "docs"
   ],
@@ -43,11 +45,9 @@
     "esbuild-register": "^3.3.2",
     "tsc-alias": "^1.5.0",
     "tsconfig-paths": "^3.12.0",
-    "typescript": "^4.5.4",
-    "vuepress": "^2.0.0-beta.43"
+    "typescript": "^4.5.4"
   },
   "dependencies": {
-    "@lc-cn/command": "^0.1.7",
     "oicq": "^2.2.1"
   }
 }

@@ -30,7 +30,7 @@
   },
   "homepage": "https://github.com/oitq/oitq#readme",
   "dependencies": {
-    "@oitq/cli": "^0.1.23",
-    "sqlite3": "^5.0.8"
+    "sqlite3": "^5.0.8",
+    "@oitq/cli": "latest"
   }
 }

@@ -1,11 +1,7 @@
 /package-lock.json
-/packages/*/lib
-/plugins/*/lib
-/packages/*/node_modules
-/plugins/*/node_modules
-/node_modules
-/test/lib
+/packages/**/*/lib
+/plugins/**/*/lib
+/**/*/node_modules
 /.idea
-/test/bot.json
-/test/oitq.json
-/test/oneBot.json
+/test/*.sqlite
+/test/*.json

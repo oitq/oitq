@@ -2,6 +2,7 @@ import {Plugin} from 'oitq'
 export const name='admin.plugin'
 export function install(ctx:Plugin){
     ctx.command('admin/plugin [name]','message')
+        .desc('管理插件')
         .option('reload','-r 重启插件')
         .option('uninstall','-u 卸载插件')
         .option('install','-i 安装插件')

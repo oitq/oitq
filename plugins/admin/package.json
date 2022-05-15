@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-admin",
   "main": "lib/index.js",
-  "version": "2.0.2-alpha",
+  "version": "2.0.3-alpha",
   "description": "admin plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",

@@ -11,6 +11,7 @@ import {
     escapeRegExp,
 } from "@oitq/utils";
 import {MessageRet} from "oicq/lib/events";
+import {Context} from "./context";
 template.set('bot', {
     system: {
         login: {
@@ -68,8 +69,8 @@ export class Bot extends Client {
     // 重写emit，将event data封装成session，上报到app
     emit<E extends keyof EventMap>(name: E, ...args: Parameters<EventMap[E]>) {
         const session=this.createSession(name,...args)
-        if(name.startsWith('message')){
-            this.app.dispatch('attach',session).finally(()=>{
+        if(name==='message'){
+            this.app.parallel('before-attach',session).finally(()=>{
                 this.app.emit(`bot.${name}`,session)
             })
         }else {
@@ -85,7 +86,20 @@ export class Bot extends Client {
         data.args = args
         return new Session(this.app, this, data,name) as unknown as NSession<E>
     }
-
+    waitMessage(filter:Context.Filter,timout=this.app.config.delay.prompt):Promise<NSession<'message'>|void>{
+        return new Promise<NSession<"message">|void>((resolve => {
+            const dispose=this.app.middleware((session)=>{
+                if(filter(session)){
+                    dispose()
+                    resolve(session)
+                }
+                setTimeout(()=>{
+                    resolve()
+                    dispose()
+                },timout)
+            })
+        }))
+    }
     /**
      * 发送消息
      * @param channelId 通道id

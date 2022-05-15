@@ -1,5 +1,5 @@
 import {App, Bot, ChannelId, Middleware, NSession, Prompt} from "./";
-import {EventMap, MessageElem, Sendable, TextElem} from "oicq";
+import {EventMap, MessageElem, Sendable} from "oicq";
 import {MessageRet} from "oicq/lib/events";
 import {template, Awaitable, Dict, s} from "@oitq/utils";
 import {Action} from "./argv";
