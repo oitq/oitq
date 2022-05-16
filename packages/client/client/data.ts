@@ -23,8 +23,8 @@ export type Store = {
     [K in keyof Console.Services]?: Console.Services[K] extends DataService<infer T> ? T : never
 }
 
-// declare const oitq_config: ClientConfig
-export const config:Partial<ClientConfig> = {}
+declare const oitq_config: ClientConfig
+export const config=oitq_config
 export const store = reactive<Store>({})
 
 export const socket = ref<WebSocket>(null)
@@ -77,7 +77,7 @@ export async function connect(endpoint: string) {
 
     socket.value.onmessage = (ev) => {
         const data = JSON.parse(ev.data)
-        console.debug('%c', 'color:purple', data.type, data.body)
+        console.log('%c', 'color:purple', data.type, data.body)
         if (data.type in listeners) {
             listeners[data.type](data.body)
         }

@@ -1,6 +1,8 @@
 $black: #000000;
 $white: #ffffff;
-
+.el-icon{
+  cursor: pointer;
+}
 :root, *::before, *::after {
   --bg0: #ffffff;
   --bg1: #f7f7f8;
@@ -50,29 +52,4 @@ html.dark {
   --hover-bg: var(--bg3);
 }
 
-.k-menu-item {
-  display: block;
-  position: relative;
-  cursor: pointer;
-  user-select: none;
-  color: var(--menu-fg);
-  transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
 
-  &:hover {
-    color: var(--fg0);
-    background-color: var(--hover-bg);
-  }
-
-  &.active {
-    font-weight: bolder;
-    color: var(--active);
-  }
-}
-
-.k-group {
-  display: inline-block;
-}
-
-.float-right {
-  float: right;
-}

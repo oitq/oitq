@@ -24,8 +24,7 @@ router.afterEach((route) => {
     }
 })
 
-// const endpoint = new URL(config.endpoint, location.origin).toString()
-// console.log(config)
-// connect(endpoint.replace(/^http/, 'ws'))
+const endpoint = new URL(config.endpoint, location.origin).toString()
+connect(endpoint.replace(/^http/, 'ws'))
 
 app.mount('#app')

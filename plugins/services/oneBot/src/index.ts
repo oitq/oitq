@@ -15,7 +15,7 @@ declare module 'oitq'{
 }
 export const using=['httpServer'] as const
 export function install(plugin:Plugin){
-    plugin.on('bot-add',async (bot:Bot)=>{
+    plugin.app.on('bot-add',async (bot:Bot)=>{
         if(bot.options.oneBot){
             bot.oneBot=new OneBot(plugin.app,bot,typeof bot.options.oneBot==='boolean'?defaultOneBotConfig:merge(defaultOneBotConfig,bot.options.oneBot))
             bot.on('message',(data)=>bot.oneBot.dispatch(data))
@@ -25,16 +25,10 @@ export function install(plugin:Plugin){
             await bot.oneBot.start()
         }
     })
-    plugin.on('bot-remove',(bot:Bot)=>{
+    plugin.app.on('bot-remove',(bot:Bot)=>{
         if(bot.oneBot){
             bot.oneBot.stop()
         }
-    })
-
-    plugin.router.get('',(ctx)=>{
-        ctx.body='this is oicq-bots api\n' +
-            'use post request to visit `/${uin}/method` to apply bot method,post data will used by method params\n' +
-            'use websocket to connect `/uin` to listen bot request/notice'
     })
     plugin.router.post('/add',async (ctx,next)=>{
         if(!ctx.request.body || Object.keys(ctx.request.body).length==0) return ctx.body=error('请输入完整bot配置，具体配置见github（BotOptions）')

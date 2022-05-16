@@ -107,6 +107,7 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
         while (!action.error && action.argv.length) {
             const content=action.argv.shift()
             const argDecl=this.args[args.length]
+
             if (content[0] !== '-' && Action.resolveConfig(argDecl?.type).greedy) {
                 args.push(Action.parseValue([content, ...action.argv].join(' '), 'argument', action, argDecl));
                 break;
@@ -126,17 +127,18 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
                     action.error=`option ${optionDecl.name} is required`
                     break
                 }else{
-                    if(!options[action.argv[0]] && optionDecl.declaration.type!=="boolean"){
+                    if(optionDecl.declaration.type!=="boolean"){
                         if(optionDecl.declaration.variadic){
                             options[optionDecl.name]=action.argv.map(arg=>Action.parseValue(arg,'option',action,optionDecl.declaration))
+                            break;
+                        } else if(Action.resolveConfig(optionDecl.declaration.type).greedy){
+                            options[optionDecl.name]=Action.parseValue(action.argv.join(' '),'option',action,optionDecl.declaration)
                             break;
                         }else{
                             options[optionDecl.name]=Action.parseValue(action.argv.shift(),'option',action,optionDecl.declaration)
                         }
-                    }else if(optionDecl.declaration.type==='boolean'){
+                    }else{
                         options[optionDecl.name]=Action.parseValue(content,'option',action,optionDecl.declaration)
-                    }else if(optionDecl.initial){
-                        options[optionDecl.name]=optionDecl.initial
                     }
                     continue
                 }

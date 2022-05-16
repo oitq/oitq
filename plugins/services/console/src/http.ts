@@ -24,7 +24,7 @@ class HttpService extends DataService<string[]> {
 
         config.root ||= config.devMode
             ? resolve(dirname(require.resolve('@oitq/client/package.json')), 'app')
-            : resolve(__dirname, '../dist')
+            : resolve(dirname(require.resolve('@oitq/client/package.json')), 'dist')
     }
 
     async start() {
@@ -121,9 +121,9 @@ class HttpService extends DataService<string[]> {
         const { root } = this.config
         this.vite = await createServer({
             root,
-            base:'/',
+            base:'/vite/',
             server: {
-                // middlewareMode: true,
+                middlewareMode: true,
             },
             plugins: [vuePlugin()],
             build: {
@@ -133,10 +133,7 @@ class HttpService extends DataService<string[]> {
             },
         })
 
-        // this.plugin.router.get('/dev(/.+)*', koaConnect(this.vite.middlewares))
-        await this.vite.listen(3333).then(()=>{
-            this.plugin.logger.info('listen at http://localhost:3333')
-        }).catch(e=>{this.plugin.logger.error(e)})
+        this.plugin.router.get('/vite(/.+)*', koaConnect(this.vite.middlewares))
         this.plugin.on('dispose', () => this.vite.close())
     }
 }

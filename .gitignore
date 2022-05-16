@@ -1,6 +1,7 @@
 /package-lock.json
 /packages/**/*/lib
 /plugins/**/*/lib
+/plugins/**/*/dist
 /**/*/node_modules
 /.idea
 /test/*.sqlite

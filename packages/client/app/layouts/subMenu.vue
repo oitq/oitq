@@ -1,41 +1,60 @@
 <template>
-  <aside class="layout-aside">
-    <div class="top">
-      <h1>oitq 控制台</h1>
-      <sidebar-item v-for="route in getRoutes('top')" :key="route.name" :route="route"></sidebar-item>
-    </div>
-    <div class="bottom">
-      <div class="k-menu-item" @click="toggle">
-        <k-icon :name="isDark ? 'moon' : 'sun'"/>
-        {{ isDark ? '夜间模式' : '明亮模式' }}
-      </div>
-      <sidebar-item v-for="route in getRoutes('bottom')" :key="route.name" :route="route"></sidebar-item>
-    </div>
-  </aside>
+  <el-menu-item v-if="!menu.children.length" :index="target">
+    <el-icon v-if="menu.meta.icon"><component :is="menu.meta.icon"/></el-icon>
+    <template #title>
+      <span>{{ menu.name }}</span>
+    </template>
+  </el-menu-item>
+  <el-sub-menu v-else :index="target">
+    <el-icon v-if="menu.meta.icon"><component :is="menu.meta.icon"/></el-icon>
+    <template #title>
+      <span>{{ menu.name }}</span>
+    </template>
+  </el-sub-menu>
+  <aside-sub-menu v-for="item in menu.children" :menu="item" :key="item.path"></aside-sub-menu>
 </template>
 
-<script lang="ts" setup>
-import { routes, getValue } from '@oitq/client'
-import { useDark } from '@vueuse/core'
-import SidebarItem from './sidebar-item.vue'
-function getRoutes(position: 'top' | 'bottom') {
-  const scale = position === 'top' ? 1 : -1
-  return routes.value
-      .filter(r => getValue(r.meta.position) === position)
-      .sort((a, b) => scale * (b.meta.order - a.meta.order))
-}
-const isDark = useDark()
-function toggle() {
-  isDark.value = !isDark.value
+<script lang="ts">
+import { store } from '@oitq/client'
+import { routeCache } from './utils'
+export default {
+  name:'AsideSubMenu',
+  data(){
+    return {
+
+    }
+  },
+  props:{
+    menu:{
+      type:Object,
+      default(){
+        return {
+          children:[]
+        }
+      }
+    }
+  },
+  computed:{
+    target(){
+      return routeCache[this.menu.name]|| this.menu.path.replace(/:.+/, '')
+    },
+    badge(){
+      if (!this.loaded.value) return 0
+    },
+    loaded(){
+      if (!this.menu.meta.fields) return true
+      return this.menu.meta.fields.every((key) => store[key])
+    }
+  },
+  mounted() {
+    console.log(this.menu,this.target)
+  }
 }
 </script>
 
 <style lang="scss">
 aside.layout-aside {
-  position: fixed;
-  height: 100%;
   z-index: 100;
-  width: var(--aside-width);
   background-color: var(--card-bg);
   box-shadow: var(--card-shadow);
   display: flex;
