@@ -1,19 +1,29 @@
 # 快速上手
-oitq提供两种工作模式可供开发者选择：
-
-## 作为HttpAPI Server
-在这种模式下，你可以使用任何编程语言编写自己的机器人功能，然后调用Oitq的提供的HttpAPI以实现自己的功能
-1.新建一个node项目
+根据本章节，你可快速创建一个oitq的项目。
+更多细节，你可点击对应标题连接了解
+::: tip
+在此之前，你需要现在自己机器上配置好[NodeJS](https://nodejs.org/)环境，你可通过命令行输入`node -v`和`npm -v`以测试，是否正确安装NodeJS。
+:::
+## 创建项目
 ```shell
-mkdir server // 建立文件夹
-cd server
-npm init -y // 初始化node项目
+mkdir oitq-app #创建项目文件夹
+cd oitq-app #进入项目文件夹
+npm init -y #初始化node项目的package.json
 ```
-2.安装oitq作为项目依赖
+## [安装](/start/install)
+```shell
+npm install oitq
+```
+## oitq提供两种工作模式可供开发者选择：
+
+### 1. [作为服务提供者工作](/start/server)
+在这种模式下，你可以使用任何编程语言编写自己的机器人功能，然后调用Oitq的提供的HttpAPI以实现自己的功能
+
+1.1.安装oitq作为项目依赖
 ```shell
 npm install oitq @oitq/plugin-http-server @oitq/plugin-one-bot -S
 ```
-3.在项目中建立index.js,并撰写以下代码到里面
+1.2.在项目中建立index.js,并撰写以下代码到里面
 ```javascript
 const {createApp}=require('oitq')
 const httpServer=require('@oitq/plugin-http-server')
@@ -26,14 +36,10 @@ app.addBot({
     password: '*********',
     type: "password",
     config: {platform: 5},
-    oneBot: true
+    oneBot: true//可传对象，true为使用默认Onebot配置
 })
 app.start()
 //start中的8080代表oitq服务监听的端口，也可以改成你想监听的端口
-```
-4.启动项目
-```shell
-node ./index.js
 ```
 至此，oitq作为服务提供者已完成，
 控制台打印的监听的地址即为服务提供地址（后续简称baseUrl）。
@@ -60,7 +66,7 @@ ticket可用post`baseUrl+/submitSlider/:你的机器人qq/`提交，参数为`{t
 
 可post请求`baseUrl+/login/:你的机器人qq`调用bot的login方法可带password字段，不带则为扫码登录。
 登录成功请自行监听ws数据
-## 作为Bot开发框架
+### 2 作为Bot开发框架
 在这种模式下，即代表你需要在本框架下实现自己的Bot所需功能代码，而不依赖其他框架。
 在此模式下，你至少需要掌握`javascript`或`typescript`语言的代码撰写能力以及`nodeJs`基础。
-若你不具备以上条件，请
+若你不具备以上条件，请先自行学习后继续往下看

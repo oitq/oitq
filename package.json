@@ -5,8 +5,8 @@
   "description": "oitq",
   "bin": "packages/cli",
   "scripts": {
-    "docs:dev": "vuepress dev docs",
-    "docs:build": "vuepress build docs",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
     "build": "npm run build -workspaces",
     "build:base": "npm run build -w @oitq/utis -w @oitq/loader -w oitq -w @oitq/cli",
     "dev": "npm run dev -w test",
@@ -45,7 +45,8 @@
     "esbuild-register": "^3.3.2",
     "tsc-alias": "^1.5.0",
     "tsconfig-paths": "^3.12.0",
-    "typescript": "^4.5.4"
+    "typescript": "^4.5.4",
+    "vitepress": "^0.22.4"
   },
   "dependencies": {
     "oicq": "^2.2.1"
