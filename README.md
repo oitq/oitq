@@ -57,8 +57,8 @@ app.plugin((ctx:Context)=>{
 // 传入name字符串时，程序会自己去查找符合名字的插件进行安装
 // 查找顺序
 // 1.appOption传入的dir目录
-// 2.名称为`oitq-plugin-${name}`的npm包
-// 3.名称为`@oitq/plugin-${name}`的npm包
+// 2.名称为`oitq-plugin.md-${name}`的npm包
+// 3.名称为`@oitq/plugin.md-${name}`的npm包
 app.plugin('example')
 // 如果传入的是一个对象，则安装插件时会自动执行对象上的install方法
 app.plugin(echo,{auth:1})

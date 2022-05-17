@@ -11,8 +11,9 @@
     "build:base": "npm run build -w @oitq/utis -w @oitq/loader -w oitq -w @oitq/cli",
     "dev": "npm run dev -w test",
     "start": "npm start -w test",
+    "bump": "node ./bump.js",
     "pub": "npm run pub -workspaces",
-    "deploy-gh": "bash ./deploy.sh",
+    "deploy-gh": "bash publish.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "workspaces": [

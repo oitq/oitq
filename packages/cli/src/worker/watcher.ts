@@ -47,7 +47,7 @@ class Watcher {
     /**
      * changes from externals E will always trigger a full reload
      *
-     * - root R -> external E -> none of plugin Q
+     * - root R -> external E -> none of plugin.md Q
      */
     private externals: Set<string>
 
@@ -55,7 +55,7 @@ class Watcher {
      * files X that should be reloaded
      *
      * - including all stashed files S
-     * - some plugin P -> file X -> some change C
+     * - some plugin.md P -> file X -> some change C
      */
     private accepted: Set<string>
 
@@ -126,14 +126,14 @@ class Watcher {
         loader.readConfig()
         const newConfig = loader.config
 
-        // check non-plugin changes
+        // check non-plugin.md changes
         const merged = { ...oldConfig, ...newConfig }
         delete merged.plugins
         if (Object.keys(merged).some(key => !deepEqual(oldConfig[key], newConfig[key]))) {
             return this.app.loader.fullReload()
         }
 
-        // check plugin changes
+        // check plugin.md changes
         const oldPlugins = oldConfig.plugins
         const newPlugins = newConfig.plugins
         for (const name in { ...oldPlugins, ...newPlugins }) {
@@ -212,7 +212,7 @@ class Watcher {
         /** plugins that should be reloaded */
         const reloads = new Map<Plugin, string>()
 
-        // we assume that plugin entry files are "atomic"
+        // we assume that plugin.md entry files are "atomic"
         // that is, reloading them will not cause any other reloads
         for (const filename in require.cache) {
             const module = require.cache[filename]
@@ -271,7 +271,7 @@ class Watcher {
                 plugin.restart()
             }
         } catch {
-            // rollback require.cache and plugin states
+            // rollback require.cache and plugin.md states
             rollback()
 
             for (const [state] of reloads) {

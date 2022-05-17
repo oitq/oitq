@@ -312,7 +312,7 @@ declare module 'oitq'{
     // middleware.d.ts
     export type Middleware = (session: NSession<'message'>) => Awaitable<boolean | Sendable | void>;
 
-    // plugin.d.ts
+    // plugin.md.d.ts
 
     export type AuthorInfo = string | {
         name: string;

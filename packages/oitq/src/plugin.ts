@@ -464,26 +464,26 @@ export class PluginManager {
         }
         if(!resolved){//尝试在全局包里面查找官方插件
             try {
-                require.resolve('@oitq/plugin-' + name);
-                resolved = '@oitq/plugin-' + name;
+                require.resolve('@oitq/plugin.md-' + name);
+                resolved = '@oitq/plugin.md-' + name;
             }catch {}
         }
         if(!resolved){//尝试在全局包里面查找社区插件
             try {
-                require.resolve('oitq-plugin-' + name);
-                resolved = 'oitq-plugin-' + name;
+                require.resolve('oitq-plugin.md-' + name);
+                resolved = 'oitq-plugin.md-' + name;
             }catch {}
         }
         if (!resolved && fs.existsSync(orgPath)) {//尝试在当前目录的依赖查找官方插件
             try{
-                require.resolve(modulePath+'/'+'@oitq/plugin-' + name);
-                resolved = modulePath+'/'+'@oitq/plugin-' + name;
+                require.resolve(modulePath+'/'+'@oitq/plugin.md-' + name);
+                resolved = modulePath+'/'+'@oitq/plugin.md-' + name;
             }catch{}
         }
         if (!resolved && fs.existsSync(modulePath)) {//尝试在当前目录的依赖查找社区插件
             try{
-                require.resolve(modulePath+'/'+'oitq-plugin-' + name);
-                resolved = modulePath+'/'+'oitq-plugin-' + name;
+                require.resolve(modulePath+'/'+'oitq-plugin.md-' + name);
+                resolved = modulePath+'/'+'oitq-plugin.md-' + name;
             }catch{}
         }
         if (!resolved)
@@ -606,7 +606,7 @@ export class PluginManager {
         }
         const modules = fs.readdirSync(modulePath, {withFileTypes: true})
         for (let file of modules) {
-            if (file.isDirectory() && (file.name.startsWith("oitq-plugin-"))) {
+            if (file.isDirectory() && (file.name.startsWith("oitq-plugin.md-"))) {
                 try {
                     require.resolve(file.name)
                     let pkgInfo:Partial<PkgInfo>={}
@@ -621,7 +621,7 @@ export class PluginManager {
                         }
                     }catch {}
                     pluginList.push({
-                        name: file.name.replace('oitq-plugin-', ''),
+                        name: file.name.replace('oitq-plugin.md-', ''),
                         type: PluginType.Community,
                         ...pkgInfo
                     })
@@ -632,7 +632,7 @@ export class PluginManager {
         if (fs.existsSync(orgPath)) {
             const orgModules = fs.readdirSync(orgPath, {withFileTypes: true})
             for (let file of orgModules) {
-                if (file.isDirectory() && file.name.startsWith('plugin-')) {
+                if (file.isDirectory() && file.name.startsWith('plugin.md-')) {
                     try {
                         require.resolve(`@oitq/${file.name}`)
                         let pkgInfo:Partial<PkgInfo>={}
@@ -647,7 +647,7 @@ export class PluginManager {
                             }
                         }catch {}
                         pluginList.push({
-                            name: file.name.replace('plugin-', ''),
+                            name: file.name.replace('plugin.md-', ''),
                             type: PluginType.Official,
                             ...pkgInfo
                         })
