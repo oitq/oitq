@@ -9,7 +9,7 @@ function hasEnv(envs, type, target) {
 }
 
 
-export async function triggerTeach(ctx: Plugin, session: NSession<'message'>) {
+export async function triggerTeach(ctx: Plugin, session: NSession) {
     const teaches = await QA.findAll()
     const question=session.cqCode
     const dialogues = teaches.map(teach => teach.toJSON())
@@ -69,5 +69,5 @@ export async function triggerTeach(ctx: Plugin, session: NSession<'message'>) {
 }
 
 export default function install(plugin: Plugin) {
-    plugin.middleware((session: NSession<'message'>) =>triggerTeach(plugin, session))
+    plugin.middleware((session: NSession<any>,next) =>session.event_name==='message'?triggerTeach(plugin, session as NSession):next())
 }

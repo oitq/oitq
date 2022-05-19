@@ -26,7 +26,7 @@ export function install(plugin: Plugin) {
                 return `设置失败,错误信息:${e.message}`
             }
         })
-    async function createApplyFallback(session:NSession<'message'>,authority:number){
+    async function createApplyFallback(session:NSession,authority:number){
         await session.bot.sendMsg(`private:${session.bot.master}` as ChannelId,`用户${session['user'].name}(${session.user_id})正在申请更改自身权限为${authority},发送同意以确认，其他内容为拒绝理由`)
         const sess=await session.bot.waitMessage((session1 => session1.message_type==='private' && session1.user_id===session.bot.master))
         if(!sess)return
@@ -47,7 +47,7 @@ export function install(plugin: Plugin) {
                 await plugin.database.models.User.update({authority:level},{where:{user_id:session.user_id}})
                 return '已设置成功'
             }
-            createApplyFallback(session as unknown as NSession<'message'>,level)
+            createApplyFallback(session as unknown as NSession,level)
             return `已经向master发起申请，结果稍后告知`
         })
 }

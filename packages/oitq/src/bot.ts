@@ -28,7 +28,7 @@ export type ChannelId = `${TargetType}:${number}`
 export type LoginType = 'qrcode' | 'password'
 
 export type ToSession<A extends any[] = []> = A extends [object, ...infer O] ? Extend<Define<Session, 'args', O>, A[0]> : Define<Session, 'args', A>
-export type NSession<E extends keyof EventMap> = ToSession<Parameters<EventMap[E]>>
+export type NSession<E extends keyof EventMap='message'> = ToSession<Parameters<EventMap[E]>>
 type Transform = {
     [P in keyof EventMap as `bot.${P}`]: (session: NSession<P>) => void
 }
@@ -86,12 +86,13 @@ export class Bot extends Client {
         data.args = args
         return new Session(this.app, this, data,name) as unknown as NSession<E>
     }
-    waitMessage(filter:Context.Filter,timout=this.app.config.delay.prompt):Promise<NSession<'message'>|void>{
-        return new Promise<NSession<"message">|void>((resolve => {
-            const dispose=this.app.middleware((session)=>{
-                if(filter(session)){
+    waitMessage(filter:Context.Filter,timout=this.app.config.delay.prompt):Promise<NSession|void>{
+        return new Promise<NSession|void>((resolve => {
+            const dispose=this.app.middleware(async (session,next)=>{
+                if(session.event_name!=='message'|| !filter(session as NSession))return next()
+                else{
                     dispose()
-                    resolve(session)
+                    resolve(session as NSession)
                 }
                 setTimeout(()=>{
                     resolve()

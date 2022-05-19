@@ -20,7 +20,7 @@ export interface Session {
     reply?(content: Sendable, quote?: boolean): Promise<MessageRet>
 }
 
-export type Computed<T> = T | ((session: NSession<'message'>) => T)
+export type Computed<T> = T | ((session: NSession) => T)
 
 export interface Parsed {
     content: string
@@ -34,7 +34,7 @@ export interface SuggestOptions {
     prefix?: string
     suffix: string
     minSimilarity?: number
-    apply: (this: NSession<'message'>, suggestion: string) => Awaitable<void | string>
+    apply: (this: NSession, suggestion: string) => Awaitable<void | string>
 }
 
 export class Session {
@@ -47,8 +47,8 @@ export class Session {
 
     middleware(middleware: Middleware) {
         const channelId = this.getFromUrl()
-        return this.app.middleware(session => {
-            if (session.getFromUrl() !== channelId) return
+        return this.app.middleware((session,next) => {
+            if (session.getFromUrl() !== channelId) return next()
             middleware(session);
             return true
         }, true)
@@ -110,7 +110,7 @@ export class Session {
     }
 
     async executeTemplate(template: string) {
-        const session: NSession<'message'> = this as any
+        const session: NSession = this as any
         template = template.replace(/\$A/g, s('at', {type: 'all'}))
             .replace(/\$a/g, s('at', {id: session.user_id}))
             .replace(/\$m/g, s('at', {id: session.bot.uin}))

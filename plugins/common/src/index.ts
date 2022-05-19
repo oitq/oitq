@@ -146,7 +146,8 @@ export function feedback(plugin: Plugin, {operators,timeout=1000*60*60}: { opera
         })
 }
 export function respondent(plugin: Plugin, respondents: Respondent[]) {
-    plugin.middleware((session) => {
+    plugin.middleware((session,next) => {
+        if(session.event_name!=='message')return next()
         const message = session.cqCode.trim()
         for (const { match, reply } of respondents) {
             const capture = typeof match === 'string' ? message === match && [message] : message.match(match)
@@ -175,6 +176,27 @@ export interface Config extends BasicConfig {
 export function install(plugin:Plugin,config:Config){
     plugin.command('common','message')
         .desc('基础功能')
+    plugin.command('common/segment','message')
+        .desc('生成指定消息段内容')
+
+    plugin.command('common/segment/face <id:integer>','message')
+        .desc('发送一个表情')
+        .action((_,id)=>segment.face(id))
+    plugin.command('common/segment/image <file>','message')
+        .desc('发送一个一张图片')
+        .action((_,file)=>segment.image(file))
+    plugin.command('common/segment/at <qq:integer>','message')
+        .desc('发送at')
+        .action((_,at)=>segment.at(at))
+    plugin.command('common/segment/dice [id:integer]','message')
+        .desc('发送摇骰子结果')
+        .action((_,id)=>segment.dice(id))
+    plugin.command('common/segment/rps [id:integer]','message')
+        .desc('发送猜拳结果')
+        .action((_,id)=>segment.rps(id))
+    plugin.command('common/segment/poke','message')
+        .desc('发送戳一戳【随机一中类型】')
+        .action((_,qq)=>segment.poke(parseInt((Math.random()*7).toFixed(0))))
     plugin.plugin(basic,{...config,name:'basic'} as Config)
     plugin.plugin(callme)
     plugin.plugin(music)

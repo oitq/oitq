@@ -23,6 +23,14 @@ function checkAdmin({session}: Action) {
 }
 
 export function install(ctx: Plugin) {
+    ctx.command('admin/group/quit','message.group')
+        .desc('退出当前群聊')
+        .check(checkAdmin)
+        .action(async ({session})=>{
+            await session.sendMsg('再见了，各位')
+            await session.bot.pickGroup(session.group_id).quit().catch(()=>{})
+            await session.sendMsg(`已退出群聊:${session.group_id}`,`private:${session.user_id}`)
+        })
     ctx.command('admin/group','message.group')
         .desc('群成员管理')
     ctx.command('admin/group/mute [...userIds:qq]', 'message.group')

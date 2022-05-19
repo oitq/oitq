@@ -6,7 +6,6 @@ import {Context} from "./context";
 import {Command} from "./command";
 import {Action} from "./argv";
 import {EventMap, Sendable} from "oicq";
-
 export type AuthorInfo=string|{
     name:string
     email?:string
@@ -55,10 +54,8 @@ export class Plugin extends Context {
     public children:Plugin[]=[]
     private _commands:Map<string,Command>=new Map<string, Command>()
     public disposes:Dispose[]=[]
-    middlewares: Middleware[] = []
     public commandList:Command[]=[]
     readonly binds = new Set<Bot>()
-    private _using: readonly (keyof Plugin.Services)[] = []
     disableStatus:boolean=false
     config
     pkg:Partial<PkgInfo>={}
@@ -67,7 +64,6 @@ export class Plugin extends Context {
         super()
         if (typeof hooks === 'string') {
             this.fullpath = require.resolve(hooks)
-            this._using = require(hooks).using || []
             this.path = this.fullpath
             try{
                 const pkg=require(path.join(hooks,'package.json'))
@@ -80,7 +76,6 @@ export class Plugin extends Context {
                 }
             }catch {}
         } else {
-            if (hooks.using) this._using = hooks.using
             if(hooks.name)this.pkg.name=hooks.name
             this.hooks = hooks
         }
@@ -93,29 +88,31 @@ export class Plugin extends Context {
     async dispatch(name:string,...args){
         if(this.disableStatus)return
         if(name&&name==='bot.message'){
-            const session=args[0] as NSession<'message'>
-            const continueResult=await this.app.bail('continue',session)
-            if(continueResult){
-                if(typeof continueResult!=='boolean'){
-                    session.sendMsg(continueResult)
+        }
+        if(name && name.startsWith('bot.')){
+            const session=args[0]
+            if(name==='bot.message'){
+                const continueResult=await this.app.bail('continue',session)
+                if(continueResult){
+                    if(typeof continueResult!=='boolean'){
+                        session.sendMsg(continueResult)
+                    }
+                    return
                 }
-                return
-            }
-            let result=await this.execute(session)
-            if(result){
-                if(typeof result!=='boolean'){
-                    session.sendMsg(result)
-                }
-                return
-            }
-            for(const middleware of this.middlewares){
-                result =await middleware(session as NSession<'message'>)
+                let result=await this.execute(session)
                 if(result){
                     if(typeof result!=='boolean'){
                         session.sendMsg(result)
                     }
                     return
                 }
+            }
+            const result=await this.callback()(session)
+            if(result){
+                if(typeof result!=="boolean"){
+                    session.sendMsg(result)
+                }
+                return
             }
         }
         for(const plugin of this.children){
@@ -131,17 +128,36 @@ export class Plugin extends Context {
     //message处理中间件，受拦截的message不会上报到'bot.message'
     middleware(middleware: Middleware, prepend?: boolean) {
         const method = prepend ? 'unshift' : 'push'
-        this.middlewares[method](middleware)
-        const dispose=() => {
-            const index = this.middlewares.indexOf(middleware)
-            if (index >= 0) {
-                this.middlewares.splice(index, 1)
-                return true
-            }
-            return false
-        }
+        this.app.middlewares[method](middleware)
+        const dispose=() => remove(this.app.middlewares,middleware)
         this.disposes.push(dispose)
         return dispose
+    }
+    use(middleware:Middleware){
+        const dispose=this.middleware(middleware)
+        this.disposes.push(dispose)
+        return this
+    }
+    private compose():(session:NSession<any>)=>Promise<boolean|Sendable|void>{
+        return (session:NSession<any>) =>{
+            // 触犯中间件的函数（递归调用）
+            const dispatch:(index:number)=>Promise<boolean|Sendable|void> = (index:number) => {
+                if (index >= this.app.middlewares.length) return Promise.resolve();
+                const fn = this.app.middlewares[index];
+                return Promise.resolve(
+                    fn(session, () => dispatch(index + 1))
+                );
+            }
+            return dispatch(0);
+        }
+    }
+    private callback(){
+        const fnMiddleware = this.compose();
+        return async (session:NSession<any>) => {
+            return await fnMiddleware(session).catch(err => {
+                this.emit('error', err, session);
+            });
+        };
     }
     using<T extends PluginManager.PluginHook>(using: readonly (keyof Plugin.Services)[], plugin:T,config?:PluginManager.Option<T>) {
         if(typeof plugin==='function'){
@@ -464,26 +480,26 @@ export class PluginManager {
         }
         if(!resolved){//尝试在全局包里面查找官方插件
             try {
-                require.resolve('@oitq/plugin.md-' + name);
-                resolved = '@oitq/plugin.md-' + name;
+                require.resolve('@oitq/plugin-' + name);
+                resolved = '@oitq/plugin-' + name;
             }catch {}
         }
         if(!resolved){//尝试在全局包里面查找社区插件
             try {
-                require.resolve('oitq-plugin.md-' + name);
-                resolved = 'oitq-plugin.md-' + name;
+                require.resolve('oitq-plugin-' + name);
+                resolved = 'oitq-plugin-' + name;
             }catch {}
         }
         if (!resolved && fs.existsSync(orgPath)) {//尝试在当前目录的依赖查找官方插件
             try{
-                require.resolve(modulePath+'/'+'@oitq/plugin.md-' + name);
-                resolved = modulePath+'/'+'@oitq/plugin.md-' + name;
+                require.resolve(modulePath+'/'+'@oitq/plugin-' + name);
+                resolved = modulePath+'/'+'@oitq/plugin-' + name;
             }catch{}
         }
         if (!resolved && fs.existsSync(modulePath)) {//尝试在当前目录的依赖查找社区插件
             try{
-                require.resolve(modulePath+'/'+'oitq-plugin.md-' + name);
-                resolved = modulePath+'/'+'oitq-plugin.md-' + name;
+                require.resolve(modulePath+'/'+'oitq-plugin-' + name);
+                resolved = modulePath+'/'+'oitq-plugin-' + name;
             }catch{}
         }
         if (!resolved)
@@ -606,7 +622,7 @@ export class PluginManager {
         }
         const modules = fs.readdirSync(modulePath, {withFileTypes: true})
         for (let file of modules) {
-            if (file.isDirectory() && (file.name.startsWith("oitq-plugin.md-"))) {
+            if (file.isDirectory() && (file.name.startsWith("oitq-plugin-"))) {
                 try {
                     require.resolve(file.name)
                     let pkgInfo:Partial<PkgInfo>={}
@@ -724,9 +740,9 @@ export namespace PluginManager {
 
     export type Option<T extends PluginHook> =
         T extends ConstructorHook<infer U> ? U
-        : T extends FunctionHook<infer U> ? U
-            : T extends ObjectHook<infer U> ? U
-                : never
+            : T extends FunctionHook<infer U> ? U
+                : T extends ObjectHook<infer U> ? U
+                    : never
 
     export interface Config {
         plugin_dir?: string,

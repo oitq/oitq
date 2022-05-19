@@ -132,7 +132,7 @@ declare module 'oitq'{
     export type ChannelId = `${TargetType}:${number}`;
     export type LoginType = 'qrcode' | 'password';
     export type ToSession<A extends any[] = []> = A extends [object, ...infer O] ? Extend<Define<Session, 'args', O>, A[0]> : Define<Session, 'args', A>;
-    export type NSession<E extends keyof EventMap> = ToSession<Parameters<EventMap[E]>>;
+    export type NSession<E extends keyof EventMap='message'> = ToSession<Parameters<EventMap[E]>>;
     type Transform = {
         [P in keyof EventMap as `bot.${P}`]: (session: NSession<P>) => void;
     };
@@ -310,9 +310,9 @@ declare module 'oitq'{
     }
 
     // middleware.d.ts
-    export type Middleware = (session: NSession<'message'>) => Awaitable<boolean | Sendable | void>;
+    export declare type Middleware = (session: NSession<any>, next?: () => Promise<any>) => Awaitable<boolean | Sendable | void>;
 
-    // plugin.md.d.ts
+    // plugin.d.ts
 
     export type AuthorInfo = string | {
         name: string;
@@ -370,6 +370,10 @@ declare module 'oitq'{
         middleware(middleware: Middleware, prepend?: boolean): () => boolean;
         using<T extends PluginManager.PluginHook>(using: readonly (keyof Plugin.Services)[], plugin: T, config?: PluginManager.Option<T>): Plugin;
         addPlugin(plugin: Plugin, config?: any): this;
+        middleware(middleware: Middleware, prepend?: boolean): () => boolean;
+        use(middleware: Middleware): this;
+        private compose;
+        private callback;
         plugin(name: string, config?: any): Plugin;
         plugin<T extends PluginManager.PluginHook>(plugin: T, config?: PluginManager.Option<T>): Plugin;
         command<D extends string>(def: D, triggerEvent: keyof EventMap): Command<Action.ArgumentType<D>>;

@@ -41,7 +41,7 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
         this.examples.push(example)
         return this
     }
-    match(session:NSession<'message'>){
+    match(session:NSession){
         return this.triggerEvent==='message'
         || `message.${session.message_type}`===this.triggerEvent
     }

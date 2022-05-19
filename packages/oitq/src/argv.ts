@@ -7,7 +7,7 @@ export interface Action<A extends any[] = any[], O = {}> {
     args?: A//携带的args
     options?: O//携带的options
     error?: string//是否报错
-    session?:NSession<'message'>
+    session?:NSession
     bot?:Bot
 }
 export namespace Action{

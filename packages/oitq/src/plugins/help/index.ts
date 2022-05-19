@@ -17,13 +17,13 @@ export function enableHelp<A extends any[], O extends {}>(cmd: Command<A, O>) {
 
 
 
-export function getCommandNames(session: NSession<'message'>) {
+export function getCommandNames(session: NSession) {
     return [...session.app.pluginManager.plugins.values()].map(plugin=>plugin.commandList).flat()
         .filter(cmd => cmd.match(session))
         .flatMap(cmd => cmd.aliasNames)
 }
 
-function* getCommands(session: NSession<'message'>, commands: Command[], showHidden = false): Generator<Command> {
+function* getCommands(session: NSession, commands: Command[], showHidden = false): Generator<Command> {
     for (const command of commands) {
         if (command.match(session)) {
             yield command
@@ -33,7 +33,7 @@ function* getCommands(session: NSession<'message'>, commands: Command[], showHid
     }
 }
 
-function formatCommands(path: string, session: NSession<'message'>, children: Command[], options: HelpOptions) {
+function formatCommands(path: string, session: NSession, children: Command[], options: HelpOptions) {
     const commands = Array
         .from(getCommands(session, children, options.showHidden))
         .sort((a, b) => a.name > b.name ? 1 : -1)
@@ -67,7 +67,7 @@ function getOptions(command: Command,config:HelpOptions) {
     return output
 }
 
-async function showHelp(command: Command, session: NSession<'message'>, config: HelpOptions) {
+async function showHelp(command: Command, session: NSession, config: HelpOptions) {
     const output = [`${command.name}${
         command.args.length?' '+command.args.map(arg=>{
             return arg.required?`<${arg.variadic?'...':''}${arg.name}:${arg.type}>`:`[${arg.variadic?'...':''}${arg.name}:${arg.type}]`

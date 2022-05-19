@@ -93,7 +93,7 @@ export function install(ctx: Plugin, config: Config) {
     })
     const validators: Record<string, Promise<unknown>> = {}
 
-    async function validate(url: string, session: NSession<'message'>) {
+    async function validate(url: string, session: NSession) {
         if (validators[url]) {
             await session.sendMsg('正在尝试连接……')
             return validators[url]

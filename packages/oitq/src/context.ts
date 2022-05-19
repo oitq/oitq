@@ -19,8 +19,8 @@ export interface AppEventMap extends BotEventMap,ServiceEventMap{
     'start'():void
     'stop'():void
     'send'(messageRet:MessageRet,channelId:ChannelId):void
-    'continue'(session:NSession<'message'>):Promise<string|boolean|void>
-    'attach'(session:NSession<'message'>):Awaitable<void|string>
+    'continue'(session:NSession):Promise<string|boolean|void>
+    'attach'(session:NSession):Awaitable<void|string>
     'bot-add'(bot: Bot): void
     'bot-remove'(bot: Bot): void
     'command-add'(command: Command): void
@@ -57,5 +57,5 @@ export class Context extends EventThrower{
     }
 }
 export namespace Context{
-    export type Filter=(session:NSession<'message'>)=>boolean
+    export type Filter=(session:NSession)=>boolean
 }

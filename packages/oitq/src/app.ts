@@ -1,17 +1,19 @@
 import 'oicq2-cq-enable';
 import {LogLevel, Sendable} from "oicq";
-import {BotList, Bot, ChannelId} from "./bot";
+import {BotList, Bot, ChannelId, NSession} from "./bot";
 import {sleep, merge, Dict, Awaitable, readConfig, createIfNotExist} from "@oitq/utils";
 import {MsgChannelId} from './context'
 import {Plugin, PluginManager} from './plugin'
 import {Computed} from "./session";
 import {defaultAppConfig, dir} from './static'
 import * as path from "path";
+import {Middleware} from "./middleware";
 export interface App{
     start(...args:any[]):Awaitable<void>
 }
 export class App extends Plugin{
     public app=this
+    middlewares: Middleware[] = []
     constructor(public config:App.Config) {
         super({install(){},name:'app'});
         this.logger=this.getLogger('app')
