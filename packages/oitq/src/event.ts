@@ -1,19 +1,27 @@
-import {App} from "./app";
-import {Context} from "./context";
-import {isBailed, remove} from "@oitq/utils";
-export type EventName=string|symbol
-export class Events{
-    _hooks: Record<keyof any, [App|Context, (...args: any[]) => any][]> = {}
+import {Awaitable, remove} from "@oitq/utils";
+import {Logger} from 'log4js'
+export type EventName=string
+export type EventListener=(...args:any[])=>Awaitable<any>
+
+export class EventThrower{
+    private _events:Record<EventName, EventListener[]>={}
     private static metaWords='./-'.split('')
-    constructor(public app?:App) {}
+    private _maxListenerCount:number=15
+    public logger:Logger
+    constructor() {}
     private getListeners(name:EventName){
-        if(typeof name === "symbol") return this.app._hooks[name]||=[]
-        return Object.keys(this.app._hooks)
+        return Object.keys(this._events)
             .filter(key=>{
-                return new RegExp(Events.createRegStr(name)).test(key) || new RegExp(Events.createRegStr(key)).test(name)
+                return new RegExp(EventThrower.createRegStr(name)).test(key) || new RegExp(EventThrower.createRegStr(key)).test(name)
             })
-            .map(key=>this.app._hooks[key])
+            .map(key=>this._events[key])
             .flat()
+    }
+    get maxListener(){
+        return this._maxListenerCount
+    }
+    setMaxListener(n:number){
+        this._maxListenerCount=n
     }
     private static createRegStr(name:string):string{
         name=`^${name}$`
@@ -22,106 +30,52 @@ export class Events{
         }
         return name.replace('*','.*')
     }
-    async parallel<K extends EventName>(name: K, ...args: any[]): Promise<void>
-    async parallel<K extends EventName>(target:any,name:K,...args:any[]):Promise<void>
-    async parallel(...args: any[]) {
+    async parallel<K extends EventName>(name: K, ...args: any[]): Promise<void>{
         const tasks: Promise<any>[] = []
-        const session = typeof args[0] === 'object' ? args.shift() : null
-        const name = args.shift()
-        const hooks=this.getListeners(name)
-        for (let [context, callback] of hooks) {
-            if (!context.match(session)) continue
+        const listeners=this.getListeners(name)
+        for (let listener of listeners) {
             tasks.push((async () => {
-                return callback.apply(session, args)
+                return listener.apply(this, args)
             })().catch(((error) => {
-                this.app.logger('app').warn(error)
+                this.logger.warn(error)
             })))
         }
         await Promise.all(tasks)
     }
-    emit<K extends EventName>(name: K, ...args: any[]): void
-    emit<K extends EventName>(target: any, name: K, ...args: any[]): void
-    emit(...args: [any, ...any[]]) {
-        this.parallel(...args)
+    emit<K extends EventName>(name: K, ...args: any[]): void {
+        this.parallel(name,...args)
     }
-    waterfall<K extends EventName>(name: K, ...args: any[]): Promise<any>
-    waterfall<K extends EventName>(target: any, name: K, ...args: any[]): Promise<any>
-    async waterfall(...args: [any, ...any[]]) {
-        const session = typeof args[0] === 'object' ? args.shift() : null
-        const name = args.shift()
-        for (let [context, callback] of this.getListeners(name)) {
-            if (!context.match(session)) continue
-            args[0] = await callback.apply(session, args)
-        }
-        return args[0]
-    }
-    chain<K extends EventName>(name: K, ...args: any[]): any
-    chain<K extends EventName>(target: any, name: K, ...args: any[]): any
-    chain(...args: [any, ...any[]]) {
-        return this.waterfall(...args)
-    }
-    serial<K extends EventName>(name: K, ...args: any[]):Promise<any>
-    serial<K extends EventName>(target: any, name: K, ...args: any[]): Promise<any>
-    async serial(...args: [any,...any]) {
-        const session = typeof args[0] === 'object' ? args.shift() : null
-        const name = args.shift()
-        for (let [context, callback] of this.getListeners(name)) {
-            if (!context.match(session)) continue
-            const result = await callback.apply(session, args)
-            if (isBailed(result)) return result
+    async bail<K extends EventName>(name:K,...args:any[]):Promise<string|boolean|void>{
+        const listeners=this.getListeners(name)
+        try{
+            for(const listener of listeners){
+                const result=await listener.apply(this,args)
+                if(result)return result
+            }
+        }catch (e){
+            return e.message
         }
     }
-
-    bail<K extends EventName>(name: K, ...args: any[]):any
-    bail<K extends EventName>(target: any, name: K, ...args: any[]): any
-    bail(...args: [any,...any[]]) {
-        return this.serial(...args)
-    }
-    on<K extends EventName>(name: K, listener: (...args:any[])=>void, prepend?: boolean): () => boolean
-    on(name: EventName, listener: (...args:any[])=>void, prepend = false):() => boolean {
+    on<K extends EventName>(name: K, listener: (...args:any[])=>void, prepend?: boolean): () => boolean{
         const method = prepend ? 'unshift' : 'push'
-
-        // handle special events
-        if (name === 'connect' && this.app.status) {
-            return listener(), () => false
-        }
-
-        const hooks = this.app._hooks[name]||=[]
-        if (hooks.length >= this.app.config.maxListeners) {
-            this.app.logger('app').warn(
+        const listeners = this._events[name]||=[]
+        if (listeners.length >= this.maxListener) {
+            this.logger.warn(
                 'max listener count (%d) for event "%s" exceeded, which may be caused by a memory leak',
-                this.app.config.maxListeners, name,
+                this.maxListener, name,
             )
         }
 
-        // @ts-ignore
-        hooks[method]([this, listener])
-        const dispose = () => {
+        listeners[method](listener)
+        return () => {
             return this.off(name, listener)
         }
-        return dispose
     }
-
     before<K extends string>(name: K, listener: (...args:any)=>void, append = false) {
-        const seg = name.split('/')
-        seg[seg.length - 1] = 'before-' + seg[seg.length - 1]
-        return this.on(seg.join('/') as EventName, listener, !append)
-    }
-
-    once(name: EventName, listener: (...args:any[])=>void, prepend = false) {
-        const dispose = this.on(name, function (...args: any[]) {
-            dispose()
-            return listener.apply(this, args)
-        }, prepend)
-        return dispose
+        return this.on(`before-${name}`, listener, !append)
     }
 
     off<K extends EventName>(name: K, listener: (...args:any[])=>void) {
-        // @ts-ignore
-        const index = (this.app._hooks[name] || []).findIndex(([context, callback]) => context === this && callback === listener)
-        if (index >= 0) {
-            this.app._hooks[name].splice(index, 1)
-            return true
-        }
+        return remove(this._events[name]||[],listener)
     }
 }

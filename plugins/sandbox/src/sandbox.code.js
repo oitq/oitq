@@ -1,3 +1,4 @@
+/* eslint-disable */
 /*
  * 该文件中的所有代码必须在sandbox中执行
  */

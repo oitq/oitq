@@ -1,83 +1,43 @@
-import {LogLevel} from "oicq";
-import {BotList, BotConfig} from "./bot";
+import 'oicq2-cq-enable';
+import {LogLevel, Sendable} from "oicq";
+import {BotList, Bot, ChannelId, NSession} from "./bot";
 import {sleep, merge, Dict, Awaitable, readConfig, createIfNotExist} from "@oitq/utils";
-import {Context} from './context'
+import {MsgChannelId} from './context'
 import {Plugin, PluginManager} from './plugin'
 import {Computed} from "./session";
 import {defaultAppConfig, dir} from './static'
-import {Command} from "@lc-cn/command";
 import * as path from "path";
-
-
-
-export interface AppConfig extends PluginManager.Config{
-    start?:boolean,
-    prefix?: Computed<string | string[]>
-    minSimilarity?:number,
-    bots?:BotConfig[]
-    delay?:Dict<number>
-    token?:string
-    dir?:string
-    logLevel?:LogLevel
-    maxListeners?:number,
-}
-
-
-interface CommandMap extends Map<string, Command> {
-    resolve(key: string): Command
-}
+import {Middleware} from "./middleware";
 export interface App{
     start(...args:any[]):Awaitable<void>
 }
-export class App extends Context{
-    status:boolean=false
-    _commandList: Command[] = []
-    _commands: CommandMap = new Map<string, Command>() as never
-    _shortcuts: Command.Shortcut[] = []
-    public app:App=this
-    public disposeState:Map<Plugin,Plugin.State>=new Map<Plugin, Plugin.State>()
-    config:AppConfig
-    constructor(config:AppConfig|string=path.join(dir,'oitq.json')) {
-        super(()=>true);
-        if(typeof config==='string'){
-            createIfNotExist(config,defaultAppConfig)
-            try{
-                config=readConfig(config) as AppConfig
-            }catch {
-                config={}
-            }
-        }
-        this.disposeState.set(null,{
-            children:[],
-            context:this,
-            plugin:null,
-            disposes:[]
-        })
-        this.config=merge(defaultAppConfig,config)
+export class App extends Plugin{
+    public app=this
+    middlewares: Middleware[] = []
+    constructor(public config:App.Config) {
+        super({install(){},name:'app'});
+        this.logger=this.getLogger('app')
+
         this.bots=new BotList(this)
-        this.pluginManager=new PluginManager(this,this.config)
-        this.pluginManager.init()
-        this._commands.resolve = (key) => {
-            if (!key) return
-            const segments = key.split('.')
-            let i = 1, name = segments[0], cmd: Command
-            while ((cmd = this.getCommand(name)) && i < segments.length) {
-                name = cmd.name + '.' + segments[i++]
-            }
-            return cmd
-        }
+        this.pluginManager=new PluginManager(this,this.config.plugin_dir)
     }
 
-    getCommand(name: string) {
-        return this._commands.get(name)
+    async broadcast(msgChannelIds:MsgChannelId|MsgChannelId[],msg:Sendable){
+        msgChannelIds=[].concat(msgChannelIds)
+        for(const msgChannelId of msgChannelIds){
+            const [_,uin,target_type,target_id]=/^(\d+)-(\S+):(\d+)$/.exec(msgChannelId)
+            await this.bots.get(Number(uin)).sendMsg(`${target_type}:${target_id}` as ChannelId,msg)
+        }
     }
-    addBot(config:BotConfig){
+    addBot(config:Bot.Config){
         return this.bots.create(config)
     }
     removeBot(uin:number){
         return this.bots.remove(uin)
     }
     async start(){
+        await this.pluginManager.init(this.config.plugins)
+        await this.parallel('before-ready')
         if(this.config.bots){
             for(const config of this.config.bots){
                 this.bots.create(config)
@@ -85,20 +45,40 @@ export class App extends Context{
         }
         for(const bot of this.bots){
             const config=this.config.bots||=[]
-            const option:BotConfig=config.find(botOption=>botOption.uin===bot.uin) ||{} as any
+            const option:Bot.Config=config.find(botOption=>botOption.uin===bot.uin) ||{} as any
             await bot.login(option.password)
-            await this.pluginManager.restore(bot)
             await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
         }
-        this.status=true
         this.emit('ready')
+    }
+}
+export namespace App{
+    export interface Config extends PluginManager.Config{
+        start?:boolean,
+        prefix?: Computed<string | string[]>
+        minSimilarity?:number,
+        bots?:Bot.Config[]
+        plugins?:Record<string, any>
+        delay?:Dict<number>
+        token?:string
+        dir?:string
+        logLevel?:LogLevel
+        maxListeners?:number,
     }
 }
 export const getAppConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'oitq.config.json')
 export const getBotConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'bot.default.json')
-export function createApp(config:string|AppConfig=getAppConfigPath(dir)){
-    return new App(config)
+export function createApp(config:string|App.Config=getAppConfigPath(dir)){
+    if(typeof config==='string'){
+        createIfNotExist(config,defaultAppConfig)
+        try{
+            config=readConfig(config) as App.Config
+        }catch {
+            config={}
+        }
+    }
+    return new App(merge(defaultAppConfig,config))
 }
-export function defineConfig(config:AppConfig){
+export function defineConfig(config:App.Config){
     return config
 }

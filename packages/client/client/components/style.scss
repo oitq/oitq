@@ -1,0 +1,11 @@
+@use 'sass:color';
+:root {
+
+}
+
+html.dark {
+  --el-bg-color: #202225;
+  --el-menu-bg-color: #2f3034;
+  --el-fill-color-blank:var(--el-menu-bg-color);
+}
+

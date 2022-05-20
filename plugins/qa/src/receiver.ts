@@ -1,7 +1,6 @@
 import {Dialogue} from './teach'
-import {NSession,Context,s} from "oitq";
+import {NSession,Plugin} from "oitq";
 import {QA} from "./models";
-import {MessageRet, Sendable} from "oicq";
 
 function hasEnv(envs, type, target) {
     return envs.length === 0 || envs.some(item => {
@@ -10,7 +9,7 @@ function hasEnv(envs, type, target) {
 }
 
 
-export async function triggerTeach(ctx: Context, session: NSession<'message'>) {
+export async function triggerTeach(ctx: Plugin, session: NSession) {
     const teaches = await QA.findAll()
     const question=session.cqCode
     const dialogues = teaches.map(teach => teach.toJSON())
@@ -63,13 +62,12 @@ export async function triggerTeach(ctx: Context, session: NSession<'message'>) {
     let answerText=dialogue.answer
         .replace(/\$0/g,question)
     try{
-        session.bot.sendMsg(session.getChannelId(),await session.executeTemplate(answerText) as string)
+        return await session.executeTemplate(answerText) as string
     }catch{
-        await session.execute(answerText)
+        return await session.app.execute(session,answerText)
     }
-    return true
 }
 
-export default function install(ctx: Context) {
-    ctx.middleware((session: NSession<'message'>) =>triggerTeach(ctx, session))
+export default function install(plugin: Plugin) {
+    plugin.middleware((session: NSession<any>,next) =>session.event_name==='message'?triggerTeach(plugin, session as NSession):next())
 }

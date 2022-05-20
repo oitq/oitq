@@ -1,7 +1,9 @@
-import {Context,template, s, fromCqcode,Dict,sleep,noop,makeArray} from "oitq";
+import {Plugin,template, s, fromCqcode,Dict,sleep,noop,makeArray} from "oitq";
 import { genDmMessageId } from "oicq/lib/message/message.js";
-import {OnlineStatus, Quotable} from "oicq";
-
+import {OnlineStatus, Quotable, segment} from "oicq";
+import * as callme from './callme'
+import * as music from './music'
+import {ChannelId} from "oitq/lib";
 template.set('common', {
     'expect-text': '请输入要发送的文本。',
     'expect-command': '请输入要触发的指令。',
@@ -21,16 +23,23 @@ export interface Respondent {
 export interface BasicConfig extends RecallConfig {
     echo?:boolean
     send?: boolean
-    operator?: number | number[]
+    feedback?: number | number[]|{
+        operator:number|number[]
+        timeout?:number
+    }
     respondent?: Respondent | Respondent[]
 }
-export function echo(ctx:Context){
-    ctx.command('common/echo <varName:string>','输出当前会话中的变量值')
+export function echo(plugin:Plugin){
+    plugin.command('common/echo <varName:string>','message')
+        .desc('输出当前会话中的变量值')
         .action(async ({session},varName)=>{
             let result:any=session
-            if(!varName)return
-            const varArr=varName.split('.')
-                .filter(name=>!['options','config','password'].includes(name))
+            if(!varName)return '请输入变量名'
+            if(varName.endsWith(')') && !session.bot.isMaster(session.user_id)) return `禁止调用函数:this.${varName}`
+            let varArr=varName.split('.')
+            if(!session.bot.isMaster(session.user_id) && varArr.some(name=>['options','bot','app','config','password'].includes(name))){
+                return `不可达的位置：${varName}`
+            }
             try{
                 const func=new Function(`return this.${varArr.join('.')}`)
                 result =func.apply(session)
@@ -42,8 +51,9 @@ export function echo(ctx:Context){
             return JSON.stringify(result,null, 4).replace(/"/g,'')
         })
 }
-export function send(ctx: Context) {
-    ctx.command('common/send <message:text>', '向当前上下文发送消息')
+export function send(plugin: Plugin) {
+    plugin.command('common/send <message:text>', 'message')
+        .desc('向当前上下文发送消息')
         .option('anonymous', '-a  匿名发送消息')
         .option('forceAnonymous', '-A  匿名发送消息')
         .option('escape', '-e  发送转义消息')
@@ -78,68 +88,66 @@ export function send(ctx: Context) {
             return message
         })
 }
-export function recall(ctx: Context, { recall = 10 }: RecallConfig) {
+export function recall(plugin: Plugin, { recall = 10 }: RecallConfig) {
     const recent: Dict<string[]> = {}
-    ctx.on('send', (session) => {
-        const list = recent[session.group_id] ||= []
-        list.unshift(session.message_id)
+    plugin.app.on('send', (messageRet,channelId) => {
+        const list = recent[channelId] ||= []
+        list.unshift(messageRet.message_id)
         if (list.length > recall) {
             list.pop()
         }
     })
-    ctx.group()
-        .command('common/recall [count:number]', '撤回 bot 发送的消息', { authority: 2 })
+    plugin
+        .command('common/recall [count:number]','message')
+        .desc('撤回机器人发送的消息')
         .action(async ({ session }, count = 1) => {
-            const list = recent[session.group_id]
+            const list = recent[session.getChannelId()]
             if (!list) return '近期没有发送消息。'
             const removal = list.splice(0, count)
-            const delay = ctx.app.options.delay.broadcast
-            if (!list.length) delete recent[session.group_id]
+            const delay = plugin.app.config.delay.broadcast
+            if (!list.length) delete recent[session.getChannelId()]
             for (let index = 0; index < removal.length; index++) {
                 if (index && delay) await sleep(delay)
                 try {
                     await session.bot.deleteMsg(removal[index])
                 } catch (error) {
-                    ctx.logger('bot').warn(error)
+                    plugin.getLogger('bot').warn(error)
                 }
             }
         })
 }
-export function feedback(ctx: Context, operators: number[]) {
-    type FeedbackData = [self_id: number, channelId: string]
-    const feedbacks: Record<number, FeedbackData> = {}
-
-
-    ctx.command('common/feedback <message:text>', '发送反馈信息给作者')
+export function feedback(plugin: Plugin, {operators,timeout=1000*60*60}: { operators:number[],timeout?:number }) {
+    async function createReplyCallback(session,user_id){
+        const sess=await session.bot.waitMessage((temp)=>temp.message_type==='private' && temp.user_id===user_id,timeout)
+        if(!sess)return
+        session.reply(['来自作者的回复：\n',...sess.message],true)
+    }
+    plugin.command('common/feedback <message:text>', 'message')
+        .desc('发送反馈信息给作者')
         .action(async ({ session }, text) => {
             if (!text) return template('common.expect-text')
             const name=session.sender['card']||session.sender['title']||session.sender.nickname||session.nickname
-            const { user_id } = session
-            const nickname = name === '' + user_id ? user_id : `${name} (${user_id})`
-            const message = template('common.feedback-receive', nickname, text)
-            const delay = ctx.app.options.delay.broadcast
-            const data: FeedbackData = [session.self_id, `${session.message_type}:${session.group_id||session.discuss_id||session.user_id}`]
+
+            const fromCN={
+                group:()=>`群：${session['group_name']}(${session.group_id})的${name}(${session.user_id})`,
+                discuss:()=>`讨论组：${session['discuss_name']}(${session.discuss_id})的${name}(${session.user_id})`,
+                private:()=>`用户：${name}(${session.user_id})`
+            }
+            const message = template('common.feedback-receive',`${fromCN[session.message_type]()}` , text)
+            const delay = plugin.app.config.delay.broadcast
             for (let index = 0; index < operators.length; ++index) {
                 if (index && delay) await sleep(delay)
                 const user_id=operators[index]
-                const bot = ctx.bots.find(bot => bot.status===OnlineStatus.Online)
-                await bot.sendPrivateMsg(user_id, fromCqcode(message))
-                    .then(({message_id}) => feedbacks[message_id] = data, noop)
+                const bot = plugin.app.bots.find(bot => bot.status===OnlineStatus.Online)
+                await bot.sendPrivateMsg(user_id, message,session)
+                createReplyCallback(session,user_id)
             }
             return template('common.feedback-success')
         })
-
-    ctx.middleware(async (session) => {
-        const { source, parsed } = session
-        const quote = { ...source as Quotable, flag: 1 };
-        if (!parsed.content || !source) return ''
-        const data = feedbacks[genDmMessageId(quote.user_id, quote.seq, quote.rand, quote.time, quote.flag)]
-        if (!data) return ''
-        await ctx.bots.find(bot=>bot.uin===data[0]).sendMsg(data[1], parsed.content)
-    })
 }
-export function respondent(ctx: Context, respondents: Respondent[]) {
-    ctx.middleware((session) => {
+export function respondent(plugin: Plugin, respondents: Respondent[]) {
+    plugin.middleware((session,next) => {
+        if(session.event_name!=='message')return next()
         const message = session.cqCode.trim()
         for (const { match, reply } of respondents) {
             const capture = typeof match === 'string' ? message === match && [message] : message.match(match)
@@ -148,22 +156,48 @@ export function respondent(ctx: Context, respondents: Respondent[]) {
         return ''
     })
 }
-export function basic(ctx: Context, config: BasicConfig = {}) {
-    if(config.echo!==false)ctx.plugin(echo)
-    if (config.send !== false) ctx.plugin(send)
-    if (!(config.recall <= 0)) ctx.plugin(recall, config)
-
-    const operators = makeArray(config.operator).map(op=>Number(op))
-    if (operators.length) ctx.plugin(feedback, operators)
+export function basic(plugin: Plugin, config: BasicConfig = {feedback:[]}) {
+    if(config.echo!==false)plugin.plugin(echo)
+    if (config.send !== false) plugin.plugin(send)
+    if (!(config.recall <= 0)) plugin.plugin(recall, config)
+    function noTimeout(feedback:BasicConfig['feedback']){
+        return typeof feedback==='number'||Array.isArray(feedback)
+    }
+    const operators = makeArray(noTimeout(config.feedback)?config.feedback:config.feedback['operator']).map(op=>Number(op))
+    if (operators.length) plugin.plugin(feedback, {operators,timeout:noTimeout(config.feedback)?plugin.app.config.delay.prompt:config.feedback['timeout']})
 
     const respondents = makeArray(config.respondent).filter(Boolean)
-    if (respondents.length) ctx.plugin(respondent, respondents)
+    if (respondents.length) plugin.plugin(respondent, respondents)
 }
 
 export interface Config extends BasicConfig {
     name?:string
 }
-export function install(ctx:Context,config:Config){
-    ctx.command('common','基础功能')
-    ctx.plugin(basic,{...config,name:'basic'} as Config)
+export function install(plugin:Plugin,config:Config){
+    plugin.command('common','message')
+        .desc('基础功能')
+    plugin.command('common/segment','message')
+        .desc('生成指定消息段内容')
+
+    plugin.command('common/segment/face <id:integer>','message')
+        .desc('发送一个表情')
+        .action((_,id)=>segment.face(id))
+    plugin.command('common/segment/image <file>','message')
+        .desc('发送一个一张图片')
+        .action((_,file)=>segment.image(file))
+    plugin.command('common/segment/at <qq:integer>','message')
+        .desc('发送at')
+        .action((_,at)=>segment.at(at))
+    plugin.command('common/segment/dice [id:integer]','message')
+        .desc('发送摇骰子结果')
+        .action((_,id)=>segment.dice(id))
+    plugin.command('common/segment/rps [id:integer]','message')
+        .desc('发送猜拳结果')
+        .action((_,id)=>segment.rps(id))
+    plugin.command('common/segment/poke','message')
+        .desc('发送戳一戳【随机一中类型】')
+        .action((_,qq)=>segment.poke(parseInt((Math.random()*7).toFixed(0))))
+    plugin.plugin(basic,{...config,name:'basic'} as Config)
+    plugin.plugin(callme)
+    plugin.plugin(music)
 }

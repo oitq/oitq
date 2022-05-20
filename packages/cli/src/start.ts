@@ -5,7 +5,7 @@ import * as path from 'path'
 import {
     dir,
     hyphenate,
-    defaultAppConfig, AppConfig, getAppConfigPath,
+    defaultAppConfig, App, getAppConfigPath,
     readConfig, writeConfig,  getBotConfigPath, defaultBotConfig,
     Dict
 } from "oitq";
@@ -102,7 +102,7 @@ export default function registerStartCommand(cli: CAC) {
             writeConfig(path.join(dir,'configFilePath'),configPath)
             createIfNotExist(getAppConfigPath(configPath),defaultAppConfig)
             createIfNotExist(getBotConfigPath(configPath),defaultBotConfig)
-            let appOptions: AppConfig = readConfig(getAppConfigPath(configPath))
+            let appOptions: App.Config = readConfig(getAppConfigPath(configPath))
             try {
                 appOptions.start = true
                 setEnvArg('OITQ_WATCH_ROOT', watch)

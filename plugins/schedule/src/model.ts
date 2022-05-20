@@ -14,7 +14,7 @@ export interface ScheduleInfo {
     interval: number
     command: string
 }
-@Table
+@Table({modelName:'Schedule'})
 export class Schedule extends Model{
     @Column(DataType.INTEGER)
     assignee:number

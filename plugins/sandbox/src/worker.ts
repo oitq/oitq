@@ -39,7 +39,6 @@ async function callApi(method, params = [], check = true):Promise<Record<string,
     })
     return new Promise((resolve) => handler.set(echo, resolve))
 }
-
 const bots = new Map
 async function init(data, gid?) {
     if (!bots.has(data.self_id))

@@ -2,7 +2,7 @@
   "name": "@oitq/loader",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
-  "version": "0.0.1",
+  "version": "2.0.1-alpha",
   "description": "oitq config loader",
   "scripts": {
     "compile": "tsc --project tsconfig.json",

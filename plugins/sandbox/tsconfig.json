@@ -3,6 +3,7 @@
   "compilerOptions": {
     "outDir": "lib",
     "rootDir": "src",
+    "allowJs": false,
     "baseUrl": ".",
     "esModuleInterop": true
   },

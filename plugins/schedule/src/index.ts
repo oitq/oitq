@@ -1,14 +1,16 @@
 import {formatContext,isSaveEnv} from "./utils";
 import {Schedule,ScheduleInfo} from "./model";
 import '@oitq/plugin-database'
-import {Context, NSession, Session,Time} from "oitq";
+import {Plugin, NSession, Session,Time} from "oitq";
 export const name='schedule'
 export const using=['database'] as const
 export interface Config {
     minInterval?: number
 }
-export function install(ctx: Context, { minInterval }: Config={minInterval:60000}) {
-    ctx.database.addModels(Schedule)
+export function install(ctx: Plugin, { minInterval }: Config={minInterval:60000}) {
+    ctx.app.before('database.ready',()=>{
+        ctx.database.addModels(Schedule)
+    })
     async function hasSchedule(id: number) {
         const data = await Schedule.findAll({where:{id}})
         return data.length
@@ -19,11 +21,14 @@ export function install(ctx: Context, { minInterval }: Config={minInterval:60000
         const date = time.valueOf()
 
         async function executeSchedule() {
-            ctx.app.logger('schedule').debug('execute %d: %s', id, command)
+            ctx.app.getLogger('schedule').debug('execute %d: %s', id, command)
             try{
-                session.bot.sendMsg(session.getChannelId(),await session.executeTemplate(command) as string)
+                await session.sendMsg(await session.executeTemplate(command) as string)
+                let result=await session.executeTemplate(command)
+                if(result && typeof result!=='boolean')await session.sendMsg(result)
             }catch{
-                await session.execute(command)
+                let result=await ctx.app.execute(session,command)
+                if(result && typeof result!=='boolean')await session.sendMsg(result)
             }
             if (!lastCall || !interval) return
             lastCall = new Date()
@@ -37,7 +42,7 @@ export function install(ctx: Context, { minInterval }: Config={minInterval:60000
                 return
             }
 
-            ctx.app.logger('schedule').debug('prepare %d: %s at %s', id, command, time)
+            ctx.app.getLogger('schedule').debug('prepare %d: %s at %s', id, command, time)
             return setTimeout(async () => {
                 if (!await hasSchedule(id)) return
                 Schedule.destroy({where:{id}})
@@ -45,7 +50,7 @@ export function install(ctx: Context, { minInterval }: Config={minInterval:60000
             }, date - now)
         }
 
-        ctx.app.logger('schedule').debug('prepare %d: %c from %s every %s', id, command, time, Time.formatTimeShort(interval))
+        ctx.app.getLogger('schedule').debug('prepare %d: %c from %s every %s', id, command, time, Time.formatTimeShort(interval))
         const timeout = date < now ? interval - (now - date) % interval : date - now
         if (lastCall && timeout + now - interval > +lastCall) {
             executeSchedule()
@@ -63,23 +68,24 @@ export function install(ctx: Context, { minInterval }: Config={minInterval:60000
 
     ctx.on('database.ready', async () => {
         const schedules = await Schedule.findAll({where:{
-                assignee:ctx.bots.map(bot => bot.uin)
+                assignee:ctx.app.bots.map(bot => bot.uin)
             }})
         schedules.forEach((s) => {
             const schedule=s.toJSON()
             const { session, assignee } = schedule
-            const bot = ctx.bots.find((bot)=>bot.uin===assignee)
+            const bot = ctx.app.bots.find((bot)=>bot.uin===assignee)
             if (!bot) return
-            prepareSchedule(schedule, new Session(ctx.app, bot, session) as unknown as NSession<'message'>)
+            prepareSchedule(schedule, new Session(ctx.app, bot, session,session.event_name) as unknown as NSession<'message'>)
         })
     })
 
-    ctx.command('schedule [time]', '定时任务', { authority: 3, checkUnknown: true })
+    ctx.command('schedule [time]', 'message')
+        .desc('定时任务')
         .option('rest', '-- <command:text>  要执行的指令')
-        .option('interval', '/ <interval:string>  设置触发的间隔秒数', { authority: 4 })
+        .option('interval', '/ <interval:string>  设置触发的间隔秒数')
         .option('list', '-l  查看已经设置的日程')
         .option('ensure', '-e  错过时间也确保执行')
-        .option('full', '-f  查找全部上下文', { authority: 4 })
+        .option('full', '-f  查找全部上下文')
         .option('delete', '-d <id>  删除已经设置的日程')
         .action(async ({ session, options }, ...dateSegments) => {
             if (options.delete) {

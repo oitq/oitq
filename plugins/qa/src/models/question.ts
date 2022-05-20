@@ -3,7 +3,7 @@ import {Table,
     Default,
     DataType,
     Model,} from "@oitq/plugin-database";
-@Table
+@Table({modelName:'QA'})
 export class QA extends Model{
     @Column(DataType.TEXT)
     question:string

@@ -7,7 +7,8 @@
         "packages/oitq/lib"
       ],
       "@oitq/plugin-*": [
-        "plugins/*/src"
+        "plugins/*/src",
+        "plugins/**/*/src"
       ],
       "@oitq/*": [
         "packages/*/src"

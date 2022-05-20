@@ -1,90 +1,475 @@
 import {
-    Sendable,
-    Quotable,
     Client,
     LogLevel,
-    Config,
+    MessageRet,
     EventMap,
     FaceElem,
     ImageElem,
     MessageElem,
-    VideoElem
-} from 'oicq';
-
-export * from '@oitq/utils'
-import {EventEmitter} from "events";
-import {Dict, Awaitable, MaybeArray, Define, Extend} from "@oitq/utils";
-import {MessageRet} from "oicq/lib/events";
-
+    Sendable,
+    VideoElem,
+    Quotable
+} from "oicq";
+import {Awaitable, Define, Dict, Extend} from '@oitq/utils'
+import { Logger } from 'log4js';
+import {Config as ClientConfig} from "oicq/lib/client";
+import 'oicq2-cq-enable'
+import {EventThrower} from "../src/event";
+export * from '@oitq/utils';
 declare module 'oitq'{
-    export interface Session {
-        self_id?: number
-        message_type?: string;
-        message?: MessageElem[];
-        post_type?: string;
-        notice_type?: string;
-        request_type?: string;
-        user_id?: number;
-        group_id?: number;
-        discuss_id?: number;
-        sub_type?: string;
+    // app.d.ts
+    import { LogLevel, Sendable } from "oicq";
+    import { Dict, Awaitable } from "@oitq/utils";
 
-        reply?(content: Sendable, quote?: boolean): Promise<MessageRet>;
+    export interface App {
+        start(...args: any[]): Awaitable<void>;
+    }
+    export class App extends Plugin {
+        config: App.Config;
+        app: this;
+        constructor(config: App.Config);
+        broadcast(msgChannelIds: MsgChannelId | MsgChannelId[], msg: Sendable): Promise<void>;
+        addBot(config: Bot.Config): Bot;
+        removeBot(uin: number): boolean;
+    }
+    export namespace App {
+        interface Config extends PluginManager.Config {
+            start?: boolean;
+            prefix?: Computed<string | string[]>;
+            minSimilarity?: number;
+            bots?: Bot.Config[];
+            plugins?: Record<string, any>;
+            delay?: Dict<number>;
+            token?: string;
+            dir?: string;
+            logLevel?: LogLevel;
+            maxListeners?: number;
+        }
+    }
+    export const getAppConfigPath: (baseDir?: string) => string;
+    export const getBotConfigPath: (baseDir?: string) => string;
+    export function createApp(config?: string | App.Config): App;
+    export function defineConfig(config: App.Config): App.Config;
+
+
+
+
+    // argv.d.ts
+
+
+    export interface Action<A extends any[] = any[], O = {}> {
+        name: string;
+        argv: string[];
+        source: string;
+        args?: A;
+        options?: O;
+        error?: string;
+        session?: NSession<'message'>;
+        bot?: Bot;
+    }
+    export declare namespace Action {
+        export interface Domain {
+            string: string;
+            number: number;
+            boolean: boolean;
+            text: string;
+            integer: number;
+            date: Date;
+            qq: number;
+        }
+        type DomainType = keyof Domain;
+        type ParamType<S extends string, F> = S extends `${any}:${infer T}` ? T extends DomainType ? Domain[T] : F : F;
+        export type Replace<S extends string, X extends string, Y extends string> = S extends `${infer L}${X}${infer R}` ? `${L}${Y}${Replace<R, X, Y>}` : S;
+        type ExtractAll<S extends string, F> = S extends `${infer L}]${infer R}` ? [ParamType<L, F>, ...ExtractAll<R, F>] : [];
+        export type ExtractFirst<S extends string, F> = S extends `${infer L}]${any}` ? ParamType<L, F> : boolean;
+        type ExtractSpread<S extends string> = S extends `${infer L}...${infer R}` ? [...ExtractAll<L, string>, ...ExtractFirst<R, string>[]] : [...ExtractAll<S, string>, ...string[]];
+        export type ArgumentType<S extends string> = ExtractSpread<Replace<S, '>', ']'>>;
+        export type OptionType<S extends string> = ExtractFirst<Replace<S, '>', ']'>, any>;
+        export type Type = DomainType | RegExp | string[] | Transform<any>;
+        export interface Declaration {
+            name?: string;
+            type?: Type;
+            initial?: any;
+            variadic?: boolean;
+            required?: boolean;
+        }
+        export type Transform<T> = (source: string) => T;
+        export interface DomainConfig<T> {
+            transform?: Transform<T>;
+            greedy?: boolean;
+        }
+        export function createDomain<K extends keyof Domain>(name: K, transform: Transform<Domain[K]>, options?: DomainConfig<Domain[K]>): void;
+        interface DeclarationList extends Array<Declaration> {
+            stripped: string;
+        }
+        export function parse(content: string): Action;
+        export function parseDecl(source: string): DeclarationList;
+        export function resolveConfig(type: Type): DomainConfig<any>;
+        export function parseValue(source: string, kind: string, argv: Action, decl?: Declaration): any;
+        export interface OptionConfig<T extends Type = Type> {
+            value?: any;
+            fallback?: any;
+            type?: T;
+            /** hide the option by default */
+            hidden?: boolean;
+        }
+        export interface TypedOptionConfig<T extends Type> extends OptionConfig<T> {
+            type: T;
+        }
+        export interface OptionDeclaration extends Declaration, OptionConfig {
+            description?: string;
+            values?: Record<string, any>;
+        }
+        export type OptionDeclarationMap = Record<string, OptionDeclaration>;
+        export {};
     }
 
-    export type Computed<T> = T | ((session: NSession<'message'>) => T);
 
-    export interface Parsed {
-        content: string;
-        prefix: string;
-        appel: boolean;
+
+
+    // bot.d.ts
+    export type TargetType = 'group' | 'private' | 'discuss';
+    export type ChannelId = `${TargetType}:${number}`;
+    export type LoginType = 'qrcode' | 'password';
+    export type ToSession<A extends any[] = []> = A extends [object, ...infer O] ? Extend<Define<Session, 'args', O>, A[0]> : Define<Session, 'args', A>;
+    export type NSession<E extends keyof EventMap='message'> = ToSession<Parameters<EventMap[E]>>;
+    type Transform = {
+        [P in keyof EventMap as `bot.${P}`]: (session: NSession<P>) => void;
+    };
+    export interface BotEventMap extends Transform, EventMap {
+        'bot-add'(bot: Bot): void;
+        'bot-remove'(bot: Bot): void;
     }
-
-    export interface SuggestOptions {
-        target: string;
-        items: string[];
-        prefix?: string;
-        suffix: string;
-        minSimilarity?: number;
-        apply: (this: NSession<'message'>, suggestion: string) => Awaitable<void | string>;
-    }
-
-    export class Session {
+    export class Bot extends Client {
         app: App;
-        bot: Bot;
-        parsed?: Parsed;
-        cqCode?: string
+        options: Bot.Config;
+        private _nameRE;
+        admins: number[];
+        master: number;
+        constructor(app: App, options: Bot.Config);
+        isMaster(user_id: number): boolean;
+        isAdmin(user_id: number): boolean;
+        emit<E extends keyof EventMap>(name: E, ...args: Parameters<EventMap[E]>): boolean;
+        createSession<E extends keyof EventMap>(name: E, ...args: Parameters<EventMap[E]>): ToSession<Parameters<EventMap<any>[E]>>;
+        waitMessage(filter: Context.Filter, timout?: number): Promise<NSession<'message'> | void>;
+        /**
+         * 发送消息
+         * @param channelId 通道id
+         * @param content 消息内容，如果为CQ码会自动转换
+         * @param source 引用的消息，为string时代表消息id
+         */
+        sendMsg(channelId: ChannelId, content: Sendable, source?: Quotable | string): Promise<MessageRet>;
+        broadcast(channelIds: (ChannelId | number)[], message: Sendable): Promise<any[]>;
+    }
+    export namespace Bot {
+        interface Config {
+            uin?: number;
+            config: ClientConfig;
+            type: LoginType;
+            password?: string;
+            nickname?: string | string[];
+            prefix?: string | string[];
+            master?: number;
+            admins?: number[];
+            parent?: number;
+        }
+    }
+    export class BotList extends Array<Bot> {
+        app: App;
+        constructor(app: App);
+        get(uin: number): Bot;
+        create(options: Bot.Config): Bot;
+        remove(uin: number): boolean;
+    }
+    // command.d.ts
 
-        constructor(app: App, bot: Bot, data: Dict);
 
-        middleware(middleware: Middleware): () => boolean;
-
-        private promptReal;
-
-        prompt<T extends keyof Prompt.TypeKV>(options: Prompt.Options<T> | Array<Prompt.Options<T>>): Promise<Prompt.Answers<Prompt.ValueType<T>>>;
-
-        private _handleShortcut;
-
-        executeTemplate(template: string): Promise<boolean | Sendable | MessageRet>;
-        execute(content?: string, autoReply?: boolean): Promise<boolean | Sendable | MessageRet>;
-
-        getChannelId(): ChannelId;
-
-        resolveValue<T>(source: T | ((session: Session) => T)): T;
-
-        text(path: string | string[], params?: object): string;
-
-        toJSON(...besides: string[]): {
-            [k: string]: any;
-        };
+    export class Command<A extends any[] = any[], O extends {} = {}> {
+        plugin: Plugin;
+        triggerEvent: keyof EventMap;
+        name: string;
+        args: Action.Declaration[];
+        parent: Command;
+        children: Command[];
+        private authority;
+        descriptions: string[];
+        shortcuts: Command.Shortcut[];
+        private checkers;
+        private actions;
+        examples: string[];
+        aliasNames: string[];
+        options: Record<string, Command.OptionConfig>;
+        constructor(declaration: string, plugin: Plugin, triggerEvent: keyof EventMap);
+        auth(authority: number): this;
+        desc(desc: string): this;
+        check(checker: Command.Callback<A, O>): this;
+        example(example: string): this;
+        match(session: NSession<'message'>): boolean;
+        alias(...name: string[]): this;
+        use(callback: (cmd: Command) => any): void;
+        shortcut(reg: RegExp | string, config?: Command.Shortcut): this;
+        subcommand<D extends string>(def: D, triggerEvent: keyof EventMap): Command<Action.ArgumentType<D>>;
+        option<K extends string, D extends string>(name: K, declaration: D, config?: Command.OptionConfig): Command<A, Define<O, K, Command.OptionType<D>>>;
+        action(action: Command.Callback<A, O>): this;
+        private parseCommand;
+        private parseShortcut;
+        execute(action: Action<A, O>): Promise<any>;
+    }
+    export namespace Command {
+        interface Shortcut {
+            name?: string | RegExp;
+            fuzzy?: boolean;
+            args?: any[];
+            option?: Record<string, any>;
+        }
+        interface OptionConfig<T extends Action.Type = Action.Type> {
+            value?: any;
+            initial?: any;
+            name?: string;
+            shortName?: string;
+            type?: T;
+            /** hide the option by default */
+            hidden?: boolean;
+            description?: string;
+            declaration?: Action.Declaration;
+        }
+        type Callback<A extends any[] = any[], O extends {} = {}> = (action: Action<A, O>, ...args: A) => boolean|Sendable | void | Promise<Sendable | void|boolean>;
+        type OptionType<S extends string> = Action.ExtractFirst<Action.Replace<S, '>', ']'>, any>;
+        function removeDeclarationArgs(name: string): string;
+        function findDeclarationArgs(declaration: string): Action.Declaration[];
     }
 
+
+    // context.d.ts
+
+
+    type ServiceAction = "load" | 'change' | 'destroy' | 'enable' | 'disable';
+    type ServiceListener<K extends keyof Plugin.Services = keyof Plugin.Services> = (key: K, service: Plugin.Services[K]) => void;
+    type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never;
+    type ServiceEventMap = {
+        [P in ServiceAction as `service.${P}`]: ServiceListener;
+    };
+    export type BeforeEventMap = {
+        [E in keyof AppEventMap & string as OmitSubstring<E, 'before-'>]: AppEventMap[E];
+    };
+    export interface AppEventMap extends BotEventMap, ServiceEventMap {
+        'start'(): void;
+        'stop'(): void;
+        'send'(messageRet: MessageRet, channelId: ChannelId): void;
+        'continue'(session: NSession<'message'>): Promise<string | boolean | void>;
+        'attach'(session: NSession<'message'>): Awaitable<void | string>;
+        'command-add'(command: Command): void
+        'command-remove'(command: Command): void
+        'plugin.install'(plugin: Plugin): void;
+        'plugin.enable'(plugin: Plugin): void;
+        'plugin.disable'(plugin: Plugin): void;
+        'plugin.destroy'(plugin: Plugin): void;
+    }
+    export type Dispose = () => boolean;
+    export type MsgChannelId = `${number}-${TargetType}:${number}`;
+    export interface Context extends Plugin.Services {
+        on<E extends keyof AppEventMap>(name: E, listener: AppEventMap[E], prepend?: boolean): Dispose;
+        on<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, listener: (...args: any) => void, prepend?: boolean): Dispose;
+        before<E extends keyof BeforeEventMap>(name: E, listener: BeforeEventMap[E], append?: boolean): Dispose;
+        before<S extends string | symbol>(name: S & Exclude<S, keyof BeforeEventMap>, listener: (...args: any) => void, append?: boolean): Dispose;
+        once<E extends keyof AppEventMap>(name: E, listener: AppEventMap[E], prepend?: boolean): Dispose;
+        once<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, listener: (...args: any) => void, prepend?: boolean): Dispose;
+        addEventListener<E extends keyof AppEventMap>(name: E, listener: AppEventMap[E], prepend?: boolean): Dispose;
+        addEventListener<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, listener: (...args: any) => void, prepend?: boolean): Dispose;
+        emit<E extends keyof AppEventMap>(name: E, ...args: Parameters<AppEventMap[E]>): boolean;
+        emit<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, ...args: any[]): boolean;
+    }
+    export class Context extends EventThrower {
+        app: App;
+        constructor(filter?: Context.Filter);
+        getLogger(name: string): import("log4js").Logger;
+    }
+    export namespace Context {
+        type Filter = (session: NSession<'message'>) => boolean;
+    }
+    // event.d.ts
+
+    export type EventName = string;
+    export type EventListener = (...args: any[]) => Awaitable<any>;
+    export class EventThrower {
+        private _events;
+        private static metaWords;
+        private _maxListenerCount;
+        logger: Logger;
+        constructor();
+        private getListeners;
+        get maxListener(): number;
+        setMaxListener(n: number): void;
+        private static createRegStr;
+        parallel<K extends EventName>(name: K, ...args: any[]): Promise<void>;
+        emit<K extends EventName>(name: K, ...args: any[]): void;
+        bail<K extends EventName>(name: K, ...args: any[]): Promise<string | boolean | void>;
+        on<K extends EventName>(name: K, listener: (...args: any[]) => void, prepend?: boolean): () => boolean;
+        before<K extends string>(name: K, listener: (...args: any) => void, append?: boolean): () => boolean;
+        off<K extends EventName>(name: K, listener: (...args: any[]) => void): boolean;
+    }
+
+    // middleware.d.ts
+    export declare type Middleware = (session: NSession<any>, next?: () => Promise<any>) => Awaitable<boolean | Sendable | void>;
+
+    // plugin.d.ts
+
+    export type AuthorInfo = string | {
+        name: string;
+        email?: string;
+        url?: string;
+    };
+    export type RepoInfo = string | {
+        type?: 'git' | 'svn';
+        directory?: string;
+        url: string;
+    };
+    export interface PkgInfo {
+        name: string;
+        version: string;
+        description: string;
+        author: AuthorInfo;
+        repository: RepoInfo;
+    }
     export enum PluginType {
         Builtin = "builtin",
         Official = "official",
         Community = "community",
         Custom = "custom"
     }
+    export interface PluginDesc extends Partial<PkgInfo> {
+        type: PluginType;
+        installed?: boolean;
+        disabled: boolean;
+        binds?: number[];
+    }
+    export interface PluginConfig {
+        name: string;
+        config?: any;
+    }
+    export class Plugin extends Context {
+        readonly fullpath: string;
+        readonly path: string;
+        protected hooks: PluginManager.ObjectHook;
+        parent: Plugin;
+        children: Plugin[];
+        private _commands;
+        disposes: Dispose[];
+        middlewares: Middleware[];
+        commandList: Command[];
+        readonly binds: Set<Bot>;
+        private _using;
+        disableStatus: boolean;
+        config: any;
+        pkg: Partial<PkgInfo>;
+        pluginManager: PluginManager;
+        constructor(hooks?: string | PluginManager.ObjectHook);
+        dispatch(name: string, ...args: any[]): Promise<void>;
+        get commands(): Command[];
+        getCommand(name: string): Command<any[], {}>;
+        middleware(middleware: Middleware, prepend?: boolean): () => boolean;
+        using<T extends PluginManager.PluginHook>(using: readonly (keyof Plugin.Services)[], plugin: T, config?: PluginManager.Option<T>): Plugin;
+        addPlugin(plugin: Plugin, config?: any): this;
+        middleware(middleware: Middleware, prepend?: boolean): () => boolean;
+        use(middleware: Middleware): this;
+        private compose;
+        private callback;
+        plugin(name: string, config?: any): Plugin;
+        plugin<T extends PluginManager.PluginHook>(plugin: T, config?: PluginManager.Option<T>): Plugin;
+        command<D extends string>(def: D, triggerEvent: keyof EventMap): Command<Action.ArgumentType<D>>;
+        execute(session: NSession<'message'>, content?: string): Promise<boolean | Sendable | void>;
+        findCommand(argv: Pick<Action, 'name' | 'source'>, commandList?: Command[]): Command<any[], {}>;
+        protected _editBotPluginCache(bot: Bot, method: "add" | "delete"): Promise<boolean>;
+        install(config?: any): Promise<string>;
+        enable(bot?: Bot): Promise<string>;
+        disable(bot?: Bot): Promise<string>;
+        destroy(plugin?: Plugin): string;
+        dispose(): string;
+        restart(): Promise<string>;
+        name(name: string): this;
+        version(version: string): this;
+        desc(desc: string): this;
+        repo(repoInfo: RepoInfo): this;
+        author(authorInfo: AuthorInfo): this;
+        toJSON(): {
+            disabled: boolean;
+            name?: string;
+            version?: string;
+            description?: string;
+            author?: AuthorInfo;
+            repository?: RepoInfo;
+        };
+    }
+    export namespace Plugin {
+        interface Services {
+            pluginManager: PluginManager;
+            bots: BotList;
+        }
+        const Services: (keyof Services)[];
+        function isConstructor(func: Function): boolean;
+        function service<K extends keyof Services>(key: K): void;
+    }
+    export class PluginManager {
+        app: App;
+        plugin_dir: string;
+        plugins: Map<string, Plugin>;
+        constructor(app: App, plugin_dir: string);
+        get logger(): import("log4js").Logger;
+        getLogger(category: string): import("log4js").Logger;
+        init(plugins: Record<string, boolean | Record<string, any>>): void;
+        import(name: string): Plugin;
+        install(plugin: Plugin, config?: any): Promise<string>;
+        checkInstall(name: string): Plugin;
+        destroy(name: string): Promise<string>;
+        restart(name: string): Promise<string>;
+        enable(name: string, bot?: Bot): Promise<string>;
+        disable(name: string, bot?: Bot): Promise<string>;
+        disableAll(bot: Bot): Promise<string>;
+        listAll(): {
+            disabled: boolean;
+            installed: boolean;
+            type?: PluginType;
+            binds?: number[];
+            name?: string;
+            version?: string;
+            description?: string;
+            author?: AuthorInfo;
+            repository?: RepoInfo;
+        }[];
+        list(name?: string): Partial<PluginDesc>[];
+        /**
+         * 恢复bot的插件服务
+         * @param {Bot} bot
+         */
+        restore(bot: Bot): Promise<Map<string, Plugin>>;
+    }
+    export namespace PluginManager {
+        const defaultConfig: Config;
+        type FunctionHook<T = any> = (parent: Plugin, options: T) => Awaitable<any>;
+        type ConstructorHook<T = any> = new (parent: Plugin, options: T) => void;
+        type PluginHook = FunctionHook | ObjectHook | ConstructorHook;
+        interface ObjectHook<T = any> {
+            install: FunctionHook<T> | ConstructorHook<T>;
+            name?: string;
+            using?: readonly (keyof Plugin.Services)[];
+        }
+        type Option<T extends PluginHook> = T extends ConstructorHook<infer U> ? U : T extends FunctionHook<infer U> ? U : T extends ObjectHook<infer U> ? U : never;
+        interface Config {
+            plugin_dir?: string;
+            plugins?: Record<string, any>;
+        }
+    }
+    export abstract class Service {
+        protected plugin: Plugin;
+        name: keyof Plugin.Services;
+        protected start(): Awaitable<void>;
+        protected stop(): Awaitable<void>;
+        constructor(plugin: Plugin, name: keyof Plugin.Services);
+        get caller(): Context;
+    }
+
+
+    // prompt.d.ts
 
     export namespace Prompt {
         export interface Options<T extends keyof TypeKV> {
@@ -94,6 +479,7 @@ declare module 'oitq'{
             message?: Sendable;
             prefix?: string;
             action?: string;
+            validate?: RegExp | ((message: string) => boolean);
             errorMsg?: string;
             separator?: string | PrevCaller<T, string>;
             choices?: ChoiceItem[] | PrevCaller<T, ChoiceItem[]>;
@@ -101,15 +487,12 @@ declare module 'oitq'{
             timeout?: number;
             format?: (value: ValueType<T>) => ValueType<T>;
         }
-
         type Falsy = false | null | undefined;
         type PrevCaller<T extends keyof TypeKV, R = T> = (prev: any, answer: Dict, options: Options<T>) => R;
-
         export interface ChoiceItem {
             title: string;
             value: any;
         }
-
         export interface TypeKV {
             text: string;
             any: any;
@@ -123,669 +506,72 @@ declare module 'oitq'{
             select: any;
             multipleSelect: any[];
         }
-
         export type Answers<V extends any = any> = {
             [id in string]: V;
         };
         export type ValueType<T extends keyof TypeKV> = T extends keyof TypeKV ? TypeKV[T] : any;
-
         export function formatValue<T extends keyof TypeKV>(prev: any, answer: Dict, option: Options<T>, message: MessageElem[]): ValueType<T>;
-
         export function getPrefix(type: keyof TypeKV): "请选择" | "是否确认" | "上传" | "请输入";
-
         export function formatOutput<T extends keyof TypeKV>(prev: any, answer: Dict, options: Options<T>): (string | MessageElem)[];
-
         export {};
     }
 
-    export interface PluginDesc {
-        name: string;
-        type: PluginType;
-        fullName?: string;
-        desc?: string;
-        author?: string;
-        version?: string;
-        isInstall?: boolean;
-        binds?: number[];
+
+    // session.d.ts
+
+    export interface Session {
+        self_id?: number;
+        cqCode?: string;
+        message_type?: string;
+        message?: MessageElem[];
+        post_type?: string;
+        notice_type?: string;
+        request_type?: string;
+        user_id?: number;
+        group_id?: number;
+        discuss_id?: number;
+        sub_type?: string;
+        reply?(content: Sendable, quote?: boolean): Promise<MessageRet>;
     }
-
-    export interface PluginConfig {
-        name: string;
-        config?: any;
-    }
-
-    export namespace Plugin {
-        interface State {
-            context: Context;
-            children: Context[];
-            disposes: Dispose[];
-            plugin: Plugin;
-        }
-    }
-
-    export class Plugin extends EventEmitter {
-        readonly name: string;
-        readonly fullpath: string;
-        readonly path: string;
-        protected hooks: PluginManager.Object;
-        readonly binds: Set<Bot>;
-        using: readonly (keyof Context.Services)[];
-        private options;
-        context: Context;
-
-        constructor(name: string, hooks: string | PluginManager.Object);
-
-        protected _editBotPluginCache(bot: Bot, method: "add" | "delete"): Promise<boolean>;
-
-        get logger(): import('log4js').Logger;
-
-        install(context: Context, config?: any): Promise<void>;
-
-        enable(bot: Bot): Promise<void>;
-
-        disable(bot: Bot): Promise<void>;
-
-        uninstall(context: Context): Promise<void>;
-
-        restart(): Promise<void>;
-    }
-
-    export class PluginManager {
-        app: App;
-        config: PluginManager.Config;
-        plugins: Map<string, Plugin>;
-
-        get logger(): import('log4js').Logger;
-
-        constructor(app: App, config: PluginManager.Config);
-
-        import(name: string): Plugin;
-
-        install(context: Context, plugin: Plugin, config?: any): void;
-
-        checkInstall(name: string): Plugin;
-
-        uninstall(name: string): Promise<void>;
-
-        restart(name: string): Promise<void>;
-
-        enable(name: string, bot: Bot): Promise<void>;
-
-        disable(name: string, bot: Bot): Promise<void>;
-
-        disableAll(bot: Bot): Promise<void>;
-
-        loadAllPlugins(): PluginDesc[];
-
-        /**
-         * 恢复bot的插件服务
-         * @param {Bot} bot
-         */
-        restore(bot: Bot): Promise<Map<string, Plugin>>;
-    }
-
-    export namespace PluginManager {
-        const defaultConfig: Config;
-        type Plugin = Function | Object;
-        type Function<T = any> = (ctx: Context, config: T) => Awaitable<any>;
-
-        interface Object<T = any> {
-            install: Function<T>;
-            name?: string;
-
-            uninstall?(ctx: Context): Awaitable<any>;
-
-            enable?(bot: Bot): Awaitable<any>;
-
-            disable?(bot: Bot): Awaitable<any>;
-        }
-
-        type Option<T extends Plugin> = T extends Function<infer U> ? U : T extends Object<infer U> ? U : never;
-
-        interface Config {
-            plugin_dir?: string;
-            plugins?: PluginConfig[];
-        }
-    }
-
-    export type Middleware = (session: NSession<'message'>) => Awaitable<boolean | Sendable | void>;
-    export type LoginType = 'qrcode' | 'password';
-
-    export interface BotConfig {
-        uin?: number;
-        config: Config;
-        type: LoginType;
-        password?: string;
-        master?: number;
-        admins?: number[];
-        parent?: number;
-    }
-
-    export type ToSession<A extends any[] = []> = A extends [object, ...infer O] ? Extend<Define<Session, 'args', O>, A[0]> : Define<Session, 'args', A>;
-    export type NSession<E extends keyof EventMap> = ToSession<Parameters<EventMap[E]>>;
-    type Transform = {
-        [P in keyof EventMap as `bot.${P}`]: (session: NSession<P>) => void;
-    };
-
-    export type TargetType = 'group' | 'private' | 'discuss';
-    export type ChannelId = `${TargetType}:${number}`;
-    export type MsgChannelId = `${number}-${TargetType}:${number}`;
-
-    export interface BotEventMap extends Transform {
-        'bot.add'(bot: Bot): void;
-
-        'bot.remove'(bot: Bot): void;
-    }
-
-    export class Bot extends Client {
-        app: App;
-        options:BotConfig;
-        middlewares: Middleware[];
-        admins: number[]
-        master: number
-
-        constructor(app: App, config: BotConfig);
-
-        isMaster(user_id: number): boolean;
-
-        isAdmin(user_id: number): boolean;
-
-        middleware(middleware: Middleware, prepend?: boolean): () => boolean;
-
-        startProcessLogin(): void;
-
-        createAdminLink<E extends keyof EventMap>(event: `bot.${E}`, admins: number[], bot: Bot): Promise<Extend<Define<Session, "args", []>, import("oicq").PrivateMessageEvent>>;
-
-        startBotLogin(session: NSession<'message.private'>, bot: Bot): void;
-
-        handleCommand(session: NSession<'message'>): Promise<any>;
-
-        handleMessage(session: NSession<'message'>): Promise<any>;
-
-        emit<E extends keyof EventMap>(name: E, ...args: Parameters<EventMap[E]>): boolean;
-
-        createSession<E extends keyof EventMap>(name: E, ...args: Parameters<EventMap[E]>): ToSession<Parameters<EventMap<any>[E]>>;
-
-        /**
-         * 发送消息
-         * @param channelId 通道id
-         * @param content 消息内容，如果为CQ码会自动转换
-         * @param source 引用的消息，为string时代表消息id
-         */
-        sendMsg(channelId: ChannelId, content: Sendable, source?: Quotable | string): Promise<MessageRet>;
-
-        broadcast(channelIds: (number | ChannelId)[], msg: Sendable): Promise<MessageRet[]>
-    }
-
-    export class BotList extends Array<Bot> {
-        app: App;
-
-        constructor(app: App);
-
-        get(uin: number): Bot;
-
-        create(config: BotConfig): Bot;
-
-        remove(uin: number): boolean;
-    }
-
-    const selectors: readonly ["user", "group", "self", "private"];
-    export type SelectorType = typeof selectors[number];
-    export type SelectorValue = boolean | MaybeArray<number>;
-    export type BaseSelection = {
-        [K in SelectorType as `$${K}`]?: SelectorValue;
-    };
-
-    export interface Selection extends BaseSelection {
-        $and?: Selection[];
-        $or?: Selection[];
-        $not?: Selection;
-    }
-
-    export type Filter = (session: NSession<'message'>) => boolean;
-    type EventName = keyof AppEventMap;
-    type ServiceAction = "load" | 'change' | 'destroy' | 'enable' | 'disable';
-    type ServiceListener<K extends keyof Context.Services = keyof Context.Services> = (key: K, service: Context.Services[K]) => void;
-    type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never;
-    type ServiceEventMap = {
-        [P in ServiceAction as `service.${P}`]: ServiceListener;
-    };
-    export type BeforeEventMap = {
-        [E in EventName & string as OmitSubstring<E, 'before-'>]: AppEventMap[E];
-    };
-
-    export interface AppEventMap extends BotEventMap, ServiceEventMap {
-        'ready'(): void;
-
-        'dispose'(): void;
-
-        'command/before-execute'(argv: Argv): Awaitable<void | string>;
-
-        'before-parse'(content: string, session: NSession<'message'>): void;
-
-        'before-attach'(session: NSession<'message'>): void;
-
-        'attach'(session: NSession<'message'>): void;
-
-        'bot-added'(bot: Bot): void;
-
-        'bot-removed'(bot: Bot): void;
-
-        'plugin-added'(plugin: Plugin): void;
-
-        'plugin-removed'(plugin: Plugin): void;
-
-        'before-command'(argv: Argv): Awaitable<void | string>;
-
-        'help/command'(output: string[], command: Command, session: NSession<'message'>): void;
-
-        'help/option'(output: string, option: Argv.OptionDeclaration, command: Command, session: NSession<'message'>): string;
-    }
-
-    export type Dispose = () => boolean;
-
-    export interface Context extends Context.Services {
-        on<E extends keyof AppEventMap>(name: E, listener: AppEventMap[E], prepend?: boolean): Dispose;
-
-        on<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, listener: (...args: any) => void, prepend?: boolean): Dispose;
-
-        before<E extends keyof BeforeEventMap>(name: E, listener: BeforeEventMap[E], append?: boolean): Dispose;
-
-        before<S extends string | symbol>(name: S & Exclude<S, keyof BeforeEventMap>, listener: (...args: any) => void, append?: boolean): Dispose;
-
-        once<E extends keyof AppEventMap>(name: E, listener: AppEventMap[E], prepend?: boolean): Dispose;
-
-        once<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, listener: (...args: any) => void, prepend?: boolean): Dispose;
-
-        addEventListener<E extends keyof AppEventMap>(name: E, listener: AppEventMap[E], prepend?: boolean): Dispose;
-
-        addEventListener<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, listener: (...args: any) => void, prepend?: boolean): Dispose;
-
-        emit<E extends keyof AppEventMap>(name: E, ...args: Parameters<AppEventMap[E]>): boolean;
-
-        emit<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, ...args: any[]): boolean;
-    }
-
-    export class Context extends Events {
-        filter: Filter;
-        app?: App;
-
-        constructor(filter: Filter, app?: App);
-
-        logger(name: string): import("log4js").Logger;
-
-        intersect(arg: Filter | Context): Context;
-
-        private _property;
-
-        exclude(arg: Filter | Context): Context;
-
-        any(): Context;
-
-        never(): Context;
-
-        union(arg: Filter | Context): Context;
-
-        user(...values: number[]): Context;
-
-        group(...values: number[]): Context;
-
-        private(...values: number[]): Context;
-
-        get state(): Plugin.State;
-
-        dispose(plugin?: Plugin): Plugin.State;
-
-
-        select(options: Selection): Context;
-
-        match(session?: NSession<'message'>): boolean;
-
-        broadcast(msgChannelIds: MsgChannelId | MsgChannelId[], msg: Sendable): Promise<void>;
-
-        using<T extends PluginManager.Plugin>(using: readonly (keyof Context.Services)[], plugin: T, config?: PluginManager.Option<T>): this;
-
-        dispose(plugin?: Plugin): void;
-
-        middleware(middleware: Middleware): Dispose;
-
-        plugin(name: string, config?: any): this;
-        plugin<T extends PluginManager.Plugin>(plugin: T, config?: PluginManager.Option<T>): this;
-
-        command<D extends string>(def: D, config?: Command.Config): Command<Argv.ArgumentType<D>>;
-        command<D extends string>(def: D, desc: string, config?: Command.Config): Command<Argv.ArgumentType<D>>;
-    }
-
-    export namespace Context {
-        export interface Services {
-            pluginManager: PluginManager;
-            bots: BotList;
-        }
-
-        export function service<K extends keyof Services>(key: K): void;
-    }
-
-    export class Events {
-        app?: App;
-        _hooks: Record<keyof any, [App | Context, (...args: any[]) => any][]>;
-        private static metaWords;
-
-        constructor(app?: App);
-
-        private getListeners;
-        private static createRegStr;
-
-        parallel<K extends EventName>(name: K, ...args: any[]): Promise<void>;
-        parallel<K extends EventName>(target: any, name: K, ...args: any[]): Promise<void>;
-
-        emit<K extends EventName>(name: K, ...args: any[]): void;
-        emit<K extends EventName>(target: any, name: K, ...args: any[]): void;
-
-        waterfall<K extends EventName>(name: K, ...args: any[]): Promise<any>;
-        waterfall<K extends EventName>(target: any, name: K, ...args: any[]): Promise<any>;
-
-        chain<K extends EventName>(name: K, ...args: any[]): any;
-        chain<K extends EventName>(target: any, name: K, ...args: any[]): any;
-
-        serial<K extends EventName>(name: K, ...args: any[]): Promise<any>;
-        serial<K extends EventName>(target: any, name: K, ...args: any[]): Promise<any>;
-
-        bail<K extends EventName>(name: K, ...args: any[]): any;
-        bail<K extends EventName>(target: any, name: K, ...args: any[]): any;
-
-        on<K extends EventName>(name: K, listener: (...args: any[]) => void, prepend?: boolean): () => boolean;
-
-        before<K extends string>(name: K, listener: (...args: any) => void, append?: boolean): () => boolean;
-
-        once(name: EventName, listener: (...args: any[]) => void, prepend?: boolean): () => boolean;
-
-        off<K extends EventName>(name: K, listener: (...args: any[]) => void): boolean;
-    }
-
-    interface KoaOptions {
-        env?: string;
-        keys?: string[];
-        proxy?: boolean;
-        subdomainOffset?: number;
-        proxyIpHeader?: string;
-        maxIpsCount?: number;
-    }
-
-    export interface AppConfig extends KoaOptions, PluginManager.Config {
-        start?: boolean;
-        prefix?: Computed<string | string[]>;
-        minSimilarity?: number;
-        bots?: BotConfig[];
-        delay?: Dict<number>;
-        admins?: number[];
-        token?: string;
-        dir?: string;
-        logLevel?: LogLevel;
-        maxListeners?: number;
-        port?: number;
-        path?: string;
-    }
-
-    interface CommandMap extends Map<string, Command> {
-        resolve(key: string): Command;
-    }
-
-    export interface App {
-        start(...args: any[]): Awaitable<void>;
-    }
-
-    export class App extends Context {
-        status: boolean;
-        _commandList: Command[];
-        _commands: CommandMap;
-        _shortcuts: Command.Shortcut[];
-        disposeState: Map<Plugin, Plugin.State>;
-        app: App;
-        config: AppConfig;
-
-        constructor(config?: AppConfig | string);
-
-        getCommand(name: string): Command<any[], {}>;
-
-        prepare(): void;
-
-        addBot(config: BotConfig): Bot;
-
-        removeBot(uin: number): Promise<boolean>;
-    }
-
-
-
-    export interface Token {
-        rest?: string;
+    export type Computed<T> = T | ((session: NSession<'message'>) => T);
+    export interface Parsed {
         content: string;
-        quoted: boolean;
-        terminator: string;
-        inters: Argv[];
+        prefix: string;
+        appel: boolean;
     }
-
-    export interface Argv<A extends any[] = any[], O = {}> {
-        args?: A;
-        options?: O;
-        error?: string;
-        source?: string;
-        initiator?: string;
-        terminator?: string;
-        command?: Command<A, O>;
-        rest?: string;
-        pos?: number;
-        root?: boolean;
-        tokens?: Token[];
-        name?: string;
-        session?: NSession<'message'>
-        bot?: Bot
+    export interface SuggestOptions {
+        target: string;
+        items: string[];
+        prefix?: string;
+        suffix: string;
+        minSimilarity?: number;
+        apply: (this: NSession<'message'>, suggestion: string) => Awaitable<void | string>;
     }
-
-    export namespace Argv {
-        export interface Interpolation {
-            terminator?: string;
-
-            parse?(source: string): Argv;
-        }
-
-        export function interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv): void;
-
-        export function escapeRegExp(source: string): string;
-
-        export class Tokenizer {
-            private readonly bracs;
-
-            constructor();
-
-            interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv): void;
-
-            parseToken(source: string, stopReg?: string): Token;
-
-            parse(source: string, terminator?: string): Argv;
-
-            stringify(argv: Argv): string;
-        }
-
-        export function parse(source: string, terminator?: string): Argv<any[], {}>;
-
-        export function stringify(argv: Argv): string;
-
-        export function revert(token: Token): void;
-
-        export interface Domain {
-            string: string;
-            number: number;
-            boolean: boolean;
-            text: string;
-            rawtext: string;
-            user: string;
-            channel: string;
-            integer: number;
-            posint: number;
-            natural: number;
-            date: Date;
-        }
-
-        type DomainType = keyof Domain;
-        type ParamType<S extends string, F> = S extends `${any}:${infer T}` ? T extends DomainType ? Domain[T] : F : F;
-        type Replace<S extends string, X extends string, Y extends string> = S extends `${infer L}${X}${infer R}` ? `${L}${Y}${Replace<R, X, Y>}` : S;
-        type ExtractAll<S extends string, F> = S extends `${infer L}]${infer R}` ? [ParamType<L, F>, ...ExtractAll<R, F>] : [];
-        type ExtractFirst<S extends string, F> = S extends `${infer L}]${any}` ? ParamType<L, F> : boolean;
-        type ExtractSpread<S extends string> = S extends `${infer L}...${infer R}` ? [...ExtractAll<L, string>, ...ExtractFirst<R, string>[]] : [...ExtractAll<S, string>, ...string[]];
-        export type ArgumentType<S extends string> = ExtractSpread<Replace<S, '>', ']'>>;
-        export type OptionType<S extends string> = ExtractFirst<Replace<S, '>', ']'>, any>;
-        export type Type = DomainType | RegExp | string[] | Transform<any>;
-
-        export interface Declaration {
-            name?: string;
-            type?: Type;
-            fallback?: any;
-            variadic?: boolean;
-            required?: boolean;
-        }
-
-        export type Transform<T> = (source: string) => T;
-
-        export interface DomainConfig<T> {
-            transform?: Transform<T>;
-            greedy?: boolean;
-        }
-
-        export function resolveConfig(type: Type): DomainConfig<any>;
-
-        export function createDomain<K extends keyof Domain>(name: K, transform: Transform<Domain[K]>, options?: DomainConfig<Domain[K]>): void;
-
-        interface DeclarationList extends Array<Declaration> {
-            stripped: string;
-        }
-
-        export function parseDecl(source: string): DeclarationList;
-
-        export function parseValue(source: string, quoted: boolean, kind: string, argv: Argv, decl?: Declaration): any;
-
-        export interface OptionConfig<T extends Type = Type> {
-            value?: any;
-            fallback?: any;
-            type?: T;
-            /** hide the option by default */
-            hidden?: boolean;
-            authority?: number;
-            notUsage?: boolean;
-        }
-
-        export interface TypedOptionConfig<T extends Type> extends OptionConfig<T> {
-            type: T;
-        }
-
-        export interface OptionDeclaration extends Declaration, OptionConfig {
-            description?: string;
-            values?: Record<string, any>;
-        }
-
-        export type OptionDeclarationMap = Record<string, OptionDeclaration>;
-        export {};
-    }
-
-    export namespace Command {
-        export type Extend<O extends {}, K extends string, T> = {
-            [P in K | keyof O]?: (P extends keyof O ? O[P] : unknown) & (P extends K ? T : unknown);
+    export class Session {
+        app: App;
+        bot: Bot;
+        event_name: keyof EventMap;
+        argv: Action;
+        parsed?: Parsed;
+        constructor(app: App, bot: Bot, data: Dict, event_name: keyof EventMap);
+        middleware(middleware: Middleware): () => boolean;
+        private promptReal;
+        prompt<T extends keyof Prompt.TypeKV>(options: Prompt.Options<T> | Array<Prompt.Options<T>>): Promise<Prompt.Answers<Prompt.ValueType<T>>>;
+        executeTemplate(template: string): Promise<Sendable>;
+        sendMsg(content: Sendable, channelId?: ChannelId): Promise<MessageRet>;
+        getChannelId(): ChannelId;
+        getFromUrl(): string;
+        resolveValue<T>(source: T | ((session: Session) => T)): T;
+        text(path: string | string[], params?: object): string;
+        toJSON(...besides: string[]): {
+            [k: string]: any;
         };
-
-        interface Config {
-            /** hide all options by default */
-            hideOptions?: boolean;
-            /** hide command */
-            hidden?: boolean;
-            /** min authority */
-            authority?: number;
-            /** disallow unknown options */
-            checkUnknown?: boolean;
-            /** check argument count */
-            checkArgCount?: boolean;
-            /** show command warnings */
-            showWarning?: boolean;
-            /** usage identifier */
-            usageName?: string;
-            maxUsage?: number;
-            /** min interval */
-            minInterval?: number;
-            /** depend on existing commands */
-            patch?: boolean;
-        }
-
-        interface Shortcut {
-            name?: string | RegExp;
-            command?: Command;
-            authority?: number;
-            prefix?: boolean;
-            fuzzy?: boolean;
-            args?: string[];
-            options?: Record<string, any>;
-        }
-
-        type Action<A extends any[] = any[], O extends {} = {}> = (argv: Argv<A, O>, ...args: A) => any | Promise<any>;
     }
 
-    export class Command<A extends any[] = any[], O extends {} = {}> {
-        name: string;
-        description: string;
-        declaration: string;
-        config: Command.Config;
-        _examples: string[];
-        _aliases: string[];
-        private _actions;
-        private _checkers;
-        _arguments: Argv.Declaration[];
-        _options: Argv.OptionDeclarationMap;
-        parent: Command;
-        children: Command[];
-        context: Context
-        private _namedOptions;
-        private _symbolicOptions;
-        private _assignOption;
 
-        constructor(name: string, declaration: string, description: string);
-
-        option<K extends string>(name: K, desc: string, config: Argv.TypedOptionConfig<RegExp>): Command<A, Command.Extend<O, K, string>>;
-        option<K extends string, R>(name: K, desc: string, config: Argv.TypedOptionConfig<(source: string) => R>): Command<A, Command.Extend<O, K, R>>;
-        option<K extends string, R extends string>(name: K, desc: string, config: Argv.TypedOptionConfig<R[]>): Command<A, Command.Extend<O, K, R>>;
-        option<K extends string, D extends string>(name: K, desc: D, config?: Argv.OptionConfig): Command<A, Command.Extend<O, K, Argv.OptionType<D>>>;
-
-        alias(...names: string[]): this;
-
-        example(example: string): this;
-
-        shortcut(name: string | RegExp, config?: Command.Shortcut): Command<A, O>
-
-        match(session?: NSession<'message'>): boolean
-
-        check(callback: Command.Action<A, O>, prepend?: boolean): this;
-
-        action(callback: Command.Action<A, O>, append?: boolean): this;
-
-        parse(argv: Argv): Argv;
-        parse(source: string, terminator?: string, args?: any[], options?: Record<string, any>): Argv;
-
-        execute(argv: string | Argv): Promise<boolean | Sendable | MessageRet>;
-
-        subcommand<D extends string>(def: D, config?: Command.Config): Command<Argv.ArgumentType<D>>;
-        subcommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<Argv.ArgumentType<D>>;
-
-        private stringifyArg;
-
-        stringify(args: readonly string[], options: any): string;
-    }
-
-    export function defineCommand<D extends string>(def: D, config?: Command.Config): Command<Argv.ArgumentType<D>>;
-    export function defineCommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<Argv.ArgumentType<D>>;
+    // static.d.ts
 
     export const dir: string;
-    export const defaultAppConfig: AppConfig;
-    export const defaultBotConfig: BotConfig;
-
-
-    export const getAppConfigPath: (baseDir?: string) => string;
-    export const getBotConfigPath: (baseDir?: string) => string;
-    export function createApp(config?: string | AppConfig): App;
-    export function defineConfig(config: AppConfig): AppConfig;
+    export const defaultAppConfig: App.Config;
+    export const defaultBotConfig: Bot.Config;
 }

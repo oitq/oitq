@@ -1,5 +1,5 @@
 import {Sendable} from "oicq";
-import {NSession} from "./index";
+import {NSession} from "./bot";
 import {Awaitable} from "@oitq/utils";
 
-export type Middleware=(session:NSession<'message'>)=>Awaitable<boolean|Sendable|void>
+export type Middleware=(session:NSession<any>,next?:() => Promise<any>)=>Awaitable<boolean|Sendable|void>

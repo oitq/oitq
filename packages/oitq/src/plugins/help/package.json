@@ -1,0 +1,11 @@
+{
+  "main": "index.js",
+  "name": "help",
+  "description": "帮助插件",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oitq/oitq.git",
+    "directory": "packages/oitq/plugins/help"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "@oitq/client",
+  "main": "client/index.ts",
+  "version": "2.0.1-rc",
+  "description": "client for oitq",
+  "scripts": {
+    "compile": "tsc --project tsconfig.json",
+    "alias": "tsc-alias -p tsconfig.json",
+    "build": "npm run compile && npm run alias",
+    "pub": "npm publish --access public"
+  },
+  "bin": {
+    "oitq-console": "lib/bin.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oitq/oitq.git"
+  },
+  "keywords": [
+    "client",
+    "plugin",
+    "oitq"
+  ],
+  "files": [
+    "app",
+    "client",
+    "lib",
+    "global.d.ts"
+  ],
+  "author": "凉菜 <admin@liucl.cn>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/oitq/oitq/issues"
+  },
+  "homepage": "https://github.com/oitq/oitq#readme",
+  "dependencies": {
+    "@element-plus/icons-vue": "^1.1.4",
+    "@vitejs/plugin-vue": "^2.3.3",
+    "@vueuse/core": "^7.7.1",
+    "cac": "^6.7.12",
+    "element-plus": "^2.2.0",
+    "sass": "^1.51.0",
+    "vite": "^2.9.9",
+    "vue": "^3.2.33",
+    "vue-router": "^4.0.15"
+  }
+}

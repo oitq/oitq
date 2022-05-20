@@ -192,9 +192,7 @@ export class Sandbox {
                 [zlib.constants.BROTLI_PARAM_QUALITY]: 5
             }
         }
-        process.on("exit", (code) => {
-            // if (code !== 200)
-            //     return
+        process.on("exit", () => {
             beforeSaveContext()
             fs.writeFileSync(fnFile, zlib.brotliCompressSync(JSON.stringify(fn), brotli_options), 'utf-8')
             fs.writeFileSync(contextFile, zlib.brotliCompressSync(JSON.stringify(this.context), brotli_options), 'utf-8')

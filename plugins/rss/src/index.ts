@@ -1,4 +1,4 @@
-import {Context, NSession,MsgChannelId} from 'oitq'
+import {Plugin, NSession,MsgChannelId} from 'oitq'
 import {Column, DataType, Model, Comment, Table} from "@oitq/plugin-database";
 import RssFeedEmitter from 'rss-feed-emitter'
 
@@ -19,7 +19,7 @@ export interface RssModel {
         target_type: string,
         target_id: number
 }
-@Table
+@Table({modelName:'Rss'})
 export class Rss extends Model {
     @Comment('属于哪个bot')
     @Column(DataType.INTEGER)
@@ -53,9 +53,9 @@ export interface Config {
     userAgent?: string
 }
 
-export function install(ctx: Context, config: Config) {
-    const logger = ctx.logger('rss')
-    ctx.database.addModels(Rss)
+export function install(ctx: Plugin, config: Config) {
+    const logger = ctx.getLogger('rss')
+    ctx.app.database.addModels(Rss)
     const {timeout, refresh, userAgent} = config
     const feedMap: Record<string, Set<MsgChannelId>> = {}
     const feeder = new RssFeedEmitter({skipFirstLoad: true, userAgent})
@@ -93,9 +93,9 @@ export function install(ctx: Context, config: Config) {
     })
     const validators: Record<string, Promise<unknown>> = {}
 
-    async function validate(url: string, session: NSession<'message'>) {
+    async function validate(url: string, session: NSession) {
         if (validators[url]) {
-            await session.reply('正在尝试连接……')
+            await session.sendMsg('正在尝试连接……')
             return validators[url]
         }
 
@@ -119,9 +119,10 @@ export function install(ctx: Context, config: Config) {
         const source = payload.meta.link
         if (!feedMap[source]) return
         const message = `${payload.meta.title} (${payload.author})\n${payload.title}\n${payload.link}`
-        await ctx.broadcast([...feedMap[source]], message)
+        await ctx.app.broadcast([...feedMap[source]], message)
     })
-    ctx.command('rss <title:string> <url:text>', '订阅 RSS 链接')
+    ctx.command('rss <title:string> <url:text>', 'message')
+        .desc('订阅 RSS 链接')
         .option('list', '-l 查看订阅列表')
         .option('remove', '-r 取消订阅')
         .action(async ({session, options}, title,url) => {
