@@ -6,6 +6,7 @@
   "description": "oitq framework for oicq dev",
   "dependencies": {
     "oicq": "^2.2.1",
+    "@oitq/utils": "latest",
     "oicq2-cq-enable": "^1.0.3"
   },
   "scripts": {
