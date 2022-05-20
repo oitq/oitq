@@ -21,13 +21,13 @@ npm install oitq
 
 1.1.安装oitq作为项目依赖
 ```shell
-npm install oitq @oitq/plugin-http-server @oitq/plugin-one-bot -S
+npm install oitq @oitq/plugin.md-http-server @oitq/plugin.md-one-bot -S
 ```
 1.2.在项目中建立index.js,并撰写以下代码到里面
 ```javascript
 const {createApp}=require('oitq')
-const httpServer=require('@oitq/plugin-http-server')
-const oneBot=require('@oitq/plugin-one-bot')
+const httpServer=require('@oitq/plugin.md-http-server')
+const oneBot=require('@oitq/plugin.md-one-bot')
 const app = createApp({logLevel: 'info'})
 app.plugin(httpServer, {port: 8086})
 app.plugin(oneBot)
@@ -41,32 +41,70 @@ app.addBot({
 app.start()
 //start中的8080代表oitq服务监听的端口，也可以改成你想监听的端口
 ```
-至此，oitq作为服务提供者已完成，
-控制台打印的监听的地址即为服务提供地址（后续简称baseUrl）。
+1.3 （可选）添加启动脚本
 
-你可通过post请求`baseUrl+'/add'`添加一个bot，
-请求参数为你需要登录的bot配置，具体请看[BotConfig](/config/bot)
-你可通过get请求`baseUrl+'/remove?uin=你的机器人qq`移除一个bot
-### bot添加后提供的服务
-#### 登录相关
-若你添加bot时提供了oneBot配置项并且oneBot的配置项中use_http和use_ws为true，
-oitq会在`baseUrl+/:你的机器人qq`添加一个httpApi服务和websocket服务。
+往根目录下的package.json里添加启动脚本
+```json5
+{
+  // ...
+  scripts: {
+    "start": "node ./index.js",
+    // ...
+  },
+  // ...
+}
+```
+1.4 启动
+命令行执行`npm start`(若你配置了1.3)或`node ./index.js`
 
-你可以通过get或post请求`baseUrl+/:你的机器人qq/:action`来控制bot发送消息，
-通过websocket连接`baseUrl+/:你的机器人qq/`来监听bot发送过来的事件。
-（[ws连接在线测试地址](http://www.websocket-test.com)）
-（注：此时的baseUrl为`ws://...`，不再是http协议）
+至此，oitq作为服务提供者已完成，你可访问[以服务提供者工作](/start/server))查看其提供的服务
 
-你可监听ws连接来拦截登录事件中的验证信息；
-
-提交滑块验证(oicq的system.login.slider事件)的
-ticket可用post`baseUrl+/submitSlider/:你的机器人qq/`提交，参数为`{ticket}`
-
-提交短信验证码可用post`baseUrl+/submitSmsCode/:你的机器人qq`提交，参数为`{sms}`
-
-可post请求`baseUrl+/login/:你的机器人qq`调用bot的login方法可带password字段，不带则为扫码登录。
-登录成功请自行监听ws数据
-### 2 作为Bot开发框架
+### 2.[作为Bot开发框架](/start/framework)
 在这种模式下，即代表你需要在本框架下实现自己的Bot所需功能代码，而不依赖其他框架。
 在此模式下，你至少需要掌握`javascript`或`typescript`语言的代码撰写能力以及`nodeJs`基础。
 若你不具备以上条件，请先自行学习后继续往下看
+
+2.1 安装你需要使用的[插件](/plugins/),此处以[问答](/plugins/qa)为例
+```shell
+npm install @oitq/plugin.md-qa @oitq/cli -S #@oitq/cli 为oitq脚手架，可用于添加、移除bot，启动项目
+```
+2.2 在项目根目录创建配置文件`oitq.config.json`并添加以下内容
+
+```json5
+{
+  "bots": [
+    {
+      "uin": 123456789,//改成你自己的
+      "password": "*********",//改成你自己的
+      "config": {//传递给oicq实例化Client时的第二个参数
+        "platform": 5
+      }
+    }
+  ],
+  "plugins": { //启用插件的配置
+    "qa": true // 为true表示启用了@oitq/plugin.md-qa插件
+  },
+  "plugin_dir": "./plugins",//此处为你自己存放插件的目录，暂时用不到
+  "logLevel": "info"
+}
+```
+2.3在`package.json`中添加启动脚本
+```json5
+{
+  // ...
+  scripts: {
+    "start": "oitq start .",//使用cli启动项目，自动读取当前目录下的配置文件，
+    "dev": "oitq start . --log-level debug --watch .",//使用cli启动项目，自动读取当前目录下的配置文件，
+    // ...
+  },
+  // ...
+}
+```
+2.4 运行启动项目
+```shell
+npm start
+```
+
+到这里，`以服务提供者工作`模式以完成，以下章节均为`以插件开发工作`的文档
+
+若官方插件不足以满足你的功能需求，你也可以自己编写自己的插件逻辑以实现自己所需功能,详见[编写插件](/start/plugin)

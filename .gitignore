@@ -6,3 +6,4 @@
 /.idea
 /test/*.sqlite
 /test/*.json
+/docs/.vitepress/dist/

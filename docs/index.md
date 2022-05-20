@@ -2,10 +2,10 @@
 home: true
 heroText: Oitq
 tagline: 为oicq而开发的多机器人框架
-actionText: 开始上手
+actionText: 快速上手
 actionLink: /start/
 actions:
-- text: 开始上手
+- text: 快速上手
   link: /start/
   type: primary
 features:
