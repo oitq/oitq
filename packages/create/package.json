@@ -1,0 +1,50 @@
+{
+  "name": "create-oitq",
+  "description": "Setup a Oitq application",
+  "version": "0.0.1",
+  "main": "lib/index.js",
+  "scripts": {
+    "compile": "tsc --project tsconfig.json",
+    "alias": "tsc-alias -p tsconfig.json",
+    "build": "npm run compile && npm run alias",
+    "pub": "npm publish --access public"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "lib"
+  ],
+  "bin": "lib/index.js",
+  "author": "凉菜 <admin@liucl.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oitq/oitq.git",
+    "directory": "packages/create"
+  },
+  "bugs": {
+    "url": "https://github.com/oitq/oitq/issues"
+  },
+  "homepage": "https://docs.liucl.cn",
+  "keywords": [
+    "bot",
+    "chatbot",
+    "oitq"
+  ],
+  "devDependencies": {
+    "@types/cross-spawn": "^6.0.2",
+    "@types/tar": "^6.1.1",
+    "@types/which-pm-runs": "^1.0.0",
+    "@types/yargs-parser": "^21.0.0"
+  },
+  "dependencies": {
+    "axios": "^0.24.0",
+    "cross-spawn": "^7.0.3",
+    "kleur": "^4.1.4",
+    "prompts": "^2.4.2",
+    "tar": "^6.1.11",
+    "which-pm-runs": "^1.1.0",
+    "yargs-parser": "^21.0.1"
+  }
+}
