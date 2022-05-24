@@ -1,12 +1,12 @@
 <template>
-  <div class="p-bot">
-    bot详情
+  <div class="p-shop">
+    插件市场
   </div>
 </template>
 
 <script>
 export default {
-  name: "bot"
+  name: "index"
 }
 </script>
 

@@ -6,7 +6,7 @@
 
 <script>
 export default {
-  name: "plugins"
+  name: "index"
 }
 </script>
 

@@ -44,7 +44,8 @@ class WsService extends DataService {
     constructor(public plugin: Plugin, private config: WsService.Config) {
         super(plugin, 'ws')
 
-        this.layer = plugin.router.ws(config.apiPath, plugin.httpServer,this.onConnection)
+        this.layer = plugin.router.ws('/'+config.apiPath, plugin.httpServer)
+        this.layer.on('connection',this.onConnection)
     }
 
     broadcast(type: string, body: any, options: DataService.Options = {}) {
@@ -67,7 +68,6 @@ class WsService extends DataService {
     private onConnection = (socket: WebSocket) => {
         const handle = new SocketHandle(this, socket)
         this.handles[handle.id] = handle
-
         socket.on('message', async (data) => {
             const { type, args, id } = JSON.parse(data.toString())
             const listener = this.listeners[type]

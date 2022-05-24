@@ -1,12 +1,12 @@
 import { createApp } from 'vue'
-import client, { config, connect, router } from '@oitq/client'
+import components from './components'
+import { config, connect, router } from '@oitq/client'
 import Blank from './layouts/blank.vue'
 import App from './layouts/index.vue'
 import './index.scss'
-
 const app = createApp(App)
 
-app.use(client)
+app.use(components)
 
 app.provide('ecTheme', 'dark-blue')
 

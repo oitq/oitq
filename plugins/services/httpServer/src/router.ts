@@ -12,7 +12,7 @@ export class Router extends KoaRouter {
         this.whiteList.push(path)
         return super.register(...args)
     }
-    ws(path:string, server:http.Server,onConnect?:(socket:WebSocket)=>any) {
+    ws(path:string, server:http.Server) {
         const wsServer = new Server({ noServer: true,path })
         this.wsStack.push(wsServer)
 
@@ -24,9 +24,6 @@ export class Router extends KoaRouter {
                 wsServer.handleUpgrade(request, socket, head, function done(ws) {
                     wsServer.emit('connection', ws, request);
                 });
-                if(onConnect){
-                    wsServer.on('connection',onConnect)
-                }
             }
         })
         return wsServer

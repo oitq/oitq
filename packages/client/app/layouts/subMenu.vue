@@ -45,9 +45,6 @@ export default {
       if (!this.menu.meta.fields) return true
       return this.menu.meta.fields.every((key) => store[key])
     }
-  },
-  mounted() {
-    console.log(this.menu,this.target)
   }
 }
 </script>

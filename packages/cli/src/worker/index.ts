@@ -1,7 +1,8 @@
 import {Plugin} from 'oitq'
 import {Loader} from './loader';
 import * as watcher from './watcher'
-
+export {Loader} from './loader'
+export {Watcher} from './watcher'
 function handleException(error: any) {
     console.error(error)
     process.exit(1)
@@ -22,6 +23,14 @@ namespace addons {
         if (process.env.OITQ_WATCH_ROOT !== undefined) {
             (config.watch ??= {}).root = process.env.OITQ_WATCH_ROOT
             plugin.plugin(watcher, config.watch)
+        }
+    }
+}
+declare module 'oitq'{
+    namespace Plugin{
+        interface Services{
+            loader:Loader
+            watcher:watcher.Watcher
         }
     }
 }

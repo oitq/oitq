@@ -1,14 +1,10 @@
 import { Console } from '@oitq/plugin-console'
 import { Dict } from 'oitq'
 import { App, Component, defineComponent, h, markRaw, reactive, ref, Ref, resolveComponent, watch } from 'vue'
-import {createRouter, createWebHashHistory,  RouteRecordNormalized, START_LOCATION} from 'vue-router'
+import {createRouter, createWebHashHistory, RouteRecordNormalized, START_LOCATION} from 'vue-router'
 import { config, Store, store } from './data'
-import install from './components'
 
-export * from './components'
 export * from './data'
-
-export default install
 
 export type Computed<T> = T | (() => T)
 
@@ -198,7 +194,7 @@ const initTask = new Promise<void>((resolve) => {
 })
 
 router.beforeEach(async (to, from) => {
-    if (to.matched.length) return
+    if (to.matched.length) return to
 
     if (from === START_LOCATION) {
         await initTask
@@ -242,29 +238,3 @@ export namespace Card {
         return create(render, fields)
     }
 }
-
-root.addPage({
-    path:'/bots',
-    icon:"User",
-    component:()=>import('./views/bots.vue'),
-    name:'机器人管理'
-})
-root.addPage({
-    path:'/bots/info',
-    component:()=>import('./views/bot.vue'),
-    name:'机器人详情',
-    position:"hidden"
-})
-root.addPage({
-    path:'/plugins',
-    icon:"Connection",
-    component:()=>import('./views/plugins.vue'),
-    name:'插件管理',
-})
-
-root.addPage({
-    path:'/plugins/info',
-    component:()=>import('./views/plugin.vue'),
-    name:'详情',
-    position:"hidden"
-})

@@ -1,12 +1,12 @@
 <template>
-  <div class="p-plugin">
-
+  <div class="p-dependency">
+    依赖管理
   </div>
 </template>
 
 <script>
 export default {
-  name: "plugin"
+  name: "index"
 }
 </script>
 

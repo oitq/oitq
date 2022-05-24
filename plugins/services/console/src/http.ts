@@ -32,7 +32,6 @@ class HttpService extends DataService<string[]> {
         if (!this.config.root) return
         if (this.config.devMode) await this.createVite()
         this.serveAssets()
-
         if (this.config.open) {
             const { port } = this.plugin.app.config
             open(`http://localhost:${port}${this.config.uiPath}`)
@@ -126,6 +125,19 @@ class HttpService extends DataService<string[]> {
                 middlewareMode: true,
             },
             plugins: [vuePlugin()],
+            resolve: {
+                dedupe: ['vue'],
+                alias: {
+                    '../vue.js': 'vue',
+                    '../vue-router.js': 'vue-router',
+                    '../vueuse.js': '@vueuse/core',
+                },
+            },
+            optimizeDeps: {
+                include: [
+                    'element-plus',
+                ],
+            },
             build: {
                 rollupOptions: {
                     input: this.config.root + '/index.html',

@@ -39,7 +39,7 @@ declare module 'oitq'{
     }
 }
 
-class Watcher {
+export class Watcher {
     public suspend = false
     private root: string
     private watcher: FSWatcher

@@ -36,9 +36,8 @@
     "oitq"
   ],
   "files": [
-    "lib/**/*.js",
-    "lib/**/*.d.ts",
-    "lib/**/LICENSE"
+    "lib",
+    "index.d.ts"
   ],
   "author": "凉菜 <admin@liucl.cn>",
   "license": "ISC",

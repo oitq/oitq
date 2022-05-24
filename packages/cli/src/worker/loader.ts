@@ -50,9 +50,25 @@ export class Loader extends ConfigLoader<App.Config> {
     destroyPlugin(name: string) {
         return this.app.pluginManager.destroy(name)
     }
+    resolvePlugin(name: string) {
+        try {
+            this.cache[name] ||= this.scope.resolve(name)
+        } catch (err) {
+            this.app.getLogger('loader').error(err.message)
+            return
+        }
+        return ns.unwrapExports(require(this.cache[name]))
+    }
 
     reloadPlugin(name: string) {
         return this.app.pluginManager.restart(name)
+    }
+    unloadPlugin(name: string) {
+        const plugin = this.resolvePlugin(name)
+        if (!plugin) return
+
+        plugin.dispose()
+
     }
 
     createApp() {

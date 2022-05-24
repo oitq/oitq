@@ -29,10 +29,9 @@ export interface Console extends Console.Services {}
 
 export class Console extends Service {
     public global = {} as ClientConfig
-
+    static using=['httpServer'] as const
     constructor(public plugin: Plugin, public config: Console.Config) {
         super(plugin, 'console')
-
         const { devMode, uiPath, apiPath, selfUrl } = config
         this.global.devMode = devMode
         this.global.uiPath = uiPath
@@ -40,6 +39,8 @@ export class Console extends Service {
 
         plugin.plugin(HttpService, config)
         plugin.plugin(WsService, config)
+        this.ws=plugin['console.ws']
+        this.http=plugin['console.http']
     }
 
     addEntry(filename: string | Entry) {
@@ -55,8 +56,6 @@ export interface Events {}
 
 export namespace Console {
     export interface Config extends HttpService.Config, WsService.Config {}
-
-
     export interface Services {
         http?: HttpService
         ws?: WsService

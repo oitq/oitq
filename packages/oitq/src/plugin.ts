@@ -199,7 +199,7 @@ export class Plugin extends Context {
         const callback = async () => {
             if (using.some(n => !this[n])) return
             await this.app.pluginManager.install(plugin,config).catch(e=>{
-                this.logger.warn(`安装${plugin.pkg.name}时遇到错误，错误信息：${e.message}`)
+                this.logger.warn(`安装${plugin.pkg.name}时遇到错误，错误信息：${e.message}:${e.stack}`)
             })
         }
         await callback()
@@ -756,9 +756,9 @@ export abstract class Service {
 
     constructor(protected plugin: Plugin, public name: keyof Plugin.Services) {
         Plugin.service(name)
+        plugin[name] = this as never
         plugin.on('ready', async () => {
             await this.start()
-            plugin[name] = this as never
         })
 
         plugin.on('dispose', async () => {
@@ -767,7 +767,7 @@ export abstract class Service {
         })
 
     }
-    get caller(): Context {
+    get caller(): Plugin {
         return this.plugin
     }
 }
