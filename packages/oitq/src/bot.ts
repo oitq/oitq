@@ -101,6 +101,22 @@ export class Bot extends Client {
             })
         }))
     }
+
+    /**
+     * 获取登录信息
+     */
+    getLoginInfo(){
+        return {
+            user_id:this.uin,
+            nickname:this.nickname
+        }
+    }
+    getStatus(){
+        return {
+            online:this.status===11,
+            good:true
+        }
+    }
     /**
      * 发送消息
      * @param channelId 通道id

@@ -281,20 +281,28 @@ export class OneBot{
             } else {
                 ret = (this.bot[method] as Function).apply(this.bot, args)
                 if (ret instanceof Promise) {
-                    if (is_async)
+                    if (is_async){
                         result = {
                             retcode: 1,
                             status: "async",
                             data: null,
                             error: null
                         }
-                    else
+                    } else{
                         result={
                             retcode: 1,
                             status: "success",
                             data: await ret,
                             error: null
                         }
+                    }
+                }else{
+                    result={
+                        retcode: 1,
+                        status: "success",
+                        data: ret,
+                        error: null
+                    }
                 }
             }
             if (result.ret instanceof Map)

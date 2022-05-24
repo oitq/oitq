@@ -1,8 +1,13 @@
-import {Client} from "oicq"
-const besides=['constructor','online_status','log_level','bkn','stat','login','logout','em']
-export const APIS=Reflect.ownKeys(Client.prototype).filter(key=>typeof key==='string' && !besides.includes(key)&& !key.startsWith('_')) as Array<keyof Client>
+import {Bot} from "oitq"
+import {Client} from "oicq";
+
+const besides=['constructor','online_status','log_level','bkn','stat','login','logout','em','emit']
+export const APIS=Reflect.ownKeys(Bot.prototype).filter(key=>typeof key==='string' && !besides.includes(key)&& !key.startsWith('_')).concat(
+    Reflect.ownKeys(Client.prototype).filter(key=>typeof key==='string' && !besides.includes(key)&& !key.startsWith('_'))
+)
 export const ARGS: { [key:string|symbol]:string[] }=Object.fromEntries(APIS.map(key=>{
-    return [key,String(Reflect.get(Client.prototype,key))
+    const str=Reflect.get(Bot.prototype,key)? String(Reflect.get(Bot.prototype,key)):String(Reflect.get(Client.prototype,key))
+    return [key,str
         .match(/\(.*\)/)?.[0]
         .replace("(","")
         .replace(")","")

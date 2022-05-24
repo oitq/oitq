@@ -19,7 +19,7 @@ export default (ctx:Context)=>{
         path: '/settings',
         name: '配置',
         icon: 'setting',
-        fields: ['packages', 'services', 'dependencies'],
+        fields: ['packages', 'dependencies'],
         order: 630,
         authority: 4,
         component: Plugins,
