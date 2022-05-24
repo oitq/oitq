@@ -5,6 +5,7 @@ import * as request from "./request";
 export interface Config{
     axios?:request.RequestConfig
 }
+export {Requester} from './request'
 export const name='常用工具'
 export function install(ctx:Plugin,config:Config){
     ctx.command('utils','message')

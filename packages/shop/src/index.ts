@@ -109,7 +109,7 @@ export default async function scan(config: ScanConfig) {
         const registry = await request<Registry>(`/${name}`)
         const versions = Object.values(registry.versions).filter((remote:RemotePackage) => {
             const { dependencies, peerDependencies, deprecated } = remote
-            const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
+            const declaredVersion = { ...dependencies, ...peerDependencies }['oitq']
             try {
                 return !deprecated && declaredVersion && intersects(version, declaredVersion)
             } catch {}
@@ -118,7 +118,7 @@ export default async function scan(config: ScanConfig) {
 
         const latest = registry.versions[versions[0].version]
         latest.keywords ??= []
-        if (latest.keywords.includes('market:hidden')) return
+        if (latest.keywords.includes('oitq:hidden')) return
 
         const shortname = official ? name.slice(17) : name.slice(14)
         onItem({

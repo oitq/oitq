@@ -49,12 +49,12 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
 
         plugin.bots.forEach(bot => BotProvider.initialize(bot, plugin))
 
-        plugin.on('bot-add', (bot) => {
+        plugin.app.on('bot-add', (bot) => {
             BotProvider.initialize(bot, plugin)
             process.nextTick(() => this.refresh())
         })
 
-        plugin.on('bot-remove', (bot) => {
+        plugin.app.on('bot-remove', (bot) => {
             process.nextTick(() => this.refresh())
             bot._messageSent.stop()
             bot._messageReceived.stop()

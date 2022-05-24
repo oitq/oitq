@@ -1,9 +1,7 @@
-import {Plugin,template, s, fromCqcode,Dict,sleep,noop,makeArray} from "oitq";
-import { genDmMessageId } from "oicq/lib/message/message.js";
-import {OnlineStatus, Quotable, segment} from "oicq";
+import {Plugin,template, s, fromCqcode,Dict,sleep,makeArray} from "oitq";
+import {OnlineStatus, segment} from "oicq";
 import * as callme from './callme'
 import * as music from './music'
-import {ChannelId} from "oitq/lib";
 template.set('common', {
     'expect-text': '请输入要发送的文本。',
     'expect-command': '请输入要触发的指令。',

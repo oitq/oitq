@@ -11,6 +11,7 @@ export default (ctx:Context)=>{
         icon: 'user',
         order: 640,
         authority: 4,
+        fields: ['bots'],
         component: Bots,
     })
 
@@ -18,6 +19,7 @@ export default (ctx:Context)=>{
         path: '/settings',
         name: '配置',
         icon: 'setting',
+        fields: ['packages', 'services', 'dependencies'],
         order: 630,
         authority: 4,
         component: Plugins,
@@ -29,6 +31,7 @@ export default (ctx:Context)=>{
         icon: 'goods',
         order: 620,
         authority: 4,
+        fields: ['shop', 'packages'],
         component: Shop,
     })
 
@@ -39,6 +42,7 @@ export default (ctx:Context)=>{
         order: 610,
         authority: 4,
         component: Dependency,
+        fields: ['shop', 'dependencies'],
         badge: () => overrideCount.value,
     })
 }

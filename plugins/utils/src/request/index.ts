@@ -6,7 +6,7 @@ import path from "path";
 import fs from "fs";
 export interface RequestConfig extends Requester.Config{
 }
-
+export {Requester}
 declare module 'oitq'{
     namespace Plugin{
         interface Services{

@@ -9,10 +9,6 @@ declare module 'oitq' {
         }
     }
 }
-
-
-
-
 const context = {
     env: process.env,
 }
@@ -83,3 +79,4 @@ export class Loader extends ConfigLoader<App.Config> {
         process.exit(51)
     }
 }
+Plugin.service('loader')
