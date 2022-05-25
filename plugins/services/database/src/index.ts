@@ -32,7 +32,7 @@ export default class Database extends Service {
     }
     start() {
         this.sequelize = new Sequelize({...this.options, logging: (text) => this.logger.debug(text)})
-        this.plugin.app.before('ready', async () => {
+        this.plugin.app.before('start', async () => {
             await this.plugin.app.parallel('before-database.ready')
             this.sequelize.addModels(Object.values(this._models))
             await this.sequelize.sync({alter: true})

@@ -6,9 +6,12 @@ import {Plugin, PluginManager} from './plugin'
 import {defaultAppConfig, dir} from './static'
 import * as path from "path";
 import {Middleware,ChannelId,MsgChannelId} from "./types";
+import {Command} from "./command";
 export class App extends Plugin{
     public app=this
     middlewares: Middleware[] = []
+    _commands:Map<string,Command>=new Map<string, Command>()
+    public commandList:Command[]=[]
     constructor(public config:App.Config) {
         super({install(){},name:'app'});
         this.logger=this.getLogger('app')

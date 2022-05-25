@@ -18,7 +18,7 @@ export function enableHelp<A extends any[], O extends {}>(cmd: Command<A, O>) {
 
 
 export function getCommandNames(session: NSession) {
-    return [...session.app.pluginManager.plugins.values()].map(plugin=>plugin.commandList).flat()
+    return session.app.commandList
         .filter(cmd => cmd.match(session))
         .flatMap(cmd => cmd.aliasNames)
 }
@@ -146,14 +146,14 @@ export function install(plugin: Plugin) {
         .option('showHidden', '-H  查看隐藏的选项和指令')
         .action(async ({session, options}, target) => {
             if (!target) {
-                const commands = plugin.app.commands.filter(cmd => cmd.parent === null)
+                const commands = plugin.app.commandList.filter(cmd => cmd.parent === null)
                 const output = formatCommands('internal.global-help-prolog', session, commands, options)
                 const epilog = template('internal.global-help-epilog')
                 if (epilog) output.push(epilog)
                 return output.filter(Boolean).join('\n')
             }
 
-            const command = plugin.app.findCommand({name:target,source:session.cqCode,},plugin.app.commands)
+            const command = plugin.app.findCommand({name:target,source:session.cqCode,})
             if (!command?.match(session)) {
                 return
             }

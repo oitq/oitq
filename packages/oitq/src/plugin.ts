@@ -61,9 +61,7 @@ export class Plugin extends EventThrower {
     protected hooks: PluginManager.ObjectHook
     public parent:Plugin=null
     public children:Plugin[]=[]
-    private _commands:Map<string,Command>=new Map<string, Command>()
     public disposes:Dispose[]=[]
-    public commandList:Command[]=[]
     readonly binds = new Set<Bot>()
     disableStatus:boolean=false
     config
@@ -145,11 +143,8 @@ export class Plugin extends EventThrower {
             await plugin.parallel(name,...args)
         }
     }
-    get commands():Command[]{
-        return [].concat(this.commandList,...this.children.map(plugin=>plugin.commands)).flat()
-    }
     getCommand(name:string){
-        return this.commands.find(command=>command.name===name)
+        return this.app.commandList.find(command=>command.name===name)
     }
     //message处理中间件，受拦截的message不会上报到'bot.message'
     middleware(middleware: Middleware, prepend?: boolean) {
@@ -216,7 +211,7 @@ export class Plugin extends EventThrower {
         segments.forEach((segment, index) => {
             const code = segment.charCodeAt(0)
             const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
-            let command = this.app.commands.find(command=>command.name==name)
+            let command = this.app.commandList.find(command=>command.name==name)
             if (command) {
                 if (parent) {
                     if (command === parent) {
@@ -234,11 +229,11 @@ export class Plugin extends EventThrower {
                 return parent = command
             }
             command = new Command(name+decl,this,triggerEvent)
-            this._commands.set(name,command)
-            this.commandList.push(command)
+            this.app._commands.set(name,command)
+            this.app.commandList.push(command)
             this.disposes.push(()=>{
-                remove(this.commandList,command)
-                this._commands.delete(name)
+                remove(this.app.commandList,command)
+                this.app._commands.delete(name)
                 this.app.emit('command-remove',command)
                 return true
             })
@@ -252,11 +247,11 @@ export class Plugin extends EventThrower {
         })
         return Object.create(parent)
     }
-    async execute(session:NSession<'message'>,content=session.cqCode||''):Promise<boolean|Sendable|void> {
+    async execute(session:NSession,content=session.cqCode||''):Promise<boolean|Sendable|void> {
         const argv = Action.parse(content)
         argv.bot = session.bot
         argv.session = session
-        const command=this.findCommand(argv,this.commands.filter(command=>command.match(session)))
+        const command=this.findCommand(argv)
         if(command){
             let result
             try{
@@ -268,8 +263,8 @@ export class Plugin extends EventThrower {
         }
     }
 
-    findCommand(argv:Pick<Action, 'name'|'source'>,commandList:Command[]=this.commandList) {
-        return commandList.find(cmd => {
+    findCommand(argv:Pick<Action, 'name'|'source'>,) {
+        return this.app.commandList.find(cmd => {
             return cmd.name===argv.name
                 || cmd.aliasNames.includes(argv.name)
                 || cmd.shortcuts.some(({name})=>typeof name==='string'?name===argv.name:name.test(argv.source))

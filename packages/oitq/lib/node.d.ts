@@ -20,6 +20,8 @@ export class App extends Plugin {
     config: App.Config;
     app: this;
     middlewares: Middleware[];
+    _commands: Map<string, Command>;
+    commandList: Command[];
     constructor(config: App.Config);
     broadcast(msgChannelIds: MsgChannelId | MsgChannelId[], msg: Sendable): Promise<void>;
     addBot(config: Bot.Config): Bot;
@@ -40,6 +42,7 @@ export const getAppConfigPath: (baseDir?: string) => string;
 export const getBotConfigPath: (baseDir?: string) => string;
 export function createApp(config?: string | App.Config): App;
 export function defineConfig(config: App.Config): App.Config;
+
 
 
 // argv.d.ts
@@ -302,9 +305,7 @@ export class Plugin extends EventThrower {
     protected hooks: PluginManager.ObjectHook;
     parent: Plugin;
     children: Plugin[];
-    private _commands;
     disposes: Dispose[];
-    commandList: Command[];
     readonly binds: Set<Bot>;
     disableStatus: boolean;
     config: any;
@@ -313,7 +314,6 @@ export class Plugin extends EventThrower {
     constructor(hooks: string | PluginManager.ObjectHook);
     getLogger(name: string): import("log4js").Logger;
     dispatch(name: string, ...args: any[]): Promise<void>;
-    get commands(): Command[];
     getCommand(name: string): Command<any[], {}>;
     middleware(middleware: Middleware, prepend?: boolean): () => boolean;
     use(middleware: Middleware): this;
@@ -322,8 +322,8 @@ export class Plugin extends EventThrower {
     plugin(name: string, config?: any): Promise<Plugin>;
     plugin<T extends PluginManager.PluginHook>(plugin: T, config?: PluginManager.Option<T>): Promise<Plugin>;
     command<D extends string>(def: D, triggerEvent: keyof EventMap): Command<Action.ArgumentType<D>>;
-    execute(session: NSession<'message'>, content?: string): Promise<boolean | Sendable | void>;
-    findCommand(argv: Pick<Action, 'name' | 'source'>, commandList?: Command[]): Command<any[], {}>;
+    execute(session: NSession, content?: string): Promise<boolean | Sendable | void>;
+    findCommand(argv: Pick<Action, 'name' | 'source'>): Command<any[], {}>;
     protected _editBotPluginCache(bot: Bot, method: "add" | "delete"): Promise<boolean>;
     install(config?: any): Promise<string>;
     enable(bot?: Bot): Promise<string>;
@@ -412,7 +412,6 @@ export abstract class Service {
     constructor(plugin: Plugin, name: keyof Plugin.Services);
     get caller(): Plugin;
 }
-
 
 // prompt.d.ts
 
