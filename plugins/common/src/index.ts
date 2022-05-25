@@ -99,8 +99,8 @@ export function recall(plugin: Plugin, { recall = 10 }: RecallConfig) {
         .command('common/recall [count:number]','message')
         .desc('撤回机器人发送的消息')
         .action(async ({ session }, count = 1) => {
-            const list = recent[session.getChannelId()]
-            if (!list) return '近期没有发送消息。'
+            const list = recent[session.getChannelId()]||=[]
+            if (!list.length) return '近期没有发送消息。'
             const removal = list.splice(0, count)
             const delay = plugin.app.config.delay.broadcast
             if (!list.length) delete recent[session.getChannelId()]

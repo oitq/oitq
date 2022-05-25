@@ -10,7 +10,7 @@ yarn add oitq
 ## 样例
 
 ```typescript
-import {createApp,Context} from 'oitq'
+import {createApp,Plugin} from 'oitq'
 const echo={
     name:'echo',
     install:(ctx,config)=>{
@@ -46,7 +46,7 @@ const app=createApp({
     ]
 })
 // 已函数形式添加一个插件
-app.plugin((ctx:Context)=>{
+app.plugin((ctx:Plugin)=>{
     // 监听私聊消息
     ctx.on('bot.message.friend',(session)=>{
         if(session.cqCode==='test'){

@@ -15,8 +15,6 @@ export function enableHelp<A extends any[], O extends {}>(cmd: Command<A, O>) {
 }
 
 
-
-
 export function getCommandNames(session: NSession) {
     return session.app.commandList
         .filter(cmd => cmd.match(session))
@@ -52,16 +50,16 @@ function formatCommands(path: string, session: NSession, children: Command[], op
 }
 
 
-function getOptions(command: Command,config:HelpOptions) {
+function getOptions(command: Command, config: HelpOptions) {
     const options = config.showHidden
         ? Object.values(command.options)
-        : Object.values(command.options).filter(option => option.hidden!==true)
+        : Object.values(command.options).filter(option => option.hidden !== true)
     if (!options.length) return []
 
     const output = [template('internal.available-options')]
 
-    options.filter((option,index)=>options.findIndex(opt=>opt.shortName===option.shortName)===index).forEach((option) => {
-        output.push(`${option.shortName},--${option.name}${option.declaration.type==='boolean'?'':option.declaration.required?` <${option.name}:${option.declaration.type}>`:` [${option.name}:${option.declaration.type}]`} ${option.description}`)
+    options.filter((option, index) => options.findIndex(opt => opt.shortName === option.shortName) === index).forEach((option) => {
+        output.push(`${option.shortName},--${option.name}${option.declaration.type === 'boolean' ? '' : option.declaration.required ? ` <${option.name}:${option.declaration.type}>` : ` [${option.name}:${option.declaration.type}]`} ${option.description}`)
     })
 
     return output
@@ -69,9 +67,9 @@ function getOptions(command: Command,config:HelpOptions) {
 
 async function showHelp(command: Command, session: NSession, config: HelpOptions) {
     const output = [`${command.name}${
-        command.args.length?' '+command.args.map(arg=>{
-            return arg.required?`<${arg.variadic?'...':''}${arg.name}:${arg.type}>`:`[${arg.variadic?'...':''}${arg.name}:${arg.type}]`
-        }):''
+        command.args.length ? ' ' + command.args.map(arg => {
+            return arg.required ? `<${arg.variadic ? '...' : ''}${arg.name}:${arg.type}>` : `[${arg.variadic ? '...' : ''}${arg.name}:${arg.type}]`
+        }) : ''
     }     ${command.descriptions.join()}`]
 
     if (command.aliasNames.length) {
@@ -79,7 +77,7 @@ async function showHelp(command: Command, session: NSession, config: HelpOptions
     }
 
 
-    output.push(...getOptions(command,config))
+    output.push(...getOptions(command, config))
 
     if (command.examples.length) {
         output.push(template('internal.command-examples'), ...command.examples.map(example => '    ' + example))
@@ -133,7 +131,7 @@ template.set('internal', {
 })
 
 export function install(plugin: Plugin) {
-    plugin.app.on('command.add', (cmd:Command) => cmd.use(enableHelp))
+    plugin.app.on('command-add', (cmd: Command) => cmd.use(enableHelp))
     plugin.app.before('command', async ({command, session, options}) => {
         if (!command) return
         if (command['actions'].length && !options['help']) return
@@ -153,7 +151,7 @@ export function install(plugin: Plugin) {
                 return output.filter(Boolean).join('\n')
             }
 
-            const command = plugin.app.findCommand({name:target,source:session.cqCode,})
+            const command = plugin.app.findCommand({name: target, source: session.cqCode,})
             if (!command?.match(session)) {
                 return
             }

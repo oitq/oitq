@@ -85,7 +85,7 @@ export function install(ctx: Plugin, config: Config) {
     feeder.on('error', (err: Error) => {
         logger.debug(err.message)
     })
-    ctx.on('database.ready', async () => {
+    ctx.app.on('database.ready', async () => {
         const rssList = await Rss.findAll({raw: true})
         for (const rss of rssList) {
             subscribe(rss.url, `${rss.bot_id}-${rss.target_type}:${rss.target_id}` as MsgChannelId)

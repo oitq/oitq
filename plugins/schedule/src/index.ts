@@ -23,7 +23,6 @@ export function install(ctx: Plugin, { minInterval }: Config={minInterval:60000}
         async function executeSchedule() {
             ctx.app.getLogger('schedule').debug('execute %d: %s', id, command)
             try{
-                await session.sendMsg(await session.executeTemplate(command) as string)
                 let result=await session.executeTemplate(command)
                 if(result && typeof result!=='boolean')await session.sendMsg(result)
             }catch{
