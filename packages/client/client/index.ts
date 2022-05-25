@@ -1,7 +1,7 @@
 import { Console } from '@oitq/plugin-console'
 import { Dict } from 'oitq'
 import { App, Component, defineComponent, h, markRaw, reactive, ref, Ref, resolveComponent, watch } from 'vue'
-import {createRouter, createWebHashHistory, RouteRecordNormalized, START_LOCATION} from 'vue-router'
+import {createRouter, createWebHistory, RouteRecordNormalized, START_LOCATION} from 'vue-router'
 import { config, Store, store } from './data'
 
 export * from './data'
@@ -43,7 +43,7 @@ declare module 'vue-router' {
 export const views = reactive<Record<string, ViewOptions[]>>({})
 
 export const router = createRouter({
-    history: createWebHashHistory(config.uiPath),
+    history: createWebHistory(config.uiPath),
     linkActiveClass: 'active',
     routes: [],
 })
@@ -194,7 +194,7 @@ const initTask = new Promise<void>((resolve) => {
 })
 
 router.beforeEach(async (to, from) => {
-    if (to.matched.length) return to
+    if (to.matched.length) return
 
     if (from === START_LOCATION) {
         await initTask

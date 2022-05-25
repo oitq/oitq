@@ -21,7 +21,7 @@ class NotFoundError extends Error { }
 export class OneBot{
     protected heartbeat?: NodeJS.Timeout
     protected _queue: Array<{
-        method: keyof Client,
+        method: keyof Bot,
         args: any[]
     }> = []
     protected wss?:WebSocketServer //ws服务器
@@ -132,7 +132,7 @@ export class OneBot{
                 'Access-Control-Allow-Headers': 'Content-Type, authorization'
             }).end()
         }
-        const url = new URL(ctx.url as string, `http://127.0.0.1`)
+        const url = new URL(ctx.url, `http://127.0.0.1`)
         if (this.config.access_token) {
             if (ctx.headers["authorization"]) {
                 if (!ctx.headers["authorization"].includes(this.config.access_token))
@@ -152,14 +152,14 @@ export class OneBot{
         if (ctx.method === "GET") {
             try {
                 const ret = await this.apply({ action,params:ctx.query })
-                ctx.res.end(ret)
+                ctx.res.writeHead(200).end(ret)
             } catch (e) {
                 ctx.res.writeHead(500).end(e.message)
             }
         } else if (ctx.method === "POST") {
             try {
                 const params={...ctx.query,...ctx.request.body}
-                ctx.res.end(await this.apply({action,params}))
+                ctx.res.writeHead(200).end(await this.apply({action,params}))
             } catch (e) {
                 ctx.res.writeHead(500).end(e.message)
             }
@@ -251,7 +251,7 @@ export class OneBot{
             }
             return JSON.stringify(result)
         }
-        const method = toHump(action) as keyof Client
+        const method = toHump(action) as keyof Bot
         if (APIS.includes(method)) {
             const args = []
             for (let k of ARGS[method]) {
@@ -279,7 +279,7 @@ export class OneBot{
                     error: null
                 }
             } else {
-                ret = (this.bot[method] as Function).apply(this.bot, args)
+                ret =  typeof this.bot[method]==='function'?(this.bot[method] as Function).apply(this.bot, args):this.bot[method]
                 if (ret instanceof Promise) {
                     if (is_async){
                         result = {
