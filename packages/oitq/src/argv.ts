@@ -1,4 +1,5 @@
-import {Bot, NSession} from "./bot";
+import {Bot} from "./bot";
+import {NSession} from "./types";
 
 export interface Action<A extends any[] = any[], O = {}> {
     name:string//指令名称

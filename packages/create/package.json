@@ -1,7 +1,7 @@
 {
   "name": "create-oitq",
   "description": "Setup a Oitq application",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "lib/index.js",
   "scripts": {
     "compile": "tsc --project tsconfig.json",

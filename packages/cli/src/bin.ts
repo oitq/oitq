@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 import {CAC} from "cac";
 import * as fs from "fs";
-import registerAddBotCommand from "./addBot";
 import registerStartCommand from "./start";
-import registerRemoveCommand from "./removeBot";
 import {
     dir,
     getAppConfigPath,App,
@@ -16,9 +14,7 @@ if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 
 createIfNotExist(path.join(dir,'configFilePath'),dir)
 cli.version('1.0.2')
-registerAddBotCommand(cli)
 registerStartCommand(cli)
-registerRemoveCommand(cli)
 cli.help()
 cli.parse()
 /**
@@ -36,6 +32,5 @@ process.on('unhandledRejection', onError)
 process.on('exit',()=>{
     const dirReal=readConfig(path.join(dir,'configFilePath'))
     const appOptions:App.Config=readConfig(getAppConfigPath(dirReal))
-    appOptions.start=false
     writeConfig(getAppConfigPath(dirReal),appOptions)
 })

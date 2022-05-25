@@ -3,10 +3,10 @@ home: true
 heroText: Oitq
 tagline: 为oicq而开发的多机器人框架
 actionText: 快速上手
-actionLink: /start/
+actionLink: /start/template
 actions:
 - text: 快速上手
-  link: /start/
+  link: /start/template
   type: primary
 features:
 - title: Typescript

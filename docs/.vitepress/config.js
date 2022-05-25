@@ -39,6 +39,7 @@ module.exports = defineConfig({
                         text: '快速上手',
                         link:"/start/",
                         children: [
+                            {text:'创建模板项目',link:'/start/template'},
                             { text: '安装', link: '/start/install' },
                             { text: '以服务提供者工作', link: '/start/server' },
                             { text: '以插件开发框架工作', link: '/start/framework' },

@@ -159,7 +159,8 @@ export class OneBot{
         } else if (ctx.method === "POST") {
             try {
                 const params={...ctx.query,...ctx.request.body}
-                ctx.res.writeHead(200).end(await this.apply({action,params}))
+                const ret=await this.apply({action,params})
+                ctx.res.writeHead(200).end(ret)
             } catch (e) {
                 ctx.res.writeHead(500).end(e.message)
             }

@@ -1,7 +1,7 @@
 {
   "name": "@oitq/client",
   "main": "client/index.ts",
-  "version": "2.0.1-rc",
+  "version": "0.0.1",
   "description": "client for oitq",
   "scripts": {
     "compile": "tsc --project tsconfig.json",

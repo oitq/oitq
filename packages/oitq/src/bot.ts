@@ -5,13 +5,11 @@ import {defaultBotConfig} from './static'
 import {
     merge,
     template,
-    Define,
-    Extend,
-    makeArray,
-    escapeRegExp,
+    remove,
 } from "@oitq/utils";
 import {MessageRet} from "oicq/lib/events";
-import {Context} from "./context";
+import {ChannelId, Filter, NSession} from "./types";
+
 template.set('bot', {
     system: {
         login: {
@@ -23,12 +21,6 @@ template.set('bot', {
     }
 })
 
-export type TargetType = 'group' | 'private' | 'discuss'
-export type ChannelId = `${TargetType}:${number}`
-export type LoginType = 'qrcode' | 'password'
-
-export type ToSession<A extends any[] = []> = A extends [object, ...infer O] ? Extend<Define<Session, 'args', O>, A[0]> : Define<Session, 'args', A>
-export type NSession<E extends keyof EventMap='message'> = ToSession<Parameters<EventMap[E]>>
 type Transform = {
     [P in keyof EventMap as `bot.${P}`]: (session: NSession<P>) => void
 }
@@ -39,13 +31,9 @@ export interface BotEventMap extends Transform,EventMap {
     'bot-remove'(bot: Bot): void
 }
 
-function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
-    return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
-}
 
 export class Bot extends Client {
     options: Bot.Config
-    private _nameRE: RegExp
     admins:number[]=[]
     master:number
     constructor(public app: App, options: Bot.Config) {
@@ -53,9 +41,6 @@ export class Bot extends Client {
         this.options = merge(defaultBotConfig, options)
         this.admins=options.admins||[]
         this.master=options.master||null
-        const {nickname} = this.options
-        this.options.nickname = makeArray(nickname) as string[]
-        this._nameRE = createLeadingRE(this.options.nickname, '@?', '([,，]\\s*|\\s+)')
     }
     isMaster(user_id:number){
         return this.options.master===user_id
@@ -86,7 +71,7 @@ export class Bot extends Client {
         data.args = args
         return new Session(this.app, this, data,name) as unknown as NSession<E>
     }
-    waitMessage(filter:Context.Filter,timout=this.app.config.delay.prompt):Promise<NSession|void>{
+    waitMessage(filter:Filter,timout=this.app.config.delay.prompt):Promise<NSession|void>{
         return new Promise<NSession|void>((resolve => {
             const dispose=this.app.middleware(async (session,next)=>{
                 if(session.event_name!=='message'|| !filter(session as NSession))return next()
@@ -153,13 +138,9 @@ export namespace Bot{
     export interface Config {
         uin?: number
         config: ClientConfig,
-        type: LoginType
-        password?: string
         nickname?: string | string[]
-        prefix?: string | string[]
         master?: number // 当前机器人主人
         admins?: number[] // 当前机器人管理员
-        parent?: number // 机器人上级
     }
 
 }
@@ -174,20 +155,24 @@ export class BotList extends Array<Bot> {
 
     create(options: Bot.Config) {
         const bot = new Bot(this.app, options)
-        this.push(bot)
-        this.app.emit('bot-add', bot)
+        this.add(bot)
         return bot
     }
-
+    add(bot:Bot){
+        this.push(bot)
+        this.app.emit('bot-add', bot)
+        return this
+    }
     remove(uin: number) {
-        const index = this.findIndex(bot => bot.uin === uin)
-        if (index < 0) {
-            return false
-        }
-        const bot = this[index]
+        const bot=this.get(uin)
+        if(!bot)return false
+        this.destroy(bot)
         this.app.emit('bot-remove', bot)
-        this.splice(index, 1)
-        return true
+        return remove(this,bot)
+    }
+    destroy(bot:Bot){
+        bot.logout(false)
+        return this
     }
 
 }

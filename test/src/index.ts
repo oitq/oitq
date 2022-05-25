@@ -1,6 +1,7 @@
-import {createApp} from "oitq"
+import {createApp, Plugin} from "oitq"
 process.on('unhandledRejection', (e) => {
     console.log(e)
 })
-createApp().start(8086)
+const plugin=new Plugin()
+createApp().addPlugin(plugin).start()
 

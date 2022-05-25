@@ -1,11 +1,13 @@
 import * as path from "path";
 import * as fs from 'fs'
-import {App, Bot, BotList, Dispose, Middleware, NSession} from "./index";
+import {getLogger} from 'log4js'
+import {App, Bot, BotList, Middleware, NSession} from "./index";
+import {AppEventMap,BeforeEventMap,Dispose} from './types'
 import {Awaitable, createIfNotExist, readConfig, remove, writeConfig} from "@oitq/utils";
-import {Context} from "./context";
 import {Command} from "./command";
 import {Action} from "./argv";
 import {EventMap, Sendable} from "oicq";
+import {EventThrower} from "./event";
 export type AuthorInfo=string|{
     name:string
     email?:string
@@ -40,13 +42,20 @@ export interface PluginDesc extends Partial<PkgInfo>{
     disabled:boolean
     binds?: number[]
 }
-
-export interface PluginConfig {
-    name: string,
-    config?: any
+export interface Plugin extends Plugin.Services{
+    on<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):Dispose;
+    on<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):Dispose;
+    before<E extends keyof BeforeEventMap>(name:E,listener:BeforeEventMap[E],append?:boolean):Dispose
+    before<S extends string|symbol>(name:S & Exclude<S, keyof BeforeEventMap>,listener:(...args:any)=>void,append?:boolean):Dispose
+    once<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):Dispose;
+    once<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):Dispose;
+    addEventListener<E extends keyof AppEventMap>(name:E,listener:AppEventMap[E],prepend?:boolean):Dispose;
+    addEventListener<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,listener:(...args:any)=>void,prepend?:boolean):Dispose;
+    emit<E extends keyof AppEventMap>(name:E,...args:Parameters<AppEventMap[E]>):boolean
+    emit<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,...args:any[]):boolean
 }
-type EventName<K extends `bot.${keyof EventMap}`>=K extends `bot.${infer R}`?R:K
-export class Plugin extends Context {
+export class Plugin extends EventThrower {
+    public app:App
     public readonly fullpath: string
     public readonly path: string
     protected hooks: PluginManager.ObjectHook
@@ -60,7 +69,7 @@ export class Plugin extends Context {
     config
     pkg:Partial<PkgInfo>={}
     public pluginManager:PluginManager
-    constructor(hooks: string | PluginManager.ObjectHook={install(){}}) {
+    constructor(hooks: string | PluginManager.ObjectHook) {
         super()
         if (typeof hooks === 'string') {
             this.fullpath = require.resolve(hooks)
@@ -83,36 +92,53 @@ export class Plugin extends Context {
             this.dispatch(`bot.${session.event_name as keyof EventMap}`,session)
         })
         this.on('attach',session => {this.dispatch('attach',session)})
+        this.on('plugin-add',plugin=>{this.children.push(plugin)})
+        this.on('plugin-remove',(plugin)=>remove(this.children,plugin))
     }
-
+    // 添加插件中事件监听的销毁
+    on(name,listener,prepend){
+        const dispose=super.on(name,listener,prepend)
+        this.disposes.push(dispose)
+        return dispose
+    }
+    before(name,listener,append){
+        const dispose=super.before(name,listener,append)
+        this.disposes.push(dispose)
+        return dispose
+    }
+    getLogger(name: string) {
+        const logger=getLogger(name)
+        logger.level=process.env.OITQ_LOG_LEVEL||this.app.config.logLevel||'off'
+        return logger
+    }
     async dispatch(name:string,...args){
         if(this.disableStatus)return
-        if(name&&name==='bot.message'){
-        }
         if(name && name.startsWith('bot.')){
             const session=args[0]
             if(name==='bot.message'){
-                const continueResult=await this.app.bail('continue',session)
-                if(continueResult){
-                    if(typeof continueResult!=='boolean'){
-                        session.sendMsg(continueResult)
-                    }
-                    return
-                }
-                let result=await this.execute(session)
+                let result:any=await this.app.bail('continue',session)
                 if(result){
                     if(typeof result!=='boolean'){
                         session.sendMsg(result)
                     }
                     return
                 }
-            }
-            const result=await this.callback()(session)
-            if(result){
-                if(typeof result!=="boolean"){
-                    session.sendMsg(result)
+                for(const middleware of this.app.middlewares){
+                    result=await middleware(session)
+                    if(result){
+                        if(typeof result!=='boolean'){
+                            session.sendMsg(result)
+                        }
+                        return
+                    }
                 }
-                return
+                result=await this.execute(session)
+                if(result){
+                    if(typeof result!=='boolean'){
+                        session.sendMsg(result)
+                    }
+                    return
+                }
             }
         }
         for(const plugin of this.children){
@@ -134,30 +160,8 @@ export class Plugin extends Context {
         return dispose
     }
     use(middleware:Middleware){
-        const dispose=this.middleware(middleware)
-        this.disposes.push(dispose)
+        this.middleware(middleware)
         return this
-    }
-    private compose():(session:NSession<any>)=>Promise<boolean|Sendable|void>{
-        return (session:NSession<any>) =>{
-            // 触犯中间件的函数（递归调用）
-            const dispatch:(index:number)=>Promise<boolean|Sendable|void> = (index:number) => {
-                if (index >= this.app.middlewares.length) return Promise.resolve();
-                const fn = this.app.middlewares[index];
-                return Promise.resolve(
-                    fn(session, () => dispatch(index + 1))
-                );
-            }
-            return dispatch(0);
-        }
-    }
-    private callback(){
-        const fnMiddleware = this.compose();
-        return async (session:NSession<any>) => {
-            return await fnMiddleware(session).catch(err => {
-                this.emit('error', err, session);
-            });
-        };
     }
     using<T extends PluginManager.PluginHook>(using: readonly (keyof Plugin.Services)[], plugin:T,config?:PluginManager.Option<T>) {
         if(typeof plugin==='function'){
@@ -168,6 +172,9 @@ export class Plugin extends Context {
     // 添加子插件
     addPlugin(plugin:Plugin,config?){
         this.children.push(plugin)
+        plugin.parent=this
+        plugin.app=this.app
+        plugin.logger=this.getLogger(`[plugin:${plugin.pkg.name}]`)
         plugin.install(config)
         return this
     }
@@ -182,11 +189,6 @@ export class Plugin extends Context {
             else plugin=new Plugin({install:entry,name:entry.name})
         }
         const using = plugin['_using'] || []
-        this.children.push(plugin)
-        this.disposes.push(()=>{
-            plugin.dispose()
-            return remove(this.children,plugin)
-        })
         plugin.parent=this
         plugin.app=this.app
         plugin.logger=this.getLogger(`[plugin:${plugin.pkg.name}]`)
@@ -203,7 +205,7 @@ export class Plugin extends Context {
             })
         }
         await callback()
-        return plugin
+        return this
     }
     command<D extends string>(def: D,triggerEvent:keyof EventMap): Command<Action.ArgumentType<D>> {
         const namePath = def.split(' ', 1)[0]
@@ -234,7 +236,8 @@ export class Plugin extends Context {
             command = new Command(name+decl,this,triggerEvent)
             this._commands.set(name,command)
             this.commandList.push(command)
-            this.disposes.push(()=>remove(this.commandList,command),()=>{
+            this.disposes.push(()=>{
+                remove(this.commandList,command)
                 this._commands.delete(name)
                 this.app.emit('command-remove',command)
                 return true
@@ -310,14 +313,14 @@ export class Plugin extends Context {
         }catch (e){
             throw new PluginError(e.message)
         }
-        this.app.emit('plugin.install',this)
+        this.parent?.emit('plugin-add',this)
         this.logger.info(`已安装插件(${this.pkg.name})${this.disableStatus!==true?',默认启用':''}`)
         return `已安装插件(${this.pkg.name})${this.disableStatus!==true?',默认启用':''}`
     }
     async enable(bot: Bot=null) {
         if(!bot && this.disableStatus){
             this.disableStatus=false
-            this.parent.emit('plugin.enable',this)
+            this.parent?.emit('plugin-enable',this)
             this.logger.info(`已启用插件${this.pkg.name}`)
             return `已启用插件${this.pkg.name}`
         }
@@ -329,7 +332,7 @@ export class Plugin extends Context {
         }
         await this._editBotPluginCache(bot, "add")
         this.binds.add(bot)
-        this.parent.emit('plugin.enable',this)
+        this.parent?.emit('plugin-enable',this)
         this.logger.info(`已对Bot(${bot.uin})启用插件(${this.pkg.name})`)
         return `已对Bot(${bot.uin})启用插件(${this.pkg.name})`
     }
@@ -337,8 +340,8 @@ export class Plugin extends Context {
     async disable(bot: Bot=null) {
         if(!bot && !this.disableStatus){
             this.disableStatus=true
-            this.parent.emit('plugin.disable',this)
-            return `已启用插件${this.pkg.name}`
+            this.parent?.emit('plugin-disable',this)
+            return `已禁用插件${this.pkg.name}`
         }
         if(this.disableStatus){
             this.logger.info(`重复禁用`)
@@ -350,7 +353,7 @@ export class Plugin extends Context {
         await this._editBotPluginCache(bot, "delete")
         this.binds.delete(bot)
         this.logger.info(`成功对机器人${bot.uin}禁用`)
-        this.parent.emit('plugin.disable',this)
+        this.parent?.emit('plugin-disable',this)
         this.logger.info(`已对Bot(${bot.uin})禁用插件(${this.pkg.name})`)
         return `已对Bot(${bot.uin})禁用插件(${this.pkg.name})`
     }
@@ -362,16 +365,16 @@ export class Plugin extends Context {
         while (this.disposes.length){
             this.disposes.shift()()
         }
-        if(this.parent){
-            remove(this.parent.children,this)
-            this.parent.emit('plugin.install',this)
+        for(const child of this.children){
+            child.dispose()
         }
         this.logger.info(`已卸载插件(${this.pkg.name})`)
         this.emit('dispose')
+        this.parent?.emit('plugin-remove',this)
         return `已卸载插件(${this.pkg.name})`
     }
     async restart() {
-        this.logger.info(`正在重新安装...`)
+        this.logger.info(`正在重新安装${this.pkg.name}...`)
         this.destroy()
         await this.install()
         return `已重启插件(${this.pkg.name})`
@@ -648,7 +651,7 @@ export class PluginManager {
         if (fs.existsSync(orgPath)) {
             const orgModules = fs.readdirSync(orgPath, {withFileTypes: true})
             for (let file of orgModules) {
-                if (file.isDirectory() && file.name.startsWith('plugin.md-')) {
+                if (file.isDirectory() && file.name.startsWith('plugin-md-')) {
                     try {
                         require.resolve(`@oitq/${file.name}`)
                         let pkgInfo:Partial<PkgInfo>={}
@@ -663,7 +666,7 @@ export class PluginManager {
                             }
                         }catch {}
                         pluginList.push({
-                            name: file.name.replace('plugin.md-', ''),
+                            name: file.name.replace('plugin-md-', ''),
                             type: PluginType.Official,
                             ...pkgInfo
                         })

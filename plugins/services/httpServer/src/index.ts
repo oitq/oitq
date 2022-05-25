@@ -39,7 +39,7 @@ export function install(plugin:Plugin){
     const koa=new Koa(config)
     const router=new Router({prefix:config.path})
     const httpServer=createServer(koa.callback()) as HttpServer
-    httpServer.port=config.port
+    httpServer.port=config.port||8086
     plugin.httpServer=httpServer
     plugin.koa=koa
     plugin.router=router
@@ -53,8 +53,8 @@ export function install(plugin:Plugin){
         .use(router.routes())
         .use(router.allowedMethods())
     bindApis(router,plugin.app)
-    httpServer.listen(config.port,()=>{
-        plugin.getLogger('app').mark(`app is listen at http://${config.host||'localhost'}${config.path||''}:${config.port}`)
+    httpServer.listen(httpServer.port,()=>{
+        plugin.getLogger('app').mark(`app is listen at http://${config.host||'localhost'}${config.path||''}:${httpServer.port}`)
     })
     plugin.app.emit('httpServer.ready')
 }

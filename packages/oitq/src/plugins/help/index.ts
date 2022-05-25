@@ -1,5 +1,5 @@
 import {Plugin} from "../../plugin";
-import {NSession} from '../../bot'
+import {NSession} from '../../types'
 import {Command} from '../../command'
 
 import {template} from "@oitq/utils";
@@ -101,16 +101,14 @@ template.set('internal', {
     'invalid-argument': '参数 {0} 输入无效，{1}',
     'unknown-option': '存在未知选项 {0}，输入帮助以查看用法。',
     'invalid-option': '选项 {0} 输入无效，{1}',
-    'check-syntax': '输入帮助以查看用法。',
+    'check-syntax': '输入"help"查看指令菜单。',
 
     // parser
-    'invalid-number': '请提供一个数字。',
-    'invalid-integer': '请提供一个整数。',
-    'invalid-posint': '请提供一个正整数。',
-    'invalid-natural': '请提供一个非负整数。',
-    'invalid-date': '请输入合法的时间。',
-    'invalid-user': '请指定正确的用户。',
-    'invalid-channel': '请指定正确的频道。',
+    'invalid-number': '无效的数字。',
+    'invalid-integer': '无效的整数。',
+    'invalid-posint': '无效的正整数。',
+    'invalid-natural': '无效的非负整数。',
+    'invalid-date': '无效的日期。',
 
     // suggest
     'suggestion': '您要找的是不是{0}？',
@@ -118,18 +116,17 @@ template.set('internal', {
     'command-suggestion-suffix': '发送空行或句号以使用推测的指令。',
 
     // help
-    'help-suggestion-prefix': '指令未找到。',
+    'help-suggestion-prefix': '没有匹配的指令。',
     'help-suggestion-suffix': '发送空行或句号以使用推测的指令。',
-    'subcommand-prolog': '可用的子指令有{0}：',
-    'global-help-prolog': '当前可用的指令有{0}：',
-    'global-help-epilog': '输入“帮助 指令名”查看特定指令的语法和使用示例。',
-    'available-options': '可用的选项有：',
-    'available-options-with-authority': '可用的选项有（括号内为额外要求的权限等级）：',
+    'subcommand-prolog': '子指令{0}：',
+    'global-help-prolog': '相关指令{0}：',
+    'global-help-epilog': '回复“帮助 指令名”以查看对应指令帮助。',
+    'available-options': '可选项：',
     'option-not-usage': '（不计入总次数）',
     'hint-authority': '括号内为对应的最低权限等级',
     'hint-subcommand': '标有星号的表示含有子指令',
     'command-aliases': '别名：{0}。',
-    'command-examples': '使用示例：',
+    'command-examples': '样例：',
     'command-authority': '最低权限：{0} 级。',
     'command-max-usage': '已调用次数：{0}/{1}。',
     'command-min-interval': '距离下次调用还需：{0}/{1} 秒。',

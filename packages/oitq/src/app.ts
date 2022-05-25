@@ -1,23 +1,17 @@
 import 'oicq2-cq-enable';
 import {LogLevel, Sendable} from "oicq";
-import {BotList, Bot, ChannelId, NSession} from "./bot";
-import {sleep, merge, Dict, Awaitable, readConfig, createIfNotExist} from "@oitq/utils";
-import {MsgChannelId} from './context'
+import {BotList, Bot} from "./bot";
+import {sleep, merge, Dict, readConfig, createIfNotExist} from "@oitq/utils";
 import {Plugin, PluginManager} from './plugin'
-import {Computed} from "./session";
 import {defaultAppConfig, dir} from './static'
 import * as path from "path";
-import {Middleware} from "./middleware";
-export interface App{
-    start(...args:any[]):Awaitable<void>
-}
+import {Middleware,ChannelId,MsgChannelId} from "./types";
 export class App extends Plugin{
     public app=this
     middlewares: Middleware[] = []
     constructor(public config:App.Config) {
         super({install(){},name:'app'});
         this.logger=this.getLogger('app')
-
         this.bots=new BotList(this)
         this.pluginManager=new PluginManager(this,this.config.plugin_dir)
     }
@@ -37,16 +31,14 @@ export class App extends Plugin{
     }
     async start(){
         await this.pluginManager.init(this.config.plugins)
-        await this.parallel('before-ready')
+        await this.parallel('before-start')
         if(this.config.bots){
             for(const config of this.config.bots){
                 this.bots.create(config)
             }
         }
         for(const bot of this.bots){
-            const config=this.config.bots||=[]
-            const option:Bot.Config=config.find(botOption=>botOption.uin===bot.uin) ||{} as any
-            await bot.login(option.password)
+            await bot.login()
             await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
         }
         this.emit('ready')
@@ -54,14 +46,10 @@ export class App extends Plugin{
 }
 export namespace App{
     export interface Config extends PluginManager.Config{
-        start?:boolean,
-        prefix?: Computed<string | string[]>
-        minSimilarity?:number,
         bots?:Bot.Config[]
         plugins?:Record<string, any>
         delay?:Dict<number>
         token?:string
-        dir?:string
         logLevel?:LogLevel
         maxListeners?:number,
     }

@@ -31,7 +31,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     constructor(public ctx: Plugin, config: PackageProvider.Config) {
         super(ctx, 'packages', { authority: 4 })
 
-        this.ctx.app.on('plugin.install', async (plg) => {
+        this.ctx.app.on('plugin-install', async (plg) => {
             this.updatePackage(plg, plg.pkg.name)
         })
 

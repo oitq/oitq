@@ -10,7 +10,6 @@ import {
     Dict
 } from "oitq";
 import {createIfNotExist} from "@oitq/utils";
-const prompts = require('prompts')
 
 let child: ChildProcess
 
@@ -101,10 +100,8 @@ export default function registerStartCommand(cli: CAC) {
             createIfNotExist(path.join(dir,'configFilePath'),configPath)
             writeConfig(path.join(dir,'configFilePath'),configPath)
             createIfNotExist(getAppConfigPath(configPath),defaultAppConfig)
-            createIfNotExist(getBotConfigPath(configPath),defaultBotConfig)
             let appOptions: App.Config = readConfig(getAppConfigPath(configPath))
             try {
-                appOptions.start = true
                 setEnvArg('OITQ_WATCH_ROOT', watch)
                 writeConfig(getAppConfigPath(configPath), appOptions)
                 process.env.OITQ_LOG_LEVEL = logLevel || 'off'

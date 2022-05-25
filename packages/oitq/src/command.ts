@@ -2,7 +2,7 @@ import {Define} from "@oitq/utils";
 import {Plugin} from "./plugin";
 import {EventMap, Sendable} from "oicq";
 import {Action} from "./argv";
-import {NSession} from "./bot";
+import {NSession} from "./types";
 
 export class Command<A extends any[] = any[], O extends {} = {}>{
     public name:string

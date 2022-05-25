@@ -12,7 +12,7 @@ export class EventThrower{
     private getListeners(name:EventName){
         return Object.keys(this._events)
             .filter(key=>{
-                return new RegExp(EventThrower.createRegStr(name)).test(key) || new RegExp(EventThrower.createRegStr(key)).test(name)
+                return EventThrower.createRegStr(name).test(key) || EventThrower.createRegStr(key).test(name)
             })
             .map(key=>this._events[key])
             .flat()
@@ -23,12 +23,12 @@ export class EventThrower{
     setMaxListener(n:number){
         this._maxListenerCount=n
     }
-    private static createRegStr(name:string):string{
+    private static createRegStr(name:string):RegExp{
         name=`^${name}$`
         for (const word of this.metaWords){
             name=name.replace(word,`\\${word}`)
         }
-        return name.replace('*','.*')
+        return new RegExp(name.replace('*','.*'))
     }
     async parallel<K extends EventName>(name: K, ...args: any[]): Promise<void>{
         const tasks: Promise<any>[] = []

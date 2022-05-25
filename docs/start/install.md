@@ -1,3 +1,3 @@
 :::tip
-此处文档待完善，请先参阅[快速上手](/start/)的安装
+在使用oitq前，请先确保你已正确安装了[NodeJS](http://nodejs.cn)且NodeJS的版本>=14。
 :::

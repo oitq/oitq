@@ -19,6 +19,7 @@ const argv = parse(process.argv.slice(2), {
     alias: {
         ref: ['r'],
         forced: ['f'],
+        language:['l'],
         mirror: ['m'],
         prod: ['p'],
         template: ['t'],
@@ -100,9 +101,8 @@ function getRef() {
 
 async function scaffold() {
     console.log(dim('  Scaffolding project in ') + project + dim(' ...'))
-
     const mirror = argv.mirror || 'https://github.com'
-    const template = argv.template || 'oitq/server'
+    const template = argv.template || 'oitq/app'
     const url = `${mirror}/${template}/archive/${getRef()}.tar.gz`
 
     try {

@@ -35,18 +35,11 @@
     "server",
     "required:console"
   ],
-  "peerDependencies": {
-    "@oitq/cli": "latest",
-    "@oitq/plugin-console": "latest",
-    "oitq": "latest"
-  },
   "devDependencies": {
-    "@oitq/client": "latest",
     "@types/cross-spawn": "^6.0.2",
     "@types/which-pm-runs": "^1.0.0"
   },
   "dependencies": {
-    "@oitq/shop": "latest",
     "cross-spawn": "^7.0.3",
     "ns-require": "^1.1.2",
     "semver": "^7.3.7",
