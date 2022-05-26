@@ -9,7 +9,7 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
     args:Action.Declaration[]
     parent:Command=null
     children:Command[]=[]
-    private authority:number=1
+    public authority:number=1
     descriptions:string[]=[]
     shortcuts:Command.Shortcut[]=[]
     private checkers:Command.Callback<A,O>[]=[]

@@ -1,5 +1,5 @@
 import {formatContext,isSaveEnv} from "./utils";
-import {Schedule,ScheduleInfo} from "./model";
+import {Schedule} from "./model";
 import '@oitq/plugin-database'
 import {Plugin, NSession, Session,Time} from "oitq";
 export const name='schedule'
@@ -9,14 +9,14 @@ export interface Config {
 }
 export function install(ctx: Plugin, { minInterval }: Config={minInterval:60000}) {
     ctx.app.before('database.ready',()=>{
-        ctx.database.addModels(Schedule)
+        ctx.database.define('Schedule',Schedule)
     })
     async function hasSchedule(id: number) {
-        const data = await Schedule.findAll({where:{id}})
+        const data = await ctx.database.models.Schedule.findAll({where:{id}})
         return data.length
     }
 
-    async function prepareSchedule({ id, interval, command, time, lastCall }: ScheduleInfo, session: NSession<'message'>) {
+    async function prepareSchedule({ id, interval, command, time, lastCall }: Schedule, session: NSession) {
         const now = Date.now()
         const date = time.valueOf()
 
@@ -31,12 +31,12 @@ export function install(ctx: Plugin, { minInterval }: Config={minInterval:60000}
             }
             if (!lastCall || !interval) return
             lastCall = new Date()
-            await Schedule.update({ lastCall },{where:{id}})
+            await ctx.database.models.Schedule.update({ lastCall },{where:{id}})
         }
 
         if (!interval) {
             if (date < now) {
-                Schedule.destroy({where:{id}})
+                ctx.database.models.Schedule.destroy({where:{id}})
                 if (lastCall) executeSchedule()
                 return
             }
@@ -44,7 +44,7 @@ export function install(ctx: Plugin, { minInterval }: Config={minInterval:60000}
             ctx.app.getLogger('schedule').debug('prepare %d: %s at %s', id, command, time)
             return setTimeout(async () => {
                 if (!await hasSchedule(id)) return
-                Schedule.destroy({where:{id}})
+                ctx.database.models.Schedule.destroy({where:{id}})
                 executeSchedule()
             }, date - now)
         }
@@ -66,7 +66,7 @@ export function install(ctx: Plugin, { minInterval }: Config={minInterval:60000}
     }
 
     ctx.on('database.ready', async () => {
-        const schedules = await Schedule.findAll({where:{
+        const schedules = await ctx.database.models.Schedule.findAll({where:{
                 assignee:ctx.app.bots.map(bot => bot.uin)
             }})
         schedules.forEach((s) => {
@@ -88,12 +88,12 @@ export function install(ctx: Plugin, { minInterval }: Config={minInterval:60000}
         .option('delete', '-d <id>  删除已经设置的日程')
         .action(async ({ session, options }, ...dateSegments) => {
             if (options.delete) {
-                await Schedule.destroy({where:{id:options.delete}})
+                await ctx.database.models.Schedule.destroy({where:{id:options.delete}})
                 return `日程 ${options.delete} 已删除。`
             }
 
             if (options.list) {
-                let schedules = (await Schedule.findAll({where:{assignee: [session.bot.uin]}})).map(t=>t.toJSON())
+                let schedules = (await ctx.database.models.Schedule.findAll({where:{assignee: [session.bot.uin]}})).map(t=>t.toJSON())
                 if (!options.full) {
                     // @ts-ignore
                     schedules = schedules.filter(s => isSaveEnv(s.session,session))
@@ -132,7 +132,7 @@ export function install(ctx: Plugin, { minInterval }: Config={minInterval:60000}
                 return '时间间隔过短。'
             }
 
-            const schedule = await Schedule.create({
+            const schedule = await ctx.database.models.Schedule.create({
                 time,
                 assignee: session.bot.uin,
                 interval,
@@ -140,6 +140,6 @@ export function install(ctx: Plugin, { minInterval }: Config={minInterval:60000}
                 session: session.toJSON('group_name'),
             })
             prepareSchedule(schedule.toJSON(), session as any)
-            return `日程已创建，编号为 ${schedule.id}。`
+            return `日程已创建，编号为 ${schedule.toJSON().id}。`
         })
 }

@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-schedule",
   "main": "lib/index.js",
-  "version": "2.0.1-1",
+  "version": "2.0.1-2",
   "description": "schedule job plugin",
   "devDependencies": {
     "querystring": "^0.2.1"
@@ -31,10 +31,5 @@
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
   },
-  "homepage": "https://github.com/oitq/oitq#readme",
-  "dependencies": {
-    "mysql2": "^2.3.3",
-    "sequelize": "^6.17.0",
-    "sequelize-typescript": "^2.1.3"
-  }
+  "homepage": "https://github.com/oitq/oitq#readme"
 }

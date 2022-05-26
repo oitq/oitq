@@ -1,6 +1,5 @@
 import {Dialogue} from './teach'
 import {NSession,Plugin} from "oitq";
-import {QA} from "./models";
 
 function hasEnv(envs, type, target) {
     return envs.length === 0 || envs.some(item => {
@@ -10,7 +9,7 @@ function hasEnv(envs, type, target) {
 
 
 export async function triggerTeach(ctx: Plugin, session: NSession) {
-    const teaches = await QA.findAll()
+    const teaches = await ctx.database.models.QA.findAll()
     const question=session.cqCode
     const dialogues = teaches.map(teach => teach.toJSON())
         .filter((teach) => hasEnv(teach.belongs, session.message_type, session.group_id || session.discuss_id || session.user_id))

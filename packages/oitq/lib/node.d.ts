@@ -181,7 +181,7 @@ export class Command<A extends any[] = any[], O extends {} = {}> {
     args: Action.Declaration[];
     parent: Command;
     children: Command[];
-    private authority;
+    authority;
     descriptions: string[];
     shortcuts: Command.Shortcut[];
     private checkers;

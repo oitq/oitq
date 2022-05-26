@@ -2,7 +2,7 @@
   "name": "oitq",
   "main": "lib/index.js",
   "typings": "lib/node.d.ts",
-  "version": "2.0.4-9",
+  "version": "2.0.4-10",
   "description": "oitq framework for oicq dev",
   "dependencies": {
     "oicq": "^2.2.1",

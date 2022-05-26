@@ -72,7 +72,7 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
             return {
                 ...pick(bot, ['uin', 'nickname', 'status']),
                 ...pick(config['config'], ['platform']),
-                config: pick(config, ['type', 'admins', 'master']),
+                config: pick(config, ['admins', 'master']),
                 messageSent: bot._messageSent.get(),
                 messageReceived: bot._messageReceived.get(),
             }
@@ -100,7 +100,7 @@ namespace BotProvider{
     export interface Data extends
         Pick<Bot.Config['config'],'platform'>,
         Pick<Bot, 'uin' | 'nickname' | 'status'> {
-        config:Pick<Bot.Config, 'type'|'admins'|'master'>,
+        config:Pick<Bot.Config, 'admins'|'master'>,
         messageSent: number
         messageReceived: number
     }

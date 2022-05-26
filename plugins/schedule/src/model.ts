@@ -1,37 +1,28 @@
 import {
-    Column,
-    Default,
-    DataType,
-    Model,
-    Table,
+    DataTypes,
 } from "@oitq/plugin-database";
 import {Session} from 'oitq'
 
-export interface ScheduleInfo {
+export interface Schedule {
     id: number
     time: Date
     lastCall: Date
     interval: number
     command: string
 }
-@Table({modelName:'Schedule'})
-export class Schedule extends Model{
-    @Column(DataType.INTEGER)
-    assignee:number
-    @Column(DataType.DATE)
-    time:Date
-    @Column(DataType.DATE)
-    lastCall:Date
-    @Column(DataType.INTEGER)
-    interval:number
-    @Column(DataType.TEXT)
-    command:string
-    @Default('{}')
-    @Column(DataType.TEXT)
-    get session(){
-        return JSON.parse(this.getDataValue('session')) as Session
-    }
-    set session(value){
-        this.setDataValue('session',JSON.stringify(value))
+export const Schedule={
+    assignee:DataTypes.INTEGER,
+    time:DataTypes.DATE,
+    lastCall:DataTypes.DATE,
+    interval:DataTypes.INTEGER,
+    command:DataTypes.TEXT,
+    session:{
+        type:DataTypes.TEXT,
+        get(){
+            return JSON.parse(this.getDataValue('session')) as Session
+        },
+        set(value:Session){
+            this.setDataValue('session',JSON.stringify(value))
+        }
     }
 }

@@ -1,5 +1,5 @@
 import {Plugin,Service} from "oitq";
-import {QAInfo,QA} from "./models";
+import {QA} from "./models";
 import teach from './teach'
 import receiver from './receiver'
 declare module 'oitq'{
@@ -14,7 +14,7 @@ export default class QAManager extends Service{
     constructor(ctx:Plugin) {
         super(ctx,'qa')
         ctx.app.before('database.ready',()=>{
-            ctx.database.addModels(QA)
+            ctx.database.define('QA',QA)
         })
     }
     start(){
@@ -24,7 +24,7 @@ export default class QAManager extends Service{
     get logger(){
         return this.plugin.getLogger('qa')
     }
-    async addQuestion(question:QAInfo){
-        return await QA.create({...question})
+    async addQuestion(question:QA){
+        return await this.plugin.database.models.QA.create({...question})
     }
 }

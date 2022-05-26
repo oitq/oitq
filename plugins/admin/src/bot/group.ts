@@ -1,5 +1,4 @@
 import {Plugin, Action} from "oitq";
-import {AtElem} from 'oicq'
 export const name = 'admin.group'
 
 function checkAdmin({session}: Action) {

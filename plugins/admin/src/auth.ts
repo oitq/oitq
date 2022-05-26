@@ -1,16 +1,16 @@
-import {Plugin} from 'oitq'
+import {Command, Plugin} from 'oitq'
 import {} from '@oitq/plugin-database'
 import {ChannelId, NSession} from "oitq/lib";
 
 export const using = ['database'] as const
 export const name='admin/auth'
 export function install(plugin: Plugin) {
-    const checkAuth = (command) => {
+    const checkAuth = (command:Command) => {
         command.check(({session}) => {
             if (session.user.authority < command.authority) return '您的权限不足以调用该指令'
         })
     }
-    for (const command of plugin.commands) {
+    for (const command of plugin.app.commandList) {
         command.use(checkAuth)
     }
     plugin.app.on('command-add', (command) => command.use(checkAuth))
@@ -20,7 +20,10 @@ export function install(plugin: Plugin) {
         .action(async ({session}, user_id, authority) => {
             if(session.user.authority< authority) return `设置的等级不能>=你的等级(${session.user.authority})`
             try {
-                const [success] = await plugin.database.models.User.update({authority}, {where: {user_id}})
+                const user=await plugin.database.models.User.findOne({where:{user_id}})
+                if(!user) return `未找到用户：${user_id}`
+                if(user.toJSON().authority>=session.user.authority) return '你不能设置同级或上级的权限等级'
+                const success = await user.update({authority}, {where: {user_id}})
                 return `已调用：设置${user_id}的权限为${authority},成功数:${success}`
             } catch (e) {
                 return `设置失败,错误信息:${e.message}`

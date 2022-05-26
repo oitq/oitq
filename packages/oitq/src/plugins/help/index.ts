@@ -6,6 +6,7 @@ import {template} from "@oitq/utils";
 
 interface HelpOptions {
     showHidden?: boolean
+    authority?: boolean
 }
 
 export function enableHelp<A extends any[], O extends {}>(cmd: Command<A, O>) {
@@ -38,9 +39,10 @@ function formatCommands(path: string, session: NSession, children: Command[], op
     if (!commands.length) return []
 
     let hasSubcommand = false
-    const output = commands.map(({name, descriptions}) => {
-        let output = '    ' + name
-        output += '  ' + descriptions.join('\n')
+    const output = commands.map(({name, authority, descriptions}) => {
+        let output = '  ' + name
+        if (options.authority) output += '   ' + `(${authority})`
+        output += ' ' + descriptions.join('\n')
         return output
     })
     const hints: string[] = []

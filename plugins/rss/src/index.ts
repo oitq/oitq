@@ -1,5 +1,5 @@
 import {Plugin, NSession,MsgChannelId} from 'oitq'
-import {Column, DataType, Model, Comment, Table} from "@oitq/plugin-database";
+import {DataTypes,TableDecl} from "@oitq/plugin-database";
 import RssFeedEmitter from 'rss-feed-emitter'
 
 export const name = 'rss'
@@ -19,28 +19,32 @@ export interface RssModel {
         target_type: string,
         target_id: number
 }
-@Table({modelName:'Rss'})
-export class Rss extends Model {
-    @Comment('属于哪个bot')
-    @Column(DataType.INTEGER)
-    bot_id: number
-    @Comment('创建人')
-    @Column(DataType.INTEGER)
-    creator_id: number
-    @Comment('订阅url')
-    @Column(DataType.TEXT)
-    url: string
-    @Comment('订阅者类型')
-    @Column(DataType.TEXT)
-    target_type: string
-    @Comment('订阅者id')
-    @Column(DataType.INTEGER)
-    target_id: number
-    @Comment('订阅内容标题')
-    @Column(DataType.TEXT)
-    title:string
+export const Rss:TableDecl={
+    bot_id:{
+        type:DataTypes.DECIMAL,
+        comment:'属于哪个bot'
+    },
+    creator_id:{
+        type:DataTypes.DECIMAL,
+        comment:'创建人'
+    },
+    url:{
+        type:DataTypes.TEXT,
+        comment:'订阅url'
+    },
+    target_type:{
+        type:DataTypes.TEXT,
+        comment:'订阅者类型'
+    },
+    target_id:{
+        type:DataTypes.INTEGER,
+        comment:'订阅者类型'
+    },
+    title:{
+        type:DataTypes.TEXT,
+        comment:'订阅内容标题'
+    }
 }
-
 export interface Config {
     timeout?: number
     refresh?: number
@@ -55,7 +59,7 @@ export interface Config {
 
 export function install(ctx: Plugin, config: Config) {
     const logger = ctx.getLogger('rss')
-    ctx.app.database.addModels(Rss)
+    ctx.app.database.define('Rss',Rss)
     const {timeout, refresh, userAgent} = config
     const feedMap: Record<string, Set<MsgChannelId>> = {}
     const feeder = new RssFeedEmitter({skipFirstLoad: true, userAgent})
@@ -86,9 +90,10 @@ export function install(ctx: Plugin, config: Config) {
         logger.debug(err.message)
     })
     ctx.app.on('database.ready', async () => {
-        const rssList = await Rss.findAll({raw: true})
+        const rssList = await ctx.database.models.Rss.findAll()
         for (const rss of rssList) {
-            subscribe(rss.url, `${rss.bot_id}-${rss.target_type}:${rss.target_id}` as MsgChannelId)
+            const rssInfo=rss.toJSON()
+            subscribe(rssInfo.url, `${rssInfo.bot_id}-${rssInfo.target_type}:${rssInfo.target_id}` as MsgChannelId)
         }
     })
     const validators: Record<string, Promise<unknown>> = {}
@@ -128,13 +133,13 @@ export function install(ctx: Plugin, config: Config) {
         .action(async ({session, options}, title,url) => {
             const target_id=session.group_id || session.discuss_id || session.user_id
             const msgChannelId=`${session.bot.uin}-${session.message_type}:${target_id}` as MsgChannelId
-            const rssList = (await Rss.findAll({
+            const rssList = (await ctx.database.models.Rss.findAll({
                 where: {
                     target_id,
                     bot_id:session.bot.uin,
                     target_type: session.message_type
                 }
-            })) as RssModel[]
+            })).map(item=>item.toJSON())
             if (options.list) {
                 if (!rssList.length) return '未订阅任何链接。'
                 return rssList.map((rss,index)=>`${rss.title}:${rss.url}`).join('\n')
@@ -145,7 +150,7 @@ export function install(ctx: Plugin, config: Config) {
             if (options.remove) {
                 if (index < 0) return '未订阅此链接。'
                 if(session.sender.user_id!==rssList[index].creator_id && session.user.authority<5) return '权限不足'
-                await Rss.destroy({
+                await ctx.database.models.Rss.destroy({
                     where:{
                         url,
                         target_id,
@@ -160,7 +165,7 @@ export function install(ctx: Plugin, config: Config) {
             if (index >= 0) return '已订阅此链接。'
             return validate(url, session).then(async () => {
                 subscribe(url, msgChannelId)
-                await Rss.create({
+                await ctx.database.models.Rss.create({
                     url,
                     target_id,
                     title,

@@ -12,7 +12,7 @@
     "build": "npm run compile && npm run alias",
     "cli": "node ./lib/cli.js",
     "start": "node .",
-    "dev": "oitq start . --log-level info --watch .. -r esbuild-register -r tsconfig-paths/register",
+    "dev": "oitq start . --log-level info --watch  -r esbuild-register -r tsconfig-paths/register",
     "pub": "echo skip"
   },
   "repository": {

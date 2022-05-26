@@ -51,14 +51,7 @@ function transformDialogue(dialogue: Dialogue) {
     }).join('\n')
 }
 
-export interface Dialogue {
-    answer?: string,
-    redirect?: string
-    isReg: boolean,
-    question?: string
-    probability?: number
-    belongs?: { type: string, target: string }[]
-}
+export interface Dialogue extends Partial<QA>{}
 
 template.set('teach', {
     'list': `已有问答如下:
@@ -150,7 +143,7 @@ export default function install(ctx: Plugin) {
                 if (options.page) {
                     if (!Number.isInteger(options.page) || options.page < 1) return '页码只能为正整数'
                 }
-                const data = await QA.findAll(condition)
+                const data = await ctx.database.models.QA.findAll(condition)
                 const {rows,count}=filterResult(data)
                 return template('teach.search', options.search, rows.join('\n'), template('teach.pagination', options.page || 1, Math.ceil(count / 15), count))
             }
@@ -162,12 +155,12 @@ export default function install(ctx: Plugin) {
                 if (options.page) {
                     if (!Number.isInteger(options.page) || options.page < 1) return '页码只能为正整数'
                 }
-                const data = await QA.findAll(condition)
+                const data = await ctx.database.models.QA.findAll(condition)
                 const {rows,count}=filterResult(data)
                 return template('teach.list', rows.join('\n'), template('teach.pagination', options.page || 1, Math.ceil(count / 15), count))
             }
             if (options.detail) {
-                const teach = await QA.findOne({
+                const teach = await ctx.database.models.QA.findOne({
                     attributes: ['id', 'question', 'answer', 'isReg', 'redirect', 'probability', 'belongs'],
                     where: {
                         id: options.id
@@ -180,7 +173,7 @@ export default function install(ctx: Plugin) {
                 return template('teach.detail', options.id, transformDialogue(dialogue))
             }
             if (options.remove) {
-                const dialogue = await QA.destroy({
+                const dialogue = await ctx.database.models.QA.destroy({
                     where: {
                         id: options.id
                     }
@@ -221,7 +214,7 @@ export default function install(ctx: Plugin) {
                 if (options.redirect) {
                     data.redirect = options.redirect
                 }
-                let dialogues = await QA.findAll({
+                let dialogues = await ctx.database.models.QA.findAll({
                     where: {
                         question: q,
                     }
@@ -256,7 +249,7 @@ export default function install(ctx: Plugin) {
                     })
                     if(confirm) return '已取消添加'
                 }
-                dialogue = await QA.create({
+                dialogue = await ctx.database.models.QA.create({
                     ...data,
                     question: q,
                 })
