@@ -67,10 +67,10 @@ export function install(ctx: Plugin, config: Config) {
     const {timeout, refresh, userAgent} = config
     const feedMap: Record<string, Set<MsgChannelId>> = {}
     const feeder = new RssFeedEmitter({skipFirstLoad: true, userAgent})
-    const callbackMap:Record<string, (payload:any)=>string>={}
-    function subscribe(url: string, msgChannelId: MsgChannelId,callback?:string) {
+    const callbackMap:Record<string, Function>={}
+    function subscribe(url: string, msgChannelId: MsgChannelId,callback?:Function) {
         if(callback){
-            callbackMap[url]=new Function('payload',callback) as (payload:any)=>string
+            callbackMap[url]=callback
         }
         if (url in feedMap) {
             feedMap[url].add(msgChannelId)
@@ -133,10 +133,10 @@ export function install(ctx: Plugin, config: Config) {
         const message = callbackMap[source]?callbackMap[source].apply(payload):`${payload.meta.title} (${payload.author})\n${payload.title}\n${payload.link}`
         await ctx.app.broadcast([...feedMap[source]], message)
     })
-    ctx.command('rss <title:string> <url:text>', 'message')
+    ctx.command('rss <title:string> <url:string>', 'message')
         .desc('订阅 RSS 链接')
         .option('list', '-l 查看订阅列表')
-        .option('callback','-c <callback:text> 回调处理函数')
+        .option('callback','-c <callback:function> 回调处理函数')
         .option('remove', '-r 取消订阅')
         .action(async ({session, options}, title,url) => {
             const target_id=session.group_id || session.discuss_id || session.user_id
