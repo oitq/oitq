@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-rss",
   "main": "lib/index.js",
-  "version": "2.0.1-2",
+  "version": "2.0.1-3",
   "description": "rss plugin",
   "scripts": {
     "compile": "tsc --project tsconfig.json",

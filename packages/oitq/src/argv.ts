@@ -20,6 +20,8 @@ export namespace Action{
         integer: number
         date: Date,
         qq:number
+        object:Record<string, any>
+        function:Function
     }
     type DomainType = keyof Domain
 
@@ -76,6 +78,20 @@ export namespace Action{
         if (Number.isFinite(value)) return value
         throw new Error('无效的数值')
     })
+    createDomain('object',(source)=>{
+        try {
+            return JSON.parse(source)
+        }catch {
+            throw new Error('无效的对象')
+        }
+    },{greedy:true})
+    createDomain('function',(source)=>{
+        try{
+            return new Function(source)
+        }catch {
+            throw new Error('无效的函数')
+        }
+    },{greedy:true})
     createDomain('integer', (source) => {
         const value = +source
         if (value * 0 === 0 && Math.floor(value) === value) return value

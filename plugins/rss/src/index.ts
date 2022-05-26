@@ -43,6 +43,10 @@ export const Rss:TableDecl={
     title:{
         type:DataTypes.TEXT,
         comment:'订阅内容标题'
+    },
+    callback:{
+        type:DataTypes.TEXT,
+        comment:'回调函数'
     }
 }
 export interface Config {
@@ -63,8 +67,11 @@ export function install(ctx: Plugin, config: Config) {
     const {timeout, refresh, userAgent} = config
     const feedMap: Record<string, Set<MsgChannelId>> = {}
     const feeder = new RssFeedEmitter({skipFirstLoad: true, userAgent})
-
-    function subscribe(url: string, msgChannelId: MsgChannelId) {
+    const callbackMap:Record<string, (payload:any)=>string>={}
+    function subscribe(url: string, msgChannelId: MsgChannelId,callback?:string) {
+        if(callback){
+            callbackMap[url]=new Function('payload',callback) as (payload:any)=>string
+        }
         if (url in feedMap) {
             feedMap[url].add(msgChannelId)
         } else {
@@ -93,7 +100,7 @@ export function install(ctx: Plugin, config: Config) {
         const rssList = await ctx.database.models.Rss.findAll()
         for (const rss of rssList) {
             const rssInfo=rss.toJSON()
-            subscribe(rssInfo.url, `${rssInfo.bot_id}-${rssInfo.target_type}:${rssInfo.target_id}` as MsgChannelId)
+            subscribe(rssInfo.url, `${rssInfo.bot_id}-${rssInfo.target_type}:${rssInfo.target_id}` as MsgChannelId,rssInfo.callback)
         }
     })
     const validators: Record<string, Promise<unknown>> = {}
@@ -123,12 +130,13 @@ export function install(ctx: Plugin, config: Config) {
         logger.debug('receive', payload.title)
         const source = payload.meta.link
         if (!feedMap[source]) return
-        const message = `${payload.meta.title} (${payload.author})\n${payload.title}\n${payload.link}`
+        const message = callbackMap[source]?callbackMap[source].apply(payload):`${payload.meta.title} (${payload.author})\n${payload.title}\n${payload.link}`
         await ctx.app.broadcast([...feedMap[source]], message)
     })
     ctx.command('rss <title:string> <url:text>', 'message')
         .desc('订阅 RSS 链接')
         .option('list', '-l 查看订阅列表')
+        .option('callback','-c <callback:text> 回调处理函数')
         .option('remove', '-r 取消订阅')
         .action(async ({session, options}, title,url) => {
             const target_id=session.group_id || session.discuss_id || session.user_id
@@ -164,13 +172,14 @@ export function install(ctx: Plugin, config: Config) {
 
             if (index >= 0) return '已订阅此链接。'
             return validate(url, session).then(async () => {
-                subscribe(url, msgChannelId)
+                subscribe(url, msgChannelId,options.callback)
                 await ctx.database.models.Rss.create({
                     url,
                     target_id,
                     title,
                     target_type:session.message_type,
                     bot_id:session.bot.uin,
+                    callback:options.callback||null,
                     creator_id:session.sender.user_id
                 })
                 return '添加订阅成功！'

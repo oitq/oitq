@@ -58,7 +58,7 @@ export interface Action<A extends any[] = any[], O = {}> {
     session?: NSession;
     bot?: Bot;
 }
-export namespace Action {
+export declare namespace Action {
     export interface Domain {
         string: string;
         number: number;
@@ -67,6 +67,8 @@ export namespace Action {
         integer: number;
         date: Date;
         qq: number;
+        object: Record<string, any>;
+        function: Function;
     }
     type DomainType = keyof Domain;
     type ParamType<S extends string, F> = S extends `${any}:${infer T}` ? T extends DomainType ? Domain[T] : F : F;
@@ -113,6 +115,8 @@ export namespace Action {
     export type OptionDeclarationMap = Record<string, OptionDeclaration>;
     export {};
 }
+
+
 // bot.d.ts
 
 
