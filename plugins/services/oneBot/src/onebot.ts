@@ -2,35 +2,43 @@ import {Client} from 'oicq'
 import * as fs from 'fs'
 import http from "http"
 import https from "https"
-import { URL } from "url"
-import {WebSocketServer,WebSocket}from "ws"
-import  rfdc from "rfdc"
-import {App,Bot} from "oitq";
-import { assert } from "./filter"
-import { toHump, transNotice, APIS, ARGS, toBool, BOOLS, genMetaEvent } from "./static"
-import { OneBotConfig, defaultOneBotConfig } from "./config"
-import {fromCqcode, toCqcode,toSegment,fromSegment} from "@oitq/utils";
+import {URL} from "url"
+import {WebSocketServer, WebSocket} from "ws"
+import rfdc from "rfdc"
+import {App, Bot} from "oitq";
+import {assert} from "./filter"
+import {toHump, transNotice, APIS, ARGS, toBool, BOOLS, genMetaEvent} from "./static"
+import {OneBotConfig, defaultOneBotConfig} from "./config"
+import {fromCqcode, toCqcode, toSegment, fromSegment} from "@oitq/utils";
+
 interface OneBotProtocol {
     action: string,
     params: any
     echo?: any
 }
+
 import '@oitq/plugin-http-server'
+
 const clone = rfdc()
-class NotFoundError extends Error { }
-export class OneBot{
+
+class NotFoundError extends Error {
+}
+
+export class OneBot {
     protected heartbeat?: NodeJS.Timeout
     protected _queue: Array<{
         method: keyof Bot,
         args: any[]
     }> = []
-    protected wss?:WebSocketServer //ws服务器
+    protected wss?: WebSocketServer //ws服务器
     protected wsr = new Set<WebSocket>() //反向ws连接
     protected queue_running = false
     protected filter: any
     protected timestamp = Date.now()
-    constructor(private app:App,protected bot:Bot,protected config:OneBotConfig=defaultOneBotConfig) {
+
+    constructor(private app: App, protected bot: Bot, protected config: OneBotConfig = defaultOneBotConfig) {
     }
+
     /**
      * 上报事件
      */
@@ -66,7 +74,7 @@ export class OneBot{
             options.headers["X-Signature"] = "sha1=" + crypto.createHmac("sha1", String(this.config.secret)).update(serialized).digest("hex")
         }
         for (const url of this.config.post_url) {
-            const protocol = url.startsWith("https") ? https: http
+            const protocol = url.startsWith("https") ? https : http
             try {
                 protocol.request(url, options, (res) => {
                     if (res.statusCode !== 200)
@@ -105,8 +113,8 @@ export class OneBot{
                 unserialized = clone(unserialized)
                 if (this.config.post_message_format === "string") {
                     unserialized.message = toCqcode(data)
-                }else{
-                    unserialized.message=toSegment(data.message)
+                } else {
+                    unserialized.message = toSegment(data.message)
                 }
                 break
             case "notice":
@@ -148,18 +156,18 @@ export class OneBot{
         ctx.res.setHeader("Content-Type", "application/json; charset=utf-8")
         if (this.config.enable_cors)
             ctx.res.setHeader("Access-Control-Allow-Origin", "*")
-        const action = url.pathname.replace(`/${this.bot.uin}`,'').slice(1)
+        const action = url.pathname.replace(`/${this.bot.uin}`, '').slice(1)
         if (ctx.method === "GET") {
             try {
-                const ret = await this.apply({ action,params:ctx.query })
+                const ret = await this.apply({action, params: ctx.query})
                 ctx.res.writeHead(200).end(ret)
             } catch (e) {
                 ctx.res.writeHead(500).end(e.message)
             }
         } else if (ctx.method === "POST") {
             try {
-                const params={...ctx.query,...ctx.request.body}
-                const ret=await this.apply({action,params})
+                const params = {...ctx.query, ...ctx.request.body}
+                const ret = await this.apply({action, params})
                 ctx.res.writeHead(200).end(ret)
             } catch (e) {
                 ctx.res.writeHead(500).end(e.message)
@@ -183,7 +191,7 @@ export class OneBot{
                     const event = data.params.context, res = data.params.operation
                     this._quickOperate(event, res)
                     ret = JSON.stringify({
-                        retcode: 1,
+                        retcode: 0,
                         status: "async",
                         data: null,
                         error: null,
@@ -216,11 +224,12 @@ export class OneBot{
         ws.send(JSON.stringify(genMetaEvent(this.bot.uin, "connect")))
         ws.send(JSON.stringify(genMetaEvent(this.bot.uin, "enable")))
     }
+
     /**
      * 调用api
      */
     protected async apply(req: OneBotProtocol) {
-        let { action, params, echo } = req
+        let {action, params, echo} = req
         let is_async = action.includes("_async")
         if (is_async)
             action = action.replace("_async", "")
@@ -228,9 +237,9 @@ export class OneBot{
         if (is_queue)
             action = action.replace("_rate_limited", "")
         if (action === "send_msg") {
-            if (["private", "group", "discuss"].includes(params.message_type)){
+            if (["private", "group", "discuss"].includes(params.message_type)) {
                 action = "send_" + params.message_type + "_msg"
-            }else if (params.user_id)
+            } else if (params.user_id)
                 action = "send_private_msg"
             else if (params.group_id)
                 action = "send_group_msg"
@@ -242,7 +251,7 @@ export class OneBot{
         if (action === "set_restart") {
             this.stop().then(this.start.bind(this))
             const result: any = {
-                retcode: 1,
+                retcode: 0,
                 status: "async",
                 data: null,
                 error: null
@@ -259,47 +268,47 @@ export class OneBot{
                 if (Reflect.has(params, k)) {
                     if (BOOLS.includes(k))
                         params[k] = toBool(params[k])
-                    if(k==='message'){
-                        if(typeof params[k]==='string'){
-                            params[k]=fromCqcode(params[k])
-                        }else{
-                            params[k]=fromSegment(params[k])
+                    if (k === 'message') {
+                        if (typeof params[k] === 'string') {
+                            params[k] = fromCqcode(params[k])
+                        } else {
+                            params[k] = fromSegment(params[k])
                         }
                     }
                     args.push(params[k])
                 }
             }
-            let ret: any,result:any
+            let ret: any, result: any
             if (is_queue) {
-                this._queue.push({ method, args })
+                this._queue.push({method, args})
                 this._runQueue()
                 result = {
-                    retcode: 1,
+                    retcode: 0,
                     status: "async",
                     data: null,
                     error: null
                 }
             } else {
-                ret =  typeof this.bot[method]==='function'?(this.bot[method] as Function).apply(this.bot, args):this.bot[method]
+                ret = typeof this.bot[method] === 'function' ? (this.bot[method] as Function).apply(this.bot, args) : this.bot[method]
                 if (ret instanceof Promise) {
-                    if (is_async){
+                    if (is_async) {
                         result = {
-                            retcode: 1,
+                            retcode: 0,
                             status: "async",
                             data: null,
                             error: null
                         }
-                    } else{
-                        result={
-                            retcode: 1,
+                    } else {
+                        result = {
+                            retcode: 0,
                             status: "success",
                             data: await ret,
                             error: null
                         }
                     }
-                }else{
-                    result={
-                        retcode: 1,
+                } else {
+                    result = {
+                        retcode: 0,
                         status: "success",
                         data: ret,
                         error: null
@@ -312,7 +321,7 @@ export class OneBot{
             if (echo) {
                 result.echo = echo
             }
-            return JSON.stringify({...result,data:ret})
+            return JSON.stringify({...result, data: ret})
         } else {
             throw new NotFoundError()
         }
@@ -321,7 +330,7 @@ export class OneBot{
     /**
      * 快速操作
      */
-    protected _quickOperate(event:any, res: any) {
+    protected _quickOperate(event: any, res: any) {
         if (event.post_type === "message") {
             if (res.reply) {
                 if (event.message_type === "discuss")
@@ -355,12 +364,13 @@ export class OneBot{
             const task = this._queue.shift()
             const {method, args} = task as typeof OneBot.prototype._queue[0]
             (this.bot[method] as Function).apply(this.bot, args)
-            await new Promise((resolve)=>{
+            await new Promise((resolve) => {
                 setTimeout(resolve, this.config.rate_limit_interval)
             })
             this.queue_running = false
         }
     }
+
     /**
      * 创建反向ws
      */
@@ -373,11 +383,11 @@ export class OneBot{
         }
         if (this.config.access_token)
             headers.Authorization = "Bearer " + this.config.access_token
-        const ws = new WebSocket(url, { headers })
+        const ws = new WebSocket(url, {headers})
         ws.on("error", (err) => {
             this.app.getLogger('OneBot').error(err.message)
         })
-        ws.on("open", ()=>{
+        ws.on("open", () => {
             this.app.getLogger('OneBot').info(`OneBot - 反向ws(${url})连接成功。`)
             this.wsr.add(ws)
             this._webSocketHandler(ws)
@@ -399,11 +409,11 @@ export class OneBot{
      * 实例启动
      */
     async start() {
-        for (const url of this.config.ws_reverse_url||[])
+        for (const url of this.config.ws_reverse_url || [])
             this._createWsr(url)
         this._dispatch(genMetaEvent(this.bot.uin, "enable"))
         if (this.config.enable_heartbeat) {
-            this.heartbeat = setInterval(()=>{
+            this.heartbeat = setInterval(() => {
                 this._dispatch({
                     self_id: this.bot.uin,
                     time: Math.floor(Date.now() / 1000),
@@ -424,17 +434,17 @@ export class OneBot{
         }
         if (!this.config.use_http && !this.config.use_ws)
             return
-        if(this.config.use_http){
-            this.app.router.all(new RegExp(`^/${this.bot.uin}/(.*)$`),this._httpRequestHandler.bind(this))
+        if (this.config.use_http) {
+            this.app.router.all(new RegExp(`^/${this.bot.uin}/(.*)$`), this._httpRequestHandler.bind(this))
             this.app.getLogger('oneBot').mark(`OneBot - 开启http服务器成功，监听:http://127.0.0.1:${this.app.httpServer.port}/${this.bot.uin}`)
         }
         if (this.config.use_ws) {
-            this.wss = this.app.router.ws(`/${this.bot.uin}`,this.app.httpServer)
+            this.wss = this.app.router.ws(`/${this.bot.uin}`, this.app.httpServer)
             this.app.getLogger('oneBot').mark(`OneBot - 开启ws服务器成功，监听:ws://127.0.0.1:${this.app.httpServer.port}/${this.bot.uin}`)
             this.wss.on("error", (err) => {
                 this.app.getLogger('OneBot').error(err.message)
             })
-            this.wss.on("connection", (ws, req)=>{
+            this.wss.on("connection", (ws, req) => {
                 ws.on("error", (err) => {
                     this.app.getLogger('OneBot').error(err.message)
                 })
@@ -453,6 +463,7 @@ export class OneBot{
             })
         }
     }
+
     /**
      * 实例停止
      */

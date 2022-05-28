@@ -174,9 +174,9 @@ export class Plugin extends EventThrower {
         return this
     }
     // 定义子插件
-    async plugin(name:string,config?:any):Promise<Plugin>
-    async plugin<T extends PluginManager.PluginHook>(plugin:T,config?:PluginManager.Option<T>):Promise<Plugin>
-    async plugin(entry: string|PluginManager.PluginHook, config?: any):Promise<Plugin>{
+    plugin(name:string,config?:any):this
+    plugin<T extends PluginManager.PluginHook>(plugin:T,config?:PluginManager.Option<T>):this
+    plugin(entry: string|PluginManager.PluginHook, config?: any):this{
         let plugin:Plugin
         if(typeof entry==='string')plugin=this.app.pluginManager.import(entry)
         else{
@@ -199,7 +199,7 @@ export class Plugin extends EventThrower {
                 this.logger.warn(`安装${plugin.pkg.name}时遇到错误，错误信息：${e.message}:${e.stack}`)
             })
         }
-        await callback()
+        callback()
         return this
     }
     command<D extends string>(def: D,triggerEvent:keyof EventMap): Command<Action.ArgumentType<D>> {
@@ -635,7 +635,7 @@ export class PluginManager {
                         }
                     }catch {}
                     pluginList.push({
-                        name: file.name.replace('oitq-plugin.md-', ''),
+                        name: file.name.replace('oitq-plugin-', ''),
                         type: PluginType.Community,
                         ...pkgInfo
                     })

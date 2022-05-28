@@ -43,7 +43,8 @@ export function install(plugin:Plugin){
     plugin.httpServer=httpServer
     plugin.koa=koa
     plugin.router=router
-    koa.use(async (ctx,next)=>{
+    koa
+        .use(async (ctx,next)=>{
         const start = new Date()
         await next()
         const ms = new Date().getTime() - start.getTime()

@@ -323,8 +323,8 @@ export class Plugin extends EventThrower {
     use(middleware: Middleware): this;
     using<T extends PluginManager.PluginHook>(using: readonly (keyof Plugin.Services)[], plugin: T, config?: PluginManager.Option<T>): Promise<Plugin>;
     addPlugin(plugin: Plugin, config?: any): this;
-    plugin(name: string, config?: any): Promise<Plugin>;
-    plugin<T extends PluginManager.PluginHook>(plugin: T, config?: PluginManager.Option<T>): Promise<Plugin>;
+    plugin(name: string, config?: any): this;
+    plugin<T extends PluginManager.PluginHook>(plugin: T, config?: PluginManager.Option<T>): this;
     command<D extends string>(def: D, triggerEvent: keyof EventMap): Command<Action.ArgumentType<D>>;
     execute(session: NSession, content?: string): Promise<boolean | Sendable | void>;
     findCommand(argv: Pick<Action, 'name' | 'source'>): Command<any[], {}>;

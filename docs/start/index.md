@@ -21,13 +21,13 @@ npm install oitq
 
 1.1.安装oitq作为项目依赖
 ```shell
-npm install oitq @oitq/plugin.md-http-server @oitq/plugin.md-one-bot -S
+npm install oitq @oitq/plugin-http-server @oitq/plugin-one-bot -S
 ```
 1.2.在项目中建立index.js,并撰写以下代码到里面
 ```javascript
 const {createApp}=require('oitq')
-const httpServer=require('@oitq/plugin.md-http-server')
-const oneBot=require('@oitq/plugin.md-one-bot')
+const httpServer=require('@oitq/plugin-http-server')
+const oneBot=require('@oitq/plugin-one-bot')
 const app = createApp({logLevel: 'info'})
 app.plugin(httpServer, {port: 8086})
 app.plugin(oneBot)
@@ -66,7 +66,7 @@ app.start()
 
 2.1 安装你需要使用的[插件](/plugins/),此处以[问答](/plugins/qa)为例
 ```shell
-npm install @oitq/plugin.md-qa @oitq/cli -S #@oitq/cli 为oitq脚手架，可用于添加、移除bot，启动项目
+npm install @oitq/plugin-qa @oitq/cli -S #@oitq/cli 为oitq脚手架，可用于添加、移除bot，启动项目
 ```
 2.2 在项目根目录创建配置文件`oitq.config.json`并添加以下内容
 
@@ -82,7 +82,7 @@ npm install @oitq/plugin.md-qa @oitq/cli -S #@oitq/cli 为oitq脚手架，可用
     }
   ],
   "plugins": { //启用插件的配置
-    "qa": true // 为true表示启用了@oitq/plugin.md-qa插件
+    "qa": true // 为true表示启用了@oitq/plugin-qa插件
   },
   "plugin_dir": "./plugins",//此处为你自己存放插件的目录，暂时用不到
   "logLevel": "info"
