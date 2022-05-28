@@ -1,4 +1,4 @@
-import {Context,Card} from "@oitq/client";
+import {Context} from "@oitq/client";
 import Bots from './bots/index.vue'
 import Plugins from './plugins/index.vue'
 import Shop from './shop/index.vue'

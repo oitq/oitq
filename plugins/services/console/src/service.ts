@@ -26,7 +26,7 @@ export abstract class DataService<T = never> extends Service {
     }
 
     constructor(protected plugin: Plugin, protected key: keyof Console.Services, public options: DataService.Options = {}) {
-        super(plugin, `console.${key}`)
+        super(plugin, `console.${key}`,true)
         DataService.define(key)
     }
 

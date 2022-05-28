@@ -58,7 +58,7 @@ export interface Action<A extends any[] = any[], O = {}> {
     session?: NSession;
     bot?: Bot;
 }
-export declare namespace Action {
+export namespace Action {
     export interface Domain {
         string: string;
         number: number;
@@ -303,10 +303,12 @@ export interface Plugin extends Plugin.Services {
     emit<S extends string | symbol>(name: S & Exclude<S, keyof AppEventMap>, ...args: any[]): boolean;
 }
 export class Plugin extends EventThrower {
+    static readonly immediate: unique symbol;
     app: App;
     readonly fullpath: string;
     readonly path: string;
     protected hooks: PluginManager.ObjectHook;
+    _using: (keyof Plugin.Services)[];
     parent: Plugin;
     children: Plugin[];
     disposes: Dispose[];
@@ -321,7 +323,7 @@ export class Plugin extends EventThrower {
     getCommand(name: string): Command<any[], {}>;
     middleware(middleware: Middleware, prepend?: boolean): () => boolean;
     use(middleware: Middleware): this;
-    using<T extends PluginManager.PluginHook>(using: readonly (keyof Plugin.Services)[], plugin: T, config?: PluginManager.Option<T>): Promise<Plugin>;
+    using<T extends PluginManager.PluginHook>(using: readonly (keyof Plugin.Services)[], plugin: T, config?: PluginManager.Option<T>): this;
     addPlugin(plugin: Plugin, config?: any): this;
     plugin(name: string, config?: any): this;
     plugin<T extends PluginManager.PluginHook>(plugin: T, config?: PluginManager.Option<T>): this;
@@ -413,9 +415,10 @@ export abstract class Service {
     name: keyof Plugin.Services;
     protected start(): Awaitable<void>;
     protected stop(): Awaitable<void>;
-    constructor(plugin: Plugin, name: keyof Plugin.Services);
+    constructor(plugin: Plugin, name: keyof Plugin.Services, immediate?: boolean);
     get caller(): Plugin;
 }
+
 
 // prompt.d.ts
 

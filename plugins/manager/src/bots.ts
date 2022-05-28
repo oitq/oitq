@@ -1,4 +1,4 @@
-import {Plugin, Dict, omit, pick, Time, Bot} from "oitq";
+import {Plugin, Dict, pick, Time, Bot} from "oitq";
 import {DataService} from "@oitq/plugin-console";
 declare module 'oitq'{
     interface Bot{
@@ -71,8 +71,7 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
             const config = this.plugin.app.config.bots[bot.app.bots.indexOf(bot)]
             return {
                 ...pick(bot, ['uin', 'nickname', 'status']),
-                ...pick(config['config'], ['platform']),
-                config: pick(config, ['admins', 'master']),
+                config: config,
                 messageSent: bot._messageSent.get(),
                 messageReceived: bot._messageReceived.get(),
             }
@@ -98,9 +97,8 @@ namespace BotProvider{
     export type Extension = (bot: Bot) => Partial<Data>
 
     export interface Data extends
-        Pick<Bot.Config['config'],'platform'>,
         Pick<Bot, 'uin' | 'nickname' | 'status'> {
-        config:Pick<Bot.Config, 'admins'|'master'>,
+        config:Partial<Bot.Config>,
         messageSent: number
         messageReceived: number
     }

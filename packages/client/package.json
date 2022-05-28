@@ -6,7 +6,7 @@
   "scripts": {
     "compile": "tsc --project tsconfig.json",
     "alias": "tsc-alias -p tsconfig.json",
-    "build": "npm run compile && npm run alias",
+    "build": "npm run compile && npm run alias && ts-node ./build.ts",
     "pub": "npm publish --access public"
   },
   "bin": {
@@ -36,7 +36,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "^1.1.4",
     "@vitejs/plugin-vue": "^2.3.3",
-    "@vueuse/core": "^7.7.1",
+    "@vueuse/core": "^8.5.0",
     "cac": "^6.7.12",
     "element-plus": "^2.2.0",
     "sass": "^1.51.0",

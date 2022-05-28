@@ -6,7 +6,8 @@ declare module '@oitq/plugin-console' {
         'manager/app-reload'(config: any): void
         'manager/plugin-reload'(name: string, config: any): void
         'manager/plugin-unload'(name: string, config: any): void
-        'manager/bot-update'(uin: number,  config: any): void
+        'manager/bot-update'(config: Bot.Config): void
+        'manager/bot-add'(config:Bot.Config):void
         'manager/bot-remove'(uin: number): void
     }
 }
@@ -31,8 +32,11 @@ export default class ConfigWriter {
             this.unloadPlugin(name, config)
         }, { authority: 4 })
 
-        ctx.console.addListener('manager/bot-update', (id, config) => {
-            this.updateBot(id, config)
+        ctx.console.addListener('manager/bot-add', (config) => {
+            this.addBot(config)
+        }, { authority: 4 })
+        ctx.console.addListener('manager/bot-update', (config) => {
+            this.updateBot(config)
         }, { authority: 4 })
 
         ctx.console.addListener('manager/bot-remove', (id) => {
@@ -60,19 +64,26 @@ export default class ConfigWriter {
         this.loader.writeConfig()
         this.loader.unloadPlugin(name)
     }
-
-    updateBot(uin: number,config: any) {
-        let bot: Bot
-        if (uin) {
-            bot = this.ctx.bots.find(bot => bot.uin === uin)
-            const index = bot.app.bots.indexOf(bot)
-            this.ctx.bots[index] = config
-        }
+    addBot(config:Bot.Config){
+        if(this.ctx.bots.get(config.uin)) return this.updateBot(config)
+        this.loader.config.bots.push(config)
+        this.loader.writeConfig()
+    }
+    updateBot(config: Bot.Config) {
+        let bot: Bot = this.ctx.bots.find(bot => bot.uin === config.uin)
+        if(!bot)return
+        const index=this.loader.config.bots.findIndex(c=>c.uin===config.uin)
+        if(index>=0)this.loader.config.bots.splice(index,1)
+        this.loader.config.bots.push(config)
         this.loader.writeConfig()
     }
 
     removeBot(uin: number) {
-        this.ctx.bots.remove(uin)
+        const bot=this.ctx.bots.get(uin)
+        if(!bot)return;
+        const index=this.loader.config.bots.findIndex(c=>c.uin===uin)
+        if(index>=0)this.loader.config.bots.splice(index,1)
+        this.loader.writeConfig()
         return
     }
 }

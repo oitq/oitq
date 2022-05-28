@@ -1,6 +1,5 @@
 import {Plugin,App, Dict, interpolate, valueMap } from 'oitq'
 import ConfigLoader from '@oitq/loader'
-import ns from 'ns-require'
 
 declare module 'oitq' {
     namespace Plugin {
@@ -16,17 +15,9 @@ export class Loader extends ConfigLoader<App.Config> {
     app: App
     config:App.Config
     cache: Dict<string> = {}
-    envfile: string
-    scope: ns.Scope
 
     constructor() {
         super(process.env.OITQ_CONFIG_FILE)
-        this.scope = ns({
-            namespace: 'oitq',
-            prefix: 'plugin',
-            official: 'oitq',
-            dirname: this.dirname,
-        })
         this.readConfig()
     }
 
@@ -46,21 +37,16 @@ export class Loader extends ConfigLoader<App.Config> {
     destroyPlugin(name: string) {
         return this.app.pluginManager.destroy(name)
     }
-    resolvePlugin(name: string) {
-        try {
-            this.cache[name] ||= this.scope.resolve(name)
-        } catch (err) {
-            this.app.getLogger('loader').error(err.message)
-            return
-        }
-        return ns.unwrapExports(require(this.cache[name]))
-    }
 
     reloadPlugin(name: string) {
-        return this.app.pluginManager.restart(name)
+        const plugin = this.app.pluginManager.plugins.get(name)
+        if (!plugin) return
+        plugin.dispose()
+        const config = this.config.plugins[name]
+        return plugin.install(config)
     }
     unloadPlugin(name: string) {
-        const plugin = this.resolvePlugin(name)
+        const plugin = this.app.pluginManager.plugins.get(name)
         if (!plugin) return
 
         plugin.dispose()

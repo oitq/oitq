@@ -55,10 +55,12 @@ export interface Plugin extends Plugin.Services{
     emit<S extends string|symbol>(name:S & Exclude<S, keyof AppEventMap>,...args:any[]):boolean
 }
 export class Plugin extends EventThrower {
+    static readonly immediate = Symbol('immediate')
     public app:App
     public readonly fullpath: string
     public readonly path: string
     protected hooks: PluginManager.ObjectHook
+    public _using:(keyof Plugin.Services)[]
     public parent:Plugin=null
     public children:Plugin[]=[]
     public disposes:Dispose[]=[]
@@ -71,7 +73,10 @@ export class Plugin extends EventThrower {
         super()
         if (typeof hooks === 'string') {
             this.fullpath = require.resolve(hooks)
+            require(hooks)
             this.path = this.fullpath
+            const mod=require.cache[this.fullpath]
+            this._using=mod.exports.using||(mod.exports.default?mod.exports.default.using||[]:[])||[]
             try{
                 const pkg=require(path.join(hooks,'package.json'))
                 this.pkg={
@@ -291,6 +296,7 @@ export class Plugin extends EventThrower {
             require(this.path)
             const mod = require.cache[this.fullpath]
             this.hooks = mod.exports
+            this._using=mod.exports.using||(mod.exports.default?mod.exports.default.using||[]:[])||[]
         }
         if (typeof this.hooks.install !== "function" && !this.hooks['default']) {
             throw new PluginError(`插件(${this.pkg.name})未导出install方法，无法安装。`)
@@ -301,6 +307,12 @@ export class Plugin extends EventThrower {
         }
         // @ts-ignore
         const res = Plugin.isConstructor(Hook)?new Hook(this,config):Hook(this,config)
+        if(Plugin.isConstructor(Hook)){
+            const name=res[Plugin.immediate]
+            if (name) {
+                this[name] = res
+            }
+        }
         try{
             if (res instanceof Promise)
                 await res
@@ -752,11 +764,14 @@ export abstract class Service {
     protected start(): Awaitable<void> {}
     protected stop(): Awaitable<void> {}
 
-    constructor(protected plugin: Plugin, public name: keyof Plugin.Services) {
+    constructor(protected plugin: Plugin, public name: keyof Plugin.Services,immediate?:boolean) {
         Plugin.service(name)
-        plugin[name] = this as never
+        if (immediate) {
+            this[Plugin.immediate] = name
+        }
         plugin.on('ready', async () => {
             await this.start()
+            plugin[name] = this as never
         })
 
         plugin.on('dispose', async () => {

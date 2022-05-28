@@ -12,7 +12,7 @@ export async function buildExtension(root: string, config: UserConfig = {}) {
             assetsDir: '',
             emptyOutDir: true,
             lib: {
-                entry: root + '/client/index.d.ts',
+                entry: root + '/client/index.ts',
                 fileName: 'index',
                 formats: ['es'],
             },

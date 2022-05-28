@@ -21,7 +21,7 @@ export function install(ctx:Plugin){
     ctx.command('utils/time.day [timeStr]','message')
         .desc('输出指定日期的日（默认当前）')
         .action(({options},timeStr)=>{
-            return moment(timeStr?timeStr:undefined).day()+1+''
+            return moment(timeStr?timeStr:undefined).date()+1+''
         })
     ctx.command('utils/time.days [timeStr]','message')
         .desc('输出指定日期所在月的天数（默认当前）')

@@ -91,7 +91,7 @@ export class Watcher {
         const triggerLocalReload = debounce(this.config.debounce, () => this.triggerLocalReload())
 
         this.watcher.on('change', (path) => {
-            const isEntry = path === loader.filename || path === loader.envfile
+            const isEntry = path === loader.filename
             if (this.suspend && isEntry) {
                 this.suspend = false
                 return

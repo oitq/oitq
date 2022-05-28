@@ -1,4 +1,11 @@
-import {Plugin} from 'oitq'
+import {Plugin,template} from 'oitq'
+template.set('plugins',{
+    plugin:{
+        info:'    插件名:${0}\n  已安装？:${1}\n    已禁用？:${2}\n',
+        detail:'插件名:${0}\n类型:${1}当前版本:${2}\n作者:${3}\n'
+    },
+    list:`相关插件：\n${0}`
+})
 export const name='admin.plugin'
 export function install(ctx:Plugin){
     ctx.command('admin/plugin [name]','message')
@@ -21,8 +28,9 @@ export function install(ctx:Plugin){
             if(actions.length===0)actions.push('list')
             switch (actions[0]){
                 case 'list':
-                    if(name)return JSON.stringify(ctx.app.pluginManager.list(name),null,2)
-                    return JSON.stringify(ctx.app.pluginManager.list(),null,2)
+                    const list=ctx.app.pluginManager.list(name)
+                    if(name)return template('plugins.list',list.map(plugin=>template('plugins.info',plugin.name,plugin.installed,plugin.disabled)).join('\n'))
+                    return template('plugins.list',list.map(plugin=>template('plugins.info',plugin.name,plugin.installed,plugin.disabled)).join('\n'))
                 case 'disable':
                     if(name)await ctx.app.pluginManager.disable(name)
                     else await ctx.app.pluginManager.disableAll(session.bot)

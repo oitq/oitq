@@ -40,9 +40,9 @@ export function install(plugin:Plugin){
     const router=new Router({prefix:config.path})
     const httpServer=createServer(koa.callback()) as HttpServer
     httpServer.port=config.port||8086
-    plugin.httpServer=httpServer
     plugin.koa=koa
     plugin.router=router
+    plugin.httpServer=httpServer
     koa
         .use(async (ctx,next)=>{
         const start = new Date()
