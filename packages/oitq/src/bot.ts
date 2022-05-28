@@ -96,6 +96,12 @@ export class Bot extends Client {
             nickname:this.nickname
         }
     }
+    getCredentials(domain:string){
+        return {
+            cookies:this.cookies[domain],
+            csrf_token:this.getCsrfToken()
+        }
+    }
     getStatus(){
         return {
             online:this.status===11,
