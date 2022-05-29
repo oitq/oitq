@@ -1,6 +1,17 @@
 @use 'sass:color';
 :root {
-
+  .el-tabs__nav-wrap{
+    &::after{
+      display: none;
+    }
+    box-shadow: var(--shadow-bottom);
+    &.is-left{
+      box-shadow: var(--shadow-right);
+    }
+    &.is-right{
+      box-shadow: var(--shadow-left);
+    }
+  }
 }
 
 html.dark {

@@ -1,7 +1,7 @@
 <template>
   <div class="p-bots">
     <el-affix>
-      <el-button type="success">新增</el-button>
+      <el-button type="success" @click="showAdd=true">添加</el-button>
     </el-affix>
     <el-tabs v-model="currentUin" tab-position="left" v-if="hasBot">
       <el-tab-pane v-for="(bot,index) in bots" :name="bot.uin" :key="bot.uin" :label="String(bot.uin)">
@@ -81,16 +81,15 @@
             <el-affix position="bottom" target=".p-bots" :offset="20">
               <div class="form-footer">
                 <el-button type="primary" @click="saveConfig(bot.config)">保存</el-button>
-                <el-button type="success" v-if="bot.status===0" @click="login(bot.config)">上线</el-button>
-                <el-button type="danger" @click="remove(bot.config)">移除</el-button>
+                <el-button type="success" @click="login({},bot.uin,'password')">上线</el-button>
+                <el-button type="danger" @click="remove(bot.uin)">移除</el-button>
               </div>
             </el-affix>
           </el-form-item>
         </el-form>
       </el-tab-pane>
     </el-tabs>
-    <el-empty v-else description="你还未添加机器人">
-      <el-button>添加</el-button>
+    <el-empty v-else description="你还未添加机器人，请点击左上角添加按钮进行添加">
     </el-empty>
     <el-drawer
         v-model="visibleDrawer"
@@ -119,12 +118,20 @@
         <el-button type="primary" @click="saveOicqConfig">保存</el-button>
       </template>
     </el-drawer>
+    <el-dialog width="70%" title="bot配置" v-model="showAdd" style="height: 500px;overflow: auto">
+      <bot v-model="newBot" type="add"></bot>
+      <template #footer>
+        <el-button type="primary" @click="addBot">新增</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import {store} from "@oitq/client";
-
+import {store,send} from "@oitq/client";
+import {baseOneBot, defaultBotConfig} from "./static";
+import Bot from './bot.vue'
+import {deepClone} from "../utils";
 const baseConfigInfo = {
   key: '',
   type: 'text',
@@ -132,33 +139,19 @@ const baseConfigInfo = {
   current: -1,
   isSave: false
 }
-const baseOneBot={
-  use_cqhttp_notice: true,
-  use_http: true,
-  use_ws: true,
-  access_token: "",
-  secret: "",
-  post_timeout: 30,
-  post_message_format: "array",
-  enable_cors: true,
-  event_filter: "",
-  enable_heartbeat: true,
-  heartbeat_interval: 15000,
-  rate_limit_interval: 500,
-  post_url: [],
-  ws_reverse_url: [],
-  ws_reverse_reconnect_interval: 3000,
-}
 export default {
-  name: "index",
+  name: "Bots",
+  components:{Bot},
   data() {
     return {
       currentUin: '',
       visibleDrawer: false,
+      showAdd:false,
       configInfo: {
         ...baseConfigInfo
       },
       newAdmin: '',
+      newBot:deepClone(defaultBotConfig),
       baseOneBot
     }
   },
@@ -174,7 +167,8 @@ export default {
     addAdmin(admins) {
       if (!Boolean(this.newAdmin)) return this.$message.error('请输入管理有账号')
       if (!/[1-9][0-9]{5,11}/.test(this.newAdmin)) return this.$message.error('管理员账号输入错误')
-      admins.push(this.newAdmin)
+      admins.push(Number(this.newAdmin))
+      this.newAdmin=''
     },
     handleClose(done) {
       if (!this.configInfo.isSave) {
@@ -216,16 +210,49 @@ export default {
       }
     },
     saveConfig(config){
-
+      send('manager/bot-update',config)
     },
-    login(config){
-
+    async login(context,uin,type,value){
+      if(type==='password' && !value){
+        const {value:password}=await this.$messageBox.prompt('请输入密码(留空则扫码登录)',{inputType:'password'})
+        context=await send('manager/bot-login',uin,type,password)
+      }else if(type==='qrcode'){
+        context=await send('manager/bot-login',uin,'password')
+      }else{
+        context=await send('manager/bot-login',uin,type,value)
+      }
+      if(!context.success){
+        switch (context.reason){
+          case 'device':{
+            const {value:sms}=await this.$messageBox.prompt(context.message,'设备锁验证')
+            return this.login(context,uin,'sms',sms)
+          }
+          case 'slider':{
+            const {value:ticket}=await this.$messageBox.prompt(context.data,context.message)
+            return this.login(context,uin,'slider',ticket)
+          }
+          case 'qrcode':{
+            await this.$messageBox.confirm(`<img src="${context.data}"/>`,'请扫码后继续',
+                {
+                  dangerouslyUseHTMLString: true,
+                  center:true
+                })
+            return this.login({},uin,'qrcode')
+          }
+          default: {
+            this.$message.error(context.reason)
+          }
+        }
+      }else{
+        this.$message.success(context.message)
+      }
     },
-    add(config){
-
+    addBot(){
+      send('manager/bot-add',{...this.newBot,uin:Number(this.newBot.uin)})
+      this.showAdd=false
     },
-    remove(config){
-
+    remove(uin){
+      send('manager/bot-remove',uin)
     },
     removeAdmin(index, admins) {
       admins.splice(index, 1)
@@ -279,6 +306,10 @@ export default {
     display: flex;
     align-items: center;
     justify-content: flex-start;
+  }
+  .el-dialog__body{
+    height: 50vh;
+    overflow: auto;
   }
 }
 </style>

@@ -27,7 +27,7 @@ export default (ctx:Context)=>{
 
     ctx.addPage({
         path: '/shop',
-        name: '插件市场',
+        name: '市场',
         icon: 'goods',
         order: 620,
         authority: 4,

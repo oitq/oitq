@@ -53,7 +53,7 @@ export default {
 aside.layout-aside {
   z-index: 100;
   background-color: var(--card-bg);
-  box-shadow: var(--card-shadow);
+  box-shadow: var(--shadow-right);
   display: flex;
   flex-direction: column;
   justify-content: space-between;

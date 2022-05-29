@@ -22,7 +22,10 @@ $white: #ffffff;
 
   --menu-fg: var(--fg1);
   --hover-bg: var(--bg2);
-
+  --shadow-right: 0 6px 10px -4px rgb(0 0 0 / 15%);
+  --shadow-bottom:6px 0 10px -4px rgb(0 0 0 / 15%);
+  --shadow-top:-6px 0 10px 4px rgb(0 0 0 / 15%);
+  --shadow-left:0 -6px 10px 4px rgb(0 0 0 / 15%);
   --aside-width: 16rem;
 
   // breakpoints
@@ -30,6 +33,7 @@ $white: #ffffff;
   --bp-medium: 1024px;
   --bp-small: 768px;
   --bp-tiny: 480px;
+  --el-menu-border-color:rgba(122, 120, 135,.4);
 }
 
 html.dark .el-switch {
@@ -52,6 +56,7 @@ html.dark {
   --primary:#409eff;
   --el-text-color-primary:var(--fg2);
   --hover-bg: var(--bg3);
+  --el-menu-border-color:rgba(227, 229, 232,.4);
   color:var(--fg3);
 }
 

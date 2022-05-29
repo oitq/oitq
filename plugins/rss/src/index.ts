@@ -185,7 +185,6 @@ export function install(ctx: Plugin, config: Config) {
                 return '添加订阅成功！'
             }, (error) => {
                 logger.debug(error)
-                console.log(error)
                 return '无法订阅此链接。'
             })
         })

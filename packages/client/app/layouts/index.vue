@@ -116,13 +116,12 @@ html,body{
   }
 }
 .el-aside{
-  border-right:solid 1px var(--el-menu-border-color);
   .el-menu{
     border-right: none;
   }
 }
 .el-header{
-  box-shadow: #1e1e2e;
+  box-shadow: var(--shadow-bottom);
 }
 .el-main{
   padding:12px;

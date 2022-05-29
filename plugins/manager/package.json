@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-manager",
   "description": "Manage your bots and plugins with console",
-  "version": "1.8.1",
+  "version": "0.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "scripts": {

@@ -7,7 +7,22 @@ interface ManagerConfig {
     showInstalled?: boolean
     hideWorkspace?: boolean
 }
-
+export function deepClone<O extends Record<string, any>>(obj:O):O{
+    function shallowClone(obj) {
+        return Object.assign({},obj); // 我们可以使用原生方法 Object.assign 来快速实现浅克隆
+    }
+    const result = shallowClone(obj);
+    Object.entries(result).forEach(
+        ([key,value])=>{
+            if(Array.isArray(value)){
+                result[key]=value.map(deepClone)
+            }else if (typeof value === 'object'){
+                result[key] = deepClone(value);
+            }
+        }
+    );
+    return result;
+}
 export const config = createStorage<ManagerConfig>('manager', 2, () => ({
     override: {},
     showInstalled: false,
@@ -31,7 +46,7 @@ watch(() => store.dependencies, (value) => {
 
 export function addFavorite(name: string) {
     if (config.override[name] || store.packages[name]) return
-    config.override[name] = store.market[name].version
+    config.override[name] = store.shop[name].version
 }
 
 export function removeFavorite(name: string) {
@@ -41,6 +56,6 @@ export function removeFavorite(name: string) {
 export const getMixedMeta = (name: string) => ({
     keywords: [],
     peerDependencies: {},
-    ...store.market[name],
+    ...store.shop[name],
     ...store.packages[name],
 })

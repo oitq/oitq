@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-console",
   "main": "lib/index.js",
-  "version": "0.0.1-1",
+  "version": "0.0.1-2",
   "description": "web console for oitq",
   "scripts": {
     "compile": "tsc --project tsconfig.json",
