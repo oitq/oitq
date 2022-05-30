@@ -57,6 +57,7 @@ export default class Database extends Service {
             Object.entries(this.modelDecl).forEach(([name, decl]) => {
                 this.sequelize.define(name, decl,{timestamps:false})
             })
+            await this.plugin.app.parallel('before-database.sync')
             await this.sequelize.sync({alter: true})
             this.plugin.app.emit('database.ready')
         })
@@ -94,6 +95,7 @@ export default class Database extends Service {
     }
 
     define(name: string, decl: TableDecl) {
+        if(this.modelDecl[name]) return this.extend(name,decl)
         this.modelDecl[name] = decl
         return this
     }

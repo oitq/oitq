@@ -12,14 +12,14 @@ declare module 'oitq'{
 export const using=['database'] as const
 export default class QAManager extends Service{
     constructor(ctx:Plugin) {
-        super(ctx,'qa')
+        super(ctx,'qa',true)
         ctx.app.before('database.ready',()=>{
             ctx.database.define('QA',QA)
         })
     }
     start(){
-        this.plugin.plugin({install:teach,name:'teach'})
-        this.plugin.plugin({install: receiver, name: 'answer'})
+        this.plugin.plugin(teach)
+        this.plugin.plugin(receiver)
     }
     get logger(){
         return this.plugin.getLogger('qa')
