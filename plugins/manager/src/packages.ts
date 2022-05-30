@@ -1,5 +1,5 @@
 import {App, Dict, omit, pick, Plugin, remove } from 'oitq'
-import { DataService } from '@oitq/plugin-console'
+import { DataService } from '@oitq/service-console'
 import { PackageJson } from '@oitq/shop'
 import { promises as fsp } from 'fs'
 import { dirname } from 'path'

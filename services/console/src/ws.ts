@@ -2,7 +2,7 @@ import { App, Awaitable, Plugin, Dict } from 'oitq'
 import { v4 } from 'uuid'
 import {WebSocket,WebSocketServer} from 'ws'
 import { DataService } from './service'
-import {} from '@oitq/plugin-http-server'
+import {} from '@oitq/service-http-server'
 export class SocketHandle {
     readonly app: App
     readonly id: string = v4()

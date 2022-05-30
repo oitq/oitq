@@ -1,5 +1,5 @@
 import { Awaitable, Plugin, Service } from 'oitq'
-import Console from '.'
+import Console from './index'
 
 export namespace DataService {
     export interface Options {

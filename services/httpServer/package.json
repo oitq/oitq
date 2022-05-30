@@ -1,8 +1,8 @@
 {
-  "name": "@oitq/plugin-http-server",
+  "name": "@oitq/service-http-server",
   "main": "lib/index.js",
-  "version": "2.0.2-6",
-  "description": "httpServer plugin",
+  "version": "0.0.1",
+  "description": "httpServer service",
   "scripts": {
     "compile": "tsc --project tsconfig.json",
     "alias": "tsc-alias -p tsconfig.json",
@@ -15,7 +15,7 @@
   },
   "keywords": [
     "httpServer",
-    "plugin",
+    "service",
     "oitq"
   ],
   "files": [
@@ -31,9 +31,11 @@
   "homepage": "https://github.com/oitq/oitq#readme",
   "dependencies": {
     "@koa/router": "^10.1.1",
+    "axios": "^0.27.2",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-static": "^5.0.0",
+    "proxy-agent": "^5.0.0",
     "ws": "^8.4.0"
   },
   "devDependencies": {

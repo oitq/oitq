@@ -2,7 +2,7 @@ import {Plugin} from 'oitq';
 import * as group from './group'
 import * as privatePlugin from './private'
 export const name='admin.bot'
-import {} from '@oitq/plugin-database'
+import {} from '@oitq/service-database'
 export const using=['database'] as const
 export function install(ctx:Plugin){
     ctx.app.on('continue',async (session)=>session.user.ignore)

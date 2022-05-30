@@ -1,4 +1,4 @@
-import { ClientConfig, Console, DataService, Events } from '@oitq/plugin-console'
+import { ClientConfig, Console, DataService, Events } from '@oitq/service-console'
 import { Promisify } from 'oitq'
 import { reactive, ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'

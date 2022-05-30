@@ -30,7 +30,7 @@ npm init -y
 ```
 #### 3.安装oitq所需依赖
 ```shell
-npm install oitq @oitq/plugin-http-server @oitq/plugin-one-bot -S
+npm install oitq @oitq/service-http-server @oitq/service-onebot -S
 ```
 #### 4.启动
 ```shell

@@ -1,5 +1,5 @@
 import {DataTypes} from "sequelize";
-import {TableDecl} from "../";
+import {TableDecl} from "../index";
 export interface User{
     id:number
     user_id:number

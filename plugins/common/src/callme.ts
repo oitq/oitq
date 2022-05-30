@@ -1,5 +1,5 @@
 import {Plugin,template} from "oitq";
-import {} from '@oitq/plugin-database'
+import {} from '@oitq/service-database'
 
 export const name = 'callme'
 export const using = ['database'] as const

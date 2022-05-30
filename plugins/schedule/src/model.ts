@@ -1,6 +1,6 @@
 import {
     DataTypes,
-} from "@oitq/plugin-database";
+} from "@oitq/service-database";
 import {Session} from 'oitq'
 
 export interface Schedule {

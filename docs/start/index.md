@@ -21,13 +21,13 @@ npm install oitq
 
 1.1.安装oitq作为项目依赖
 ```shell
-npm install oitq @oitq/plugin-http-server @oitq/plugin-one-bot -S
+npm install oitq @oitq/service-http-server @oitq/service-onebot -S
 ```
 1.2.在项目中建立index.js,并撰写以下代码到里面
 ```javascript
 const {createApp}=require('oitq')
-const httpServer=require('@oitq/plugin-http-server')
-const oneBot=require('@oitq/plugin-one-bot')
+const httpServer=require('@oitq/service-http-server')
+const oneBot=require('@oitq/service-onebot')
 const app = createApp({logLevel: 'info'})
 app.plugin(httpServer, {port: 8086})
 app.plugin(oneBot)

@@ -6,7 +6,7 @@
   "scripts": {
     "compile": "tsc --project tsconfig.json",
     "alias": "tsc-alias -p tsconfig.json",
-    "build": "npm run compile && npm run alias && ts-node ./build.ts",
+    "build": "npm run compile && npm run alias",
     "pub": "npm publish --access public"
   },
   "bin": {
@@ -35,7 +35,6 @@
   "homepage": "https://github.com/oitq/oitq#readme",
   "dependencies": {
     "@element-plus/icons-vue": "^1.1.4",
-    "@vitejs/plugin-vue": "^2.3.3",
     "@vueuse/core": "^8.5.0",
     "cac": "^6.7.12",
     "element-plus": "^2.2.0",
@@ -43,5 +42,8 @@
     "vite": "^2.9.9",
     "vue": "^3.2.33",
     "vue-router": "^4.0.15"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^2.3.3"
   }
 }

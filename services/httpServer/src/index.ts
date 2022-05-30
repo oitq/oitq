@@ -2,6 +2,7 @@ import {Plugin} from "oitq";
 import Koa from 'koa'
 import {Router} from "./router";
 import {createServer, Server} from "http";
+import {Requester} from "./requester";
 import KoaBodyParser from "koa-bodyparser";
 import {bindApis} from "./api";
 declare module 'oitq'{
@@ -12,6 +13,7 @@ declare module 'oitq'{
         export interface Services{
             koa:Koa
             router:Router
+            axios:Requester
             httpServer:HttpServer
         }
     }
@@ -27,6 +29,7 @@ export interface KoaOptions{
     proxyIpHeader?: string
     maxIpsCount?: number
 }
+export {Requester,Router}
 export interface HttpServerConfig extends KoaOptions{
     host?:string
     path?:string
@@ -41,6 +44,7 @@ export function install(plugin:Plugin){
     const httpServer=createServer(koa.callback()) as HttpServer
     httpServer.port=config.port||8086
     plugin.koa=koa
+    plugin.axios=Requester.create()
     plugin.router=router
     plugin.httpServer=httpServer
     koa
@@ -62,3 +66,4 @@ export function install(plugin:Plugin){
 Plugin.service('httpServer')
 Plugin.service('koa')
 Plugin.service('router')
+Plugin.service('axios')

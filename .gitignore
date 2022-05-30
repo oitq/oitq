@@ -7,3 +7,4 @@
 /test/*.sqlite
 /test/*.json
 /docs/.vitepress/dist/
+/test/data/

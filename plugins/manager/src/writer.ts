@@ -1,7 +1,7 @@
 import { Bot, Plugin } from 'oitq'
 import { Loader } from '@oitq/cli'
 
-declare module '@oitq/plugin-console' {
+declare module '@oitq/service-console' {
     interface Events {
         'manager/app-reload'(config: any): void
         'manager/plugin-reload'(name: string, config: any): void

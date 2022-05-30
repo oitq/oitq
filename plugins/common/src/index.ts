@@ -108,6 +108,7 @@ export function recall(plugin: Plugin, { recall = 10 }: RecallConfig) {
                 if (index && delay) await sleep(delay)
                 try {
                     await session.bot.deleteMsg(removal[index])
+                    return true
                 } catch (error) {
                     plugin.getLogger('bot').warn(error)
                 }

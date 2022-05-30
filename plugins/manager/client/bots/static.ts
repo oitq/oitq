@@ -16,7 +16,7 @@ export const baseOneBot={
     ws_reverse_reconnect_interval: 3000,
 }
 export const defaultBotConfig={
-    uin:0,
+    uin:'',
     admins:[],
     master:1659488338,
     oneBot:true,

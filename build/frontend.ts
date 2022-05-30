@@ -14,7 +14,7 @@ function findModulePath(id: string) {
     return path.slice(0, path.indexOf(keyword)) + keyword.slice(0, -1)
 }
 
-const dist = cwd + '/plugins/services/console/dist'
+const dist = cwd + '/services/console/dist'
 
 export async function build(root: string, config: vite.UserConfig = {}) {
     const { rollupOptions = {} } = config.build || {}
@@ -22,7 +22,7 @@ export async function build(root: string, config: vite.UserConfig = {}) {
     return vite.build({
         root,
         build: {
-            outDir: cwd + '/plugins/services/console/dist',
+            outDir: cwd + '/services/console/dist',
             emptyOutDir: true,
             cssCodeSplit: false,
             ...config.build,

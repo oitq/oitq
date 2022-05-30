@@ -1,5 +1,5 @@
 import {Plugin, NSession,MsgChannelId} from 'oitq'
-import {DataTypes,TableDecl} from "@oitq/plugin-database";
+import {DataTypes,TableDecl} from "@oitq/service-database";
 import RssFeedEmitter from 'rss-feed-emitter'
 
 export const name = 'rss'

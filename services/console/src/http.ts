@@ -5,7 +5,7 @@ import {createServer} from "vite";
 import vuePlugin from "@vitejs/plugin-vue";
 import { DataService } from './service'
 import { ViteDevServer } from 'vite'
-import {} from '@oitq/plugin-http-server'
+import {} from '@oitq/service-http-server'
 import koaConnect from 'koa-connect'
 import open from 'open'
 

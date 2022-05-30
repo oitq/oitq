@@ -2,7 +2,7 @@
   <div class="c-bot">
     <el-form :model="innerValue" style="margin: 0 28px">
       <el-form-item prop="uin" label="账号">
-        <el-input type="number" v-model="innerValue.uin"/>
+        <el-input v-model="innerValue.uin"/>
       </el-form-item>
       <el-form-item prop="config" label="配置文件">
         <el-form :model="innerValue" label-width="80px" class="sub-form">
@@ -125,14 +125,6 @@ export default {
       deep:true,
       handler(value){
         this.innerValue=deepClone(value)
-      }
-    },
-    innerValue:{
-      deep:true,
-      handler(value){
-        this.$emit('input',value)
-        this.$emit('change',value)
-        this.$emit('update:modelValue',value)
       }
     }
   },

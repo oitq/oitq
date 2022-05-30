@@ -1,9 +1,8 @@
 import * as path from "path";
-import * as os from "os";
 import {App} from "./app";
 import {Bot} from "./bot";
 
-export const dir = path.join(os.homedir(), ".oitq")
+export const dir = process.cwd()
 export const defaultAppConfig:App.Config={
     bots:[],
     maxListeners:50,

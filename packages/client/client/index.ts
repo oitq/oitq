@@ -1,4 +1,4 @@
-import { Console } from '@oitq/plugin-console'
+import { Console } from '@oitq/service-console'
 import { Dict } from 'oitq'
 import { App, Component, defineComponent, h, markRaw, reactive, ref, Ref, resolveComponent, watch } from 'vue'
 import {createRouter, createWebHistory, RouteRecordNormalized, START_LOCATION} from 'vue-router'

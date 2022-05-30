@@ -1,4 +1,3 @@
-import {Client} from 'oicq'
 import * as fs from 'fs'
 import http from "http"
 import https from "https"
@@ -17,7 +16,7 @@ interface OneBotProtocol {
     echo?: any
 }
 
-import '@oitq/plugin-http-server'
+import {} from '@oitq/service-http-server'
 
 const clone = rfdc()
 

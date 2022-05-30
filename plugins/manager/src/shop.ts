@@ -1,6 +1,6 @@
 import { Plugin, Dict, pick } from 'oitq'
-import {Requester} from "@oitq/plugin-utils";
-import { DataService } from '@oitq/plugin-console'
+import {Requester} from "@oitq/service-http-server";
+import { DataService } from '@oitq/service-console'
 import scan, {AnalyzedPackage, PackageJson, Registry, RemotePackage} from '@oitq/shop'
 import which from 'which-pm-runs'
 import spawn from 'cross-spawn'

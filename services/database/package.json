@@ -1,8 +1,11 @@
 {
-  "name": "@oitq/plugin-one-bot",
+  "name": "@oitq/services-database",
   "main": "lib/index.js",
-  "version": "2.0.2-5",
-  "description": "oneBot plugin",
+  "version": "2.0.1-3",
+  "description": "database service",
+  "devDependencies": {
+    "querystring": "^0.2.1"
+  },
   "scripts": {
     "compile": "tsc --project tsconfig.json",
     "alias": "tsc-alias -p tsconfig.json",
@@ -14,8 +17,8 @@
     "url": "git+https://github.com/oitq/oitq.git"
   },
   "keywords": [
-    "oneBot",
-    "plugin",
+    "database",
+    "service",
     "oitq"
   ],
   "files": [
@@ -30,10 +33,6 @@
   },
   "homepage": "https://github.com/oitq/oitq#readme",
   "dependencies": {
-    "rfdc": "^1.3.0",
-    "ws": "^8.6.0"
-  },
-  "devDependencies": {
-    "@types/ws": "^8.5.3"
+    "sequelize": "^6.20.0"
   }
 }

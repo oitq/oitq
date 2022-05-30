@@ -1,6 +1,6 @@
 import { Plugin } from 'oitq'
 import { resolve } from 'path'
-import {} from '@oitq/plugin-console'
+import {} from '@oitq/service-console'
 import BotProvider from "./bots";
 import Installer from "./installer";
 import PackageProvider from "./packages";
@@ -33,7 +33,7 @@ export function install(plugin: Plugin,config:Config={}) {
     plugin.plugin(ShopProvider,config)
     plugin.plugin(ConfigWriter)
 }
-declare module '@oitq/plugin-console' {
+declare module '@oitq/service-console' {
     namespace Console {
         interface Services {
             dependencies:Installer

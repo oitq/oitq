@@ -1,5 +1,5 @@
 import {Command, Plugin} from 'oitq'
-import {} from '@oitq/plugin-database'
+import {} from '@oitq/service-database'
 import {ChannelId, NSession} from "oitq/lib";
 
 export const using = ['database'] as const

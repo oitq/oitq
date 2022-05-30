@@ -1,22 +1,12 @@
 import {Plugin} from "oitq";
-import {Requester} from "./requester";
 import {toCqcode} from "@oitq/utils";
 import {segment} from "oicq";
 import path from "path";
+import {} from '@oitq/service-http-server'
 import fs from "fs";
-export interface RequestConfig extends Requester.Config{
-}
-export {Requester}
-declare module 'oitq'{
-    namespace Plugin{
-        interface Services{
-            axios:Requester
-        }
-    }
-}
 export const name='request'
-export function install(ctx:Plugin,config:RequestConfig){
-    ctx.axios=Requester.create(config)
+export const using=['httpServer'] as const
+export function install(ctx:Plugin){
     ctx.command('utils/axios.get <url>','message')
         .desc('发起get请求')
         .option('callback','-c <callback:function> 回调函数')
@@ -74,4 +64,3 @@ export function install(ctx:Plugin,config:RequestConfig){
         })
 
 }
-Plugin.service('axios')

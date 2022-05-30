@@ -1,5 +1,5 @@
 {
-  "name": "@oitq/plugin-console",
+  "name": "@oitq/service-console",
   "main": "lib/index.js",
   "version": "0.0.1-2",
   "description": "web console for oitq",
@@ -14,15 +14,15 @@
     "url": "git+https://github.com/oitq/oitq.git"
   },
   "keywords": [
-    "farm",
-    "plugin",
+    "console",
+    "service",
     "oitq"
   ],
   "files": [
     "lib/**/*.js",
     "lib/**/*.d.ts",
     "lib/**/LICENSE",
-    "../../../packages/client/global.d.ts",
+    "../../packages/client/global.d.ts",
     "dist/**/*"
   ],
   "author": "凉菜 <admin@liucl.cn>",
@@ -32,10 +32,12 @@
   },
   "homepage": "https://github.com/oitq/oitq#readme",
   "dependencies": {
-    "@vitejs/plugin-vue": "^2.3.3",
     "koa-connect": "^2.1.0",
     "open": "^8.4.0",
-    "uuid": "^8.3.2",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^2.3.3",
     "vite": "^2.9.9"
   }
 }

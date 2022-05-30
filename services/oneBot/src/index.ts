@@ -2,7 +2,7 @@ import {Plugin,Bot} from "oitq";
 import { merge} from "@oitq/utils";
 import {OneBot} from "./onebot";
 import {OneBotConfig,defaultOneBotConfig} from "./config";
-import {} from '@oitq/plugin-http-server'
+import {} from '@oitq/service-http-server'
 declare module 'oitq'{
     interface Bot{
         oneBot?:OneBot

@@ -120,8 +120,8 @@
     </el-drawer>
     <el-dialog width="70%" title="bot配置" v-model="showAdd" style="height: 500px;overflow: auto">
       <bot v-model="newBot" type="add"></bot>
-      <template #footer>
-        <el-button type="primary" @click="addBot">新增</el-button>
+      <template #footer scope="{bot}">
+        <el-button type="primary" @click="addBot(bot)">新增</el-button>
       </template>
     </el-dialog>
   </div>
@@ -247,8 +247,8 @@ export default {
         this.$message.success(context.message)
       }
     },
-    addBot(){
-      send('manager/bot-add',{...this.newBot,uin:Number(this.newBot.uin)})
+    addBot(bot){
+      send('manager/bot-add',{...bot,uin:Number(bot.uin)})
       this.showAdd=false
     },
     remove(uin){

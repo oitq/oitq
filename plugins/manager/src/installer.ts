@@ -1,5 +1,5 @@
 import { Plugin, defineProperty, Dict } from 'oitq'
-import { DataService } from '@oitq/plugin-console'
+import { DataService } from '@oitq/service-console'
 import { PackageJson } from '@oitq/shop'
 import { resolve } from 'path'
 import { promises as fsp } from 'fs'
@@ -8,7 +8,7 @@ import {} from '@oitq/cli'
 import which from 'which-pm-runs'
 import spawn from 'cross-spawn'
 
-declare module '@oitq/plugin-console' {
+declare module '@oitq/service-console' {
     interface Events {
         'market/install'(deps: Dict<string>): Promise<number>
         'market/patch'(name: string, version: string): void

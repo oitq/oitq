@@ -15,8 +15,8 @@ const plugins=[
     'plugins/rss',
     'plugins/sandbox',
     'plugins/schedule',
-    'plugins/services/console',
-    'plugins/services/database',
-    'plugins/services/httpServer',
-    'plugins/services/oneBot',
+    'services/console',
+    'services/database',
+    'services/httpServer',
+    'services/oneBot',
 ]

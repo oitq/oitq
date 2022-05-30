@@ -1,4 +1,4 @@
-import {DataTypes} from "@oitq/plugin-database";
+import {DataTypes} from "@oitq/service-database";
 export const QA={
     question:DataTypes.TEXT,
     answer:DataTypes.TEXT,

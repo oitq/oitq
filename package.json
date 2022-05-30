@@ -20,7 +20,7 @@
     "packages/*",
     "plugins/*",
     "plugins/games/*",
-    "plugins/services/*",
+    "services/*",
     "test",
     "docs"
   ],

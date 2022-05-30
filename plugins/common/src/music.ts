@@ -3,7 +3,7 @@ import {Plugin} from "oitq";
 import lodash from "lodash";
 import querystring from "querystring";
 import {MusicPlatform} from "oicq";
-import {} from '@oitq/plugin-utils'
+import {} from '@oitq/service-http-server'
 export const name = 'music'
 export const using=['axios'] as const
 const m_ERR_CODE = Object.freeze({
