@@ -140,7 +140,11 @@ export class Watcher {
             if (name.startsWith('~')) continue
             if (deepEqual(oldPlugins[name], newPlugins[name])) continue
             if (name in newPlugins) {
-                loader.reloadPlugin(name)
+                if(name in oldPlugins){
+                    loader.reloadPlugin(name)
+                }else{
+                    loader.loadPlugin(name,newPlugins[name])
+                }
             } else {
                 loader.destroyPlugin(name)
             }

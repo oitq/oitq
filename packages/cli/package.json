@@ -40,7 +40,7 @@
     "index.d.ts"
   ],
   "author": "凉菜 <admin@liucl.cn>",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
   },

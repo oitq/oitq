@@ -9,6 +9,7 @@ import {Middleware,ChannelId,MsgChannelId} from "./types";
 import {Command} from "./command";
 export class App extends Plugin{
     public app=this
+    public parent=this
     middlewares: Middleware[] = []
     _commands:Map<string,Command>=new Map<string, Command>()
     public commandList:Command[]=[]
@@ -16,7 +17,7 @@ export class App extends Plugin{
         super({install(){},name:'app'});
         this.logger=this.getLogger('app')
         this.bots=new BotList(this)
-        this.pluginManager=new PluginManager(this,this.config.plugin_dir)
+        this.pluginManager=new PluginManager(this)
     }
 
     async broadcast(msgChannelIds:MsgChannelId|MsgChannelId[],msg:Sendable){
@@ -33,7 +34,7 @@ export class App extends Plugin{
         return this.bots.remove(uin)
     }
     async start(){
-        await this.pluginManager.init(this.config.plugins)
+        await this.pluginManager.init()
         await this.parallel('before-start')
         if(this.config.bots){
             for(const config of this.config.bots){
@@ -50,7 +51,6 @@ export class App extends Plugin{
 export namespace App{
     export interface Config extends PluginManager.Config{
         bots?:Bot.Config[]
-        plugins?:Record<string, any>
         delay?:Dict<number>
         token?:string
         logLevel?:LogLevel

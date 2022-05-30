@@ -7,7 +7,7 @@
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "build": "npm run build -workspaces",
-    "build:base": "npm run build -w @oitq/utis -w @oitq/loader -w oitq -w @oitq/cli",
+    "build:base": "npm run build -w @oitq/utils -w @oitq/loader -w oitq -w @oitq/cli",
     "build:fe": "ts-node ./build/frontend.ts",
     "dev": "npm run dev -w test",
     "start": "npm start -w test",

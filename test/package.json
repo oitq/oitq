@@ -24,13 +24,12 @@
     "oitq"
   ],
   "author": "凉菜 <admin@liucl.cn>",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
   },
   "homepage": "https://github.com/oitq/oitq#readme",
   "dependencies": {
-    "sqlite3": "^5.0.8",
-    "@oitq/cli": "latest"
+    "sqlite3": "^5.0.8"
   }
 }

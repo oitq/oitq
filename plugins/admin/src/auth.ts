@@ -3,7 +3,7 @@ import {} from '@oitq/service-database'
 import {ChannelId, NSession} from "oitq/lib";
 
 export const using = ['database'] as const
-export const name='admin/auth'
+export const name='admin.auth'
 export function install(plugin: Plugin) {
     const checkAuth = (command:Command) => {
         command.check(({session}) => {
@@ -42,7 +42,6 @@ export function install(plugin: Plugin) {
     }
     plugin.command('apply <level:integer>','message')
         .desc('申请权限，可申请(1-6)')
-        .desc('申请权限')
         .check((_,level)=>level>6||level<1?'仅允许申请1-6的等级':false)
         .action(async ({session,options},level)=>{
             if(session.user.authority===level) return `未发生改变`

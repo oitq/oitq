@@ -198,12 +198,17 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
         if(action.error){
             return action.error
         }
+        let result
+        try{
+            result=await this.plugin.bail('before-command',action)
+        }catch {}
+        if(result) return result
         for(const callback of this.checkers){
-            const result=await callback.call(this,action,...action.args)
+            result=await callback.call(this,action,...action.args)
             if(result)return result
         }
         for(const callback of this.actions){
-            const result=await callback.call(this,action,...action.args)
+            result=await callback.call(this,action,...action.args)
             if(result)return result
         }
     }

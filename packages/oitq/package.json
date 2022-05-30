@@ -3,10 +3,9 @@
   "main": "lib/index.js",
   "typings": "lib/node.d.ts",
   "version": "2.0.4-17",
-  "description": "oitq framework for oicq dev",
+  "description": "oitq framework for oicq",
   "dependencies": {
     "oicq": "^2.2.1",
-    "@oitq/utils": "latest",
     "oicq2-cq-enable": "^1.0.3"
   },
   "scripts": {
@@ -29,7 +28,7 @@
     "oitq"
   ],
   "author": "凉菜 <admin@liucl.cn>",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
   },

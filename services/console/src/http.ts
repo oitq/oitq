@@ -17,19 +17,20 @@ export interface Entry {
 class HttpService extends DataService<string[]> {
     private vite: ViteDevServer
     private data: Dict<string> = {}
+    root:string
     private isStarted:boolean=false
 
     constructor(plugin: Plugin, private config: HttpService.Config) {
         super(plugin, 'http')
 
-        config.root ||= config.devMode
+        this.root=config.root?config.root: config.devMode
             ? resolve(dirname(require.resolve('@oitq/client/package.json')), 'app')
             : resolve(__dirname, '../dist')
     }
 
     async start() {
         if(this.isStarted)return
-        if (!this.config.root) return
+        if (!this.root) return
         if (this.config.devMode) await this.createVite()
         this.serveAssets()
         if (this.config.open) {
@@ -75,8 +76,8 @@ class HttpService extends DataService<string[]> {
     }
 
     private serveAssets() {
-        const { uiPath, root } = this.config
-
+        const { uiPath } = this.config
+        const {root}=this
         this.plugin.router.get(uiPath + '(/.+)*', async (ctx, next) => {
             // add trailing slash and redirect
             if (ctx.path === uiPath && !uiPath.endsWith('/')) {
@@ -117,7 +118,7 @@ class HttpService extends DataService<string[]> {
     }
 
     private async createVite() {
-        const { root } = this.config
+        const { root } = this
         this.vite = await createServer({
             root,
             base:'/vite/',
@@ -140,7 +141,7 @@ class HttpService extends DataService<string[]> {
             },
             build: {
                 rollupOptions: {
-                    input: this.config.root + '/index.html',
+                    input: this.root + '/index.html',
                 },
             },
         })

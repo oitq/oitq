@@ -15,9 +15,6 @@ export const defaultAppConfig:App.Config={
 
 export const defaultBotConfig:Bot.Config={
     admins:[],
+    config:{},
     master:1659488338,
-    config:{
-        platform:5,
-        data_dir:path.join(dir,'data')
-    }
 }

@@ -58,14 +58,6 @@
           </el-form-item>
         </el-form>
       </el-form-item>
-      <el-form-item>
-        <el-affix position="bottom" target=".p-bots" :offset="20">
-          <div class="form-footer">
-            <slot name="footer" :bot="innerValue">
-            </slot>
-          </div>
-        </el-affix>
-      </el-form-item>
     </el-form>
     <el-drawer
         v-model="visibleDrawer"
@@ -94,6 +86,12 @@
         <el-button type="primary" @click="saveOicqConfig">保存</el-button>
       </template>
     </el-drawer>
+    <el-affix position="bottom" :offset="20">
+      <div class="form-footer">
+        <slot name="footer" :bot="innerValue">
+        </slot>
+      </div>
+    </el-affix>
   </div>
 </template>
 

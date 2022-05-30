@@ -1,7 +1,10 @@
 /package-lock.json
 /packages/**/*/lib
+/packages/**/*/dist
 /plugins/**/*/lib
 /plugins/**/*/dist
+/services/**/*/lib
+/services/**/*/dist
 /**/*/node_modules
 /.idea
 /test/*.sqlite

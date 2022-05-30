@@ -162,7 +162,7 @@ export function basic(plugin: Plugin, config: BasicConfig = {feedback:[]}) {
     function noTimeout(feedback:BasicConfig['feedback']){
         return typeof feedback==='number'||Array.isArray(feedback)
     }
-    const operators = makeArray(noTimeout(config.feedback)?config.feedback:config.feedback['operator']).map(op=>Number(op))
+    const operators = makeArray(noTimeout(config.feedback)?config.feedback:config?.feedback['operator']).map(op=>Number(op))
     if (operators.length) plugin.plugin(feedback, {operators,timeout:noTimeout(config.feedback)?plugin.app.config.delay.prompt:config.feedback['timeout']})
 
     const respondents = makeArray(config.respondent).filter(Boolean)
@@ -196,7 +196,7 @@ export function install(plugin:Plugin,config:Config){
     plugin.command('common/segment/poke','message')
         .desc('发送戳一戳【随机一中类型】')
         .action((_,qq)=>segment.poke(parseInt((Math.random()*7).toFixed(0))))
-    plugin.plugin(basic,{...config,name:'basic'} as Config)
+    plugin.plugin(basic,config)
     plugin.plugin(callme)
     plugin.plugin(music)
 }

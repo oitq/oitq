@@ -25,6 +25,10 @@ export function merge(head, base) {
     });
     return head;
 }
+export function unwrapExports(module:any){
+    const {default:Default,...other}=module
+    return Default?Object.assign(Default,other):module
+}
 export function remove<T>(list: T[], item: T) {
     const index = list.indexOf(item)
     if (index >= 0) {

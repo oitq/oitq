@@ -143,7 +143,7 @@ export namespace Bot{
 
     export interface Config {
         uin?: number
-        config: ClientConfig,
+        config?: ClientConfig,
         nickname?: string | string[]
         master?: number // 当前机器人主人
         admins?: number[] // 当前机器人管理员
@@ -177,7 +177,7 @@ export class BotList extends Array<Bot> {
         return remove(this,bot)
     }
     destroy(bot:Bot){
-        bot.logout(false)
+        if(bot.isOnline())bot.logout()
         return this
     }
 

@@ -39,4 +39,8 @@ export interface AppEventMap extends BotEventMap,ServiceEventMap{
     'plugin-enable'(plugin: Plugin): void
     'plugin-disable'(plugin: Plugin): void
     'plugin-remove'(plugin: Plugin): void
+    'service-add'(plugin: Plugin): void
+    'service-enable'(plugin: Plugin): void
+    'service-disable'(plugin: Plugin): void
+    'service-remove'(plugin: Plugin): void
 }

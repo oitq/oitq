@@ -33,7 +33,9 @@ export class Loader extends ConfigLoader<App.Config> {
         }
     }
 
-
+    loadPlugin(name:string,config?:any){
+        return this.app.plugin(name,config)
+    }
     destroyPlugin(name: string) {
         return this.app.pluginManager.destroy(name)
     }

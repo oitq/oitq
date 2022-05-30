@@ -7,6 +7,8 @@ import fs from "fs";
 export const name='request'
 export const using=['httpServer'] as const
 export function install(ctx:Plugin){
+    ctx.command('utils/axios','message')
+        .desc('请求工具')
     ctx.command('utils/axios.get <url>','message')
         .desc('发起get请求')
         .option('callback','-c <callback:function> 回调函数')

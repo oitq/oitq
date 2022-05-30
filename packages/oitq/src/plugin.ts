@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import {getLogger} from 'log4js'
 import {App, Bot, BotList, Middleware, NSession} from "./index";
 import {AppEventMap,BeforeEventMap,Dispose} from './types'
-import {Awaitable, createIfNotExist, readConfig, remove, writeConfig} from "@oitq/utils";
+import {Awaitable, createIfNotExist, readConfig, remove, writeConfig,unwrapExports} from "@oitq/utils";
 import {Command} from "./command";
 import {Action} from "./argv";
 import {EventMap, Sendable} from "oicq";
@@ -59,8 +59,8 @@ export class Plugin extends EventThrower {
     public app:App
     public readonly fullpath: string
     public readonly path: string
-    protected hooks: PluginManager.ObjectHook
-    public _using:(keyof Plugin.Services)[]
+    protected hooks: PluginManager.ObjectHook|PluginManager.ServiceHook
+    public _using:readonly (keyof Plugin.Services)[]
     public parent:Plugin=null
     public children:Plugin[]=[]
     public disposes:Dispose[]=[]
@@ -69,14 +69,14 @@ export class Plugin extends EventThrower {
     config
     pkg:Partial<PkgInfo>={}
     public pluginManager:PluginManager
-    constructor(hooks: string | PluginManager.ObjectHook) {
+    constructor(hooks: string | PluginManager.ObjectHook|PluginManager.ServiceHook,public type:'plugin'|'service'='plugin') {
         super()
         if (typeof hooks === 'string') {
             this.fullpath = require.resolve(hooks)
             require(hooks)
-            this.path = this.fullpath
-            const mod=require.cache[this.fullpath]
-            this._using=mod.exports.using||(mod.exports.default?mod.exports.default.using||[]:[])||[]
+            const mod=unwrapExports(require.cache[this.fullpath].exports)
+            this.path=this.fullpath
+            this._using=mod.using||[]
             try{
                 const pkg=require(path.join(hooks,'package.json'))
                 this.pkg={
@@ -95,8 +95,8 @@ export class Plugin extends EventThrower {
             this.dispatch(`bot.${session.event_name as keyof EventMap}`,session)
         })
         this.on('attach',session => {this.dispatch('attach',session)})
-        this.on('plugin-add',plugin=>{this.children.push(plugin)})
-        this.on('plugin-remove',(plugin)=>remove(this.children,plugin))
+        this.on(`${type}-add`,plugin=>{this.children.push(plugin)})
+        this.on(`${type}-remove`,(plugin)=>remove(this.children,plugin))
     }
     // 添加插件中事件监听的销毁
     on(name,listener,prepend){
@@ -109,8 +109,8 @@ export class Plugin extends EventThrower {
         this.disposes.push(dispose)
         return dispose
     }
-    getLogger(name: string) {
-        const logger=getLogger(name)
+    getLogger(category: string) {
+        const logger=getLogger(category)
         logger.level=process.env.OITQ_LOG_LEVEL||this.app.config.logLevel||'off'
         return logger
     }
@@ -178,6 +178,36 @@ export class Plugin extends EventThrower {
         plugin.install(config)
         return this
     }
+    static validate(config: any) {
+        if (config === false) return
+        if (config === true) config = undefined
+        return config
+    }
+    service(name:string,config?:any):this
+    service<T extends PluginManager.ServiceHook>(service:T,config?:PluginManager.Option<T>):this
+    service(entry:string|PluginManager.ServiceHook,config:any):this{
+        let plugin:Plugin
+        if(typeof entry==='string') plugin=this.app.pluginManager.import(entry,'service')
+        else plugin=new Plugin(entry,'service')
+        plugin.parent=this
+        plugin.app=this.app
+        const using = plugin['_using'] || []
+        plugin.logger=this.getLogger(`[service:${plugin.pkg.name}]`)
+        if (using.length) {
+            this.app.on('service.load', async (name) => {
+                if (!using.includes(name)) return
+                await callback()
+            })
+        }
+        const callback = async () => {
+            if (using.some(n => !this[n])) return
+            await this.app.pluginManager.install(plugin,Plugin.validate(config)).catch(e=>{
+                this.logger.warn(`安装${plugin.pkg.name}时遇到错误，错误信息：${e.message}:${e.stack}`)
+            })
+        }
+        callback()
+        return this
+    }
     // 定义子插件
     plugin(name:string,config?:any):this
     plugin<T extends PluginManager.PluginHook>(plugin:T,config?:PluginManager.Option<T>):this
@@ -200,7 +230,7 @@ export class Plugin extends EventThrower {
         }
         const callback = async () => {
             if (using.some(n => !this[n])) return
-            await this.app.pluginManager.install(plugin,config).catch(e=>{
+            await this.app.pluginManager.install(plugin,Plugin.validate(config)).catch(e=>{
                 this.logger.warn(`安装${plugin.pkg.name}时遇到错误，错误信息：${e.message}:${e.stack}`)
             })
         }
@@ -212,45 +242,31 @@ export class Plugin extends EventThrower {
         const decl = def.slice(namePath.length)
         const segments = namePath.split(/(?=[./])/g)
 
-        let parent: Command, root: Command
-        segments.forEach((segment, index) => {
+        let parent: Command, nameArr=[]
+        while (segments.length){
+            const segment=segments.shift()
             const code = segment.charCodeAt(0)
-            const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
-            let command = this.app.commandList.find(command=>command.name==name)
-            if (command) {
-                if (parent) {
-                    if (command === parent) {
-                        throw new Error(`cannot set a command (${command.name}) as its own subcommand`)
-                    }
-                    if (command.parent) {
-                        if (command.parent !== parent) {
-                            throw new Error(`cannot create subcommand ${path}: ${command.parent.name}/${command.name} alconnect exists`)
-                        }
-                    } else {
-                        command.parent = parent
-                        parent.children.push(command)
-                    }
-                }
-                return parent = command
-            }
-            command = new Command(name+decl,this,triggerEvent)
-            this.app._commands.set(name,command)
-            this.app.commandList.push(command)
-            this.disposes.push(()=>{
-                remove(this.app.commandList,command)
-                this.app._commands.delete(name)
-                this.app.emit('command-remove',command)
-                return true
-            })
-            this.app.emit('command-add',command)
-            if (!root) root = command
-            if (parent) {
-                command.parent = parent
-                parent.children.push(command)
-            }
-            parent = command
+            const tempName = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
+            nameArr.push(tempName)
+            if(segments.length)parent=this.app.commandList.find(cmd=>cmd.name===tempName)
+            if(!parent && segments.length) throw Error(`cannot find parent command:${nameArr.join('.')}`)
+        }
+        const name=nameArr.pop()
+        const command = new Command(name+decl,this,triggerEvent)
+        if(parent){
+            command.parent=parent
+            parent.children.push(command)
+        }
+        this.app._commands.set(name,command)
+        this.app.commandList.push(command)
+        this.disposes.push(()=>{
+            remove(this.app.commandList,command)
+            this.app._commands.delete(name)
+            this.app.emit('command-remove',command)
+            return true
         })
-        return Object.create(parent)
+        this.app.emit('command-add',command)
+        return Object.create(command)
     }
     async execute(session:NSession,content=session.cqCode||''):Promise<boolean|Sendable|void> {
         const argv = Action.parse(content)
@@ -259,6 +275,7 @@ export class Plugin extends EventThrower {
         const command=this.findCommand(argv)
         if(command){
             let result
+            if (result) return result
             try{
                 result = await command.execute(argv)
             }catch (e){
@@ -294,16 +311,15 @@ export class Plugin extends EventThrower {
         else config=this.config
         if (this.path) {
             require(this.path)
-            const mod = require.cache[this.fullpath]
-            this.hooks = mod.exports
-            this._using=mod.exports.using||(mod.exports.default?mod.exports.default.using||[]:[])||[]
+            this.hooks = unwrapExports(require.cache[this.fullpath].exports)
+            this._using=this.hooks.using||[]
         }
-        if (typeof this.hooks.install !== "function" && !this.hooks['default']) {
+        if (typeof this.hooks['install'] !== "function" && typeof this.hooks !== "function") {
             throw new PluginError(`插件(${this.pkg.name})未导出install方法，无法安装。`)
         }
-        let Hook:PluginManager.ConstructorHook|PluginManager.FunctionHook=this.hooks.install
-        if(!Hook && this.hooks['default']){
-            Hook=this.hooks['default']
+        let Hook:PluginManager.ConstructorHook|PluginManager.FunctionHook=this.hooks['install']
+        if(!Hook){
+            Hook=this.hooks as PluginManager.ConstructorHook
         }
         // @ts-ignore
         const res = Plugin.isConstructor(Hook)?new Hook(this,config):Hook(this,config)
@@ -320,49 +336,53 @@ export class Plugin extends EventThrower {
         }catch (e){
             throw new PluginError(e.message)
         }
-        this.parent?.emit('plugin-add',this)
-        this.logger.info(`已安装插件(${this.pkg.name})${this.disableStatus!==true?',默认启用':''}`)
-        return `已安装插件(${this.pkg.name})${this.disableStatus!==true?',默认启用':''}`
+        this.parent.emit(`${this.type}-add`,this)
+        this.log(`已安装${this.type}(${this.pkg.name})${this.disableStatus!==true && this.type==='plugin'?',默认启用':''}`)
+        return `已安装${this.type}(${this.pkg.name})${this.disableStatus!==true && this.type==='plugin'?',默认启用':''}`
+    }
+    private log(str:string,force?:boolean){
+        if(this.parent===this.app || force){
+            this.parent.logger.info(str)
+        }
     }
     async enable(bot: Bot=null) {
         if(!bot && this.disableStatus){
             this.disableStatus=false
-            this.parent?.emit('plugin-enable',this)
-            this.logger.info(`已启用插件${this.pkg.name}`)
-            return `已启用插件${this.pkg.name}`
+            this.parent.emit(`${this.type}-enable`,this)
+            this.log(`已启用${this.type}${this.pkg.name}`)
+            return `已启用${this.type}${this.pkg.name}`
         }
         if(this.disableStatus){
-            throw new PluginError(`重复启用插件(${this.pkg.name})`)
+            throw new PluginError(`重复启用${this.type}(${this.pkg.name})`)
         }
         if (this.binds.has(bot)) {
-            throw new PluginError(`这个机器人实例已经启用了插件(${this.pkg.name})`)
+            throw new PluginError(`这个机器人实例已经启用了${this.type}(${this.pkg.name})`)
         }
         await this._editBotPluginCache(bot, "add")
         this.binds.add(bot)
-        this.parent?.emit('plugin-enable',this)
-        this.logger.info(`已对Bot(${bot.uin})启用插件(${this.pkg.name})`)
-        return `已对Bot(${bot.uin})启用插件(${this.pkg.name})`
+        this.parent.emit(`${this.type}-enable`,this)
+        this.log(`已对Bot(${bot.uin})启用${this.type}(${this.pkg.name})`)
+        return `已对Bot(${bot.uin})启用${this.type}(${this.pkg.name})`
     }
 
     async disable(bot: Bot=null) {
         if(!bot && !this.disableStatus){
             this.disableStatus=true
-            this.parent?.emit('plugin-disable',this)
-            return `已禁用插件${this.pkg.name}`
+            this.parent.emit(`${this.type}-disable`,this)
+            return `已禁用${this.type}${this.pkg.name}`
         }
         if(this.disableStatus){
             this.logger.info(`重复禁用`)
             return
         }
         if (!this.binds.has(bot)) {
-            throw new PluginError(`这个机器人实例尚未启用插件(${this.pkg.name})`)
+            throw new PluginError(`这个机器人实例尚未启用${this.type}(${this.pkg.name})`)
         }
         await this._editBotPluginCache(bot, "delete")
         this.binds.delete(bot)
-        this.logger.info(`成功对机器人${bot.uin}禁用`)
-        this.parent?.emit('plugin-disable',this)
-        this.logger.info(`已对Bot(${bot.uin})禁用插件(${this.pkg.name})`)
-        return `已对Bot(${bot.uin})禁用插件(${this.pkg.name})`
+        this.parent.emit(`${this.type}-disable`,this)
+        this.log(`已对Bot(${bot.uin})禁用${this.type}(${this.pkg.name})`)
+        return `已对Bot(${bot.uin})禁用${this.type}(${this.pkg.name})`
     }
 
     destroy(plugin:Plugin=this) {
@@ -375,16 +395,16 @@ export class Plugin extends EventThrower {
         for(const child of this.children){
             child.dispose()
         }
-        this.logger.info(`已卸载插件(${this.pkg.name})`)
         this.emit('dispose')
-        this.parent?.emit('plugin-remove',this)
-        return `已卸载插件(${this.pkg.name})`
+        this.parent.emit(`${this.type}-remove`,this)
+        this.log(`已卸载插件(${this.pkg.name})`)
+        return `已卸载${this.type}(${this.pkg.name})`
     }
     async restart() {
-        this.logger.info(`正在重新安装${this.pkg.name}...`)
+        this.log(`正在重启${this.pkg.name}...`)
         this.destroy()
         await this.install()
-        return `已重启插件(${this.pkg.name})`
+        return `已重启${this.type}(${this.pkg.name})`
     }
     name(name:string){
         this.pkg.name=name
@@ -451,70 +471,76 @@ export namespace Plugin{
     service('pluginManager')
 }
 export class PluginManager {
+    public plugin_dir:string
+    public service_dir:string
     public plugins: Map<string, Plugin> = new Map<string, Plugin>()
-    constructor(public app: App, public plugin_dir:string) {
+    constructor(public app: App) {
+        this.plugin_dir=app.config.plugin_dir
+        this.service_dir=app.config.service_dir
     }
     get logger(){
-        return this.app.getLogger('pluginManager')
+        return this.getLogger('pluginManager')
     }
     getLogger(category:string){
         return this.app.getLogger(category)
     }
-    async init(plugins:Record<string, boolean|Record<string, any>>) {
-        for (const [name, conf] of Object.entries(plugins)) {
+    async init() {
+        // init services
+        for (const [name, conf] of Object.entries(this.app.config.services||{})) {
+            try {
+                await this.app.service(name,conf)
+            } catch (e) {
+                this.logger.warn(e.message)
+            }
+        }
+        // init plugins
+        for (const [name, conf] of Object.entries(this.app.config.plugins||{})) {
             try {
                 await this.app.plugin(name,conf)
             } catch (e) {
                 this.logger.warn(e.message)
             }
         }
-
     }
-    import(name: string) {
+    import(name: string,type:'service'|'plugin'='plugin') {
         if (this.plugins.has(name))
             return this.plugins.get(name)
         let resolved = ""
-        const modulePath = path.join(process.cwd(), "node_modules")
-        const orgPath = path.resolve(modulePath, '@oitq')
         // 查找内置插件
         try{
             require.resolve(path.join(__dirname,`plugins/${name}`))
             resolved=`${__dirname}/plugins/${name}`
         }catch {}
-        if(!resolved && fs.existsSync(this.plugin_dir)){
-            try {
-                require.resolve(`${this.plugin_dir}/${name}`)
-                resolved = `${this.plugin_dir}/${name}`
-            } catch {
+        if(!resolved){
+            if(fs.existsSync(this.plugin_dir) && type==='plugin'){
+                try {
+                    require.resolve(`${this.plugin_dir}/${name}`)
+                    resolved = `${this.plugin_dir}/${name}`
+                } catch {
+                }
+            }else if(fs.existsSync(this.service_dir) && type==='service'){
+                try {
+                    require.resolve(`${this.plugin_dir}/${name}`)
+                    resolved = `${this.plugin_dir}/${name}`
+                } catch {
+                }
             }
         }
         if(!resolved){//尝试在全局包里面查找官方插件
             try {
-                require.resolve('@oitq/plugin-' + name);
-                resolved = '@oitq/plugin-' + name;
+                require.resolve(`@oitq/${type}-${name}`);
+                resolved = `@oitq/${type}-${name}`;
             }catch {}
         }
         if(!resolved){//尝试在全局包里面查找社区插件
             try {
-                require.resolve('oitq-plugin-' + name);
-                resolved = 'oitq-plugin-' + name;
+                require.resolve(`oitq-${type}-${name}`);
+                resolved = `oitq-${type}-${name}`;
             }catch {}
-        }
-        if (!resolved && fs.existsSync(orgPath)) {//尝试在当前目录的依赖查找官方插件
-            try{
-                require.resolve(modulePath+'/'+'@oitq/plugin-' + name);
-                resolved = modulePath+'/'+'@oitq/plugin-' + name;
-            }catch{}
-        }
-        if (!resolved && fs.existsSync(modulePath)) {//尝试在当前目录的依赖查找社区插件
-            try{
-                require.resolve(modulePath+'/'+'oitq-plugin-' + name);
-                resolved = modulePath+'/'+'oitq-plugin-' + name;
-            }catch{}
         }
         if (!resolved)
             throw new PluginError(`插件名错误，无法找到插件(${name})`)
-        const plugin=new Plugin(resolved)
+        const plugin=new Plugin(resolved,type)
         plugin.name(name)
         return plugin
     }
@@ -527,7 +553,7 @@ export class PluginManager {
 
     checkInstall(name: string) {
         if (!this.plugins.has(name)) {
-            throw new PluginError(`尚未安装插件(${name})`)
+            throw new PluginError(`尚未安装(${name})`)
         }
         return this.plugins.get(name)
     }
@@ -548,19 +574,6 @@ export class PluginManager {
 
     disable(name: string, bot: Bot=null) {
         return this.checkInstall(name).disable(bot)
-    }
-
-    async disableAll(bot: Bot) {
-        const success:string[]=[],error:string[]=[]
-        for (let [_, plugin] of this.plugins) {
-            try{
-                await plugin.disable(bot)
-                success.push(plugin.pkg.name)
-            }catch (e){
-                error.push(`${plugin.pkg.name}:${e.message}`)
-            }
-        }
-        return `调用成功，禁用成功${success.length}个插件\n禁用失败${error.length}个插件${error.length?`错误信息:\n${error.join('\n')}`:''}`
     }
     listAll(){
         const pluginList:Partial<PluginDesc>[]=[]
@@ -632,7 +645,7 @@ export class PluginManager {
         }
         const modules = fs.readdirSync(modulePath, {withFileTypes: true})
         for (let file of modules) {
-            if (file.isDirectory() && (file.name.startsWith("oitq-plugin-"))) {
+            if (file.isDirectory() && (file.name.startsWith("oitq-plugin-") || file.name.startsWith("oitq-service-"))) {
                 try {
                     require.resolve(file.name)
                     let pkgInfo:Partial<PkgInfo>={}
@@ -647,7 +660,7 @@ export class PluginManager {
                         }
                     }catch {}
                     pluginList.push({
-                        name: file.name.replace('oitq-plugin-', ''),
+                        name: file.name.replace('oitq-plugin-', '').replace('oitq-service-',''),
                         type: PluginType.Community,
                         ...pkgInfo
                     })
@@ -658,7 +671,7 @@ export class PluginManager {
         if (fs.existsSync(orgPath)) {
             const orgModules = fs.readdirSync(orgPath, {withFileTypes: true})
             for (let file of orgModules) {
-                if (file.isDirectory() && file.name.startsWith('plugin-md-')) {
+                if (file.isDirectory() && (file.name.startsWith('plugin-') || file.name.startsWith('service-'))) {
                     try {
                         require.resolve(`@oitq/${file.name}`)
                         let pkgInfo:Partial<PkgInfo>={}
@@ -673,7 +686,7 @@ export class PluginManager {
                             }
                         }catch {}
                         pluginList.push({
-                            name: file.name.replace('plugin-md-', ''),
+                            name: file.name.replace('plugin-', '').replace('service-',''),
                             type: PluginType.Official,
                             ...pkgInfo
                         })
@@ -739,9 +752,11 @@ export namespace PluginManager {
     }
 
     export type FunctionHook<T = any> = (parent: Plugin, options: T) => Awaitable<any>
-    export type ConstructorHook<T = any> = new (parent: Plugin, options: T) => void
+    export type ConstructorHook<T = any> =( new (parent: Plugin, options: T) => void) & {
+        using?:readonly (keyof Plugin.Services)[]
+    }
     export type PluginHook = FunctionHook | ObjectHook | ConstructorHook
-
+    export type ServiceHook=ConstructorHook
     export interface ObjectHook<T = any> {
         install: FunctionHook<T>|ConstructorHook<T>
         name?:string
@@ -755,7 +770,9 @@ export namespace PluginManager {
                     : never
 
     export interface Config {
-        plugin_dir?: string,
+        plugin_dir?: string
+        service_dir?:string
+        services?:Record<string, any>
         plugins?: Record<string, any>
     }
 }

@@ -41,7 +41,7 @@
                   </template>
                 </el-input>
               </el-form-item>
-              <el-form-item prop="config" label="oicq配置">
+              <el-form-item v-if="bot.config.config" prop="config" label="oicq配置">
                 <el-form :model="bot.config.config" class="sub-form">
                   <el-form-item v-for="([key,value],idx) in Object.entries(bot.config.config)"
                                 :key="key+idx"
@@ -78,7 +78,7 @@
             </el-form>
           </el-form-item>
           <el-form-item>
-            <el-affix position="bottom" target=".p-bots" :offset="20">
+            <el-affix position="bottom" :offset="20">
               <div class="form-footer">
                 <el-button type="primary" @click="saveConfig(bot.config)">保存</el-button>
                 <el-button type="success" @click="login({},bot.uin,'password')">上线</el-button>
@@ -118,11 +118,12 @@
         <el-button type="primary" @click="saveOicqConfig">保存</el-button>
       </template>
     </el-drawer>
-    <el-dialog width="70%" title="bot配置" v-model="showAdd" style="height: 500px;overflow: auto">
-      <bot v-model="newBot" type="add"></bot>
-      <template #footer scope="{bot}">
-        <el-button type="primary" @click="addBot(bot)">新增</el-button>
-      </template>
+    <el-dialog width="70%" title="bot配置" v-model="showAdd">
+      <bot v-model="newBot" type="add">
+        <template #footer="{bot}">
+          <el-button  type="primary" @click="addBot(bot)">新增</el-button>
+        </template>
+      </bot>
     </el-dialog>
   </div>
 </template>
@@ -284,8 +285,6 @@ export default {
         }
       }
     }
-
-
     .admins-wrap {
       .el-form-item__content {
         .el-tag {

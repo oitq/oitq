@@ -22,6 +22,8 @@ function checkAdmin({session}: Action) {
 }
 
 export function install(ctx: Plugin) {
+    ctx.command('admin/group','message.group')
+        .desc('群成员管理')
     ctx.command('admin/group/quit','message.group')
         .desc('退出当前群聊')
         .check(checkAdmin)
@@ -30,8 +32,6 @@ export function install(ctx: Plugin) {
             await session.bot.pickGroup(session.group_id).quit().catch(()=>{})
             await session.sendMsg(`已退出群聊:${session.group_id}`,`private:${session.user_id}`)
         })
-    ctx.command('admin/group','message.group')
-        .desc('群成员管理')
     ctx.command('admin/group/mute [...userIds:qq]', 'message.group')
         .desc('禁言群成员')
         .option('time', '-t <time:number> 禁言时长（单位：秒；默认：600）')

@@ -139,7 +139,7 @@ export function install(plugin: Plugin) {
         if (command['actions'].length && !options['help']) return
         return await session.execute(`help ${command.name}`)
     })
-    plugin.app.command('help [command]', 'message')
+    plugin.command('help [command]', 'message')
         .desc('显示帮助信息')
         .shortcut('帮助')
         .option('authority', '-a  显示权限设置')
