@@ -25,10 +25,10 @@ jobs:
         env:
           DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
           DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-          run: |
-            echo "${DOCKER_PASSWORD}" | docker login \
-              --username "${DOCKER_USERNAME}" \
-              --password-stdin
+        run: |
+          echo "${DOCKER_PASSWORD}" | docker login \
+            --username "${DOCKER_USERNAME}" \
+            --password-stdin
       - name: Run buildx and push
         env:
             DOCKER_REPO: oitq/${{env.IMAGE_NAME}}
