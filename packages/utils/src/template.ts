@@ -59,7 +59,7 @@ export function sanitize(source: string) {
 }
 
 export function template(path: string | string[], ...params: any[]) {
-    if (!Array.isArray(path)) path = [path]
+    path=[].concat(path)
     for (const item of path) {
         const source = template.get(item)
         if (typeof source === 'string') {

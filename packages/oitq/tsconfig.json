@@ -1,12 +1,10 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.base",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "lib",
-    "esModuleInterop": true,
-    "declaration": true
+    "outFile": "temp/index.d.ts",
   },
   "include": [
-    "src"
+    "src",
   ]
 }

@@ -33,7 +33,6 @@ export function install(ctx:Plugin){
                     return template('plugins.list',list.map(plugin=>template('plugins.info',plugin.name,plugin.installed,plugin.disabled)).join('\n'))
                 case 'disable':
                     if(name)await ctx.app.pluginManager.disable(name)
-                    else await ctx.app.pluginManager.disableAll(session.bot)
                     break;
                 case 'enable':
                     if(!name){

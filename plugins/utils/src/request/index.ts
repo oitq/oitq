@@ -14,7 +14,7 @@ export function install(ctx:Plugin){
         .option('callback','-c <callback:function> 回调函数')
         .option('config','-C <config:object> 配置请求config')
         .action(async ({session,options},url)=>{
-            const res=await ctx.app.axios.get(url,options.config)
+            const res=await ctx.app.axios.get(encodeURI(url),options.config)
             const target=session['group']||session['friend']
             if(options.callback) return options.callback.apply({result:res,shareMusic:target.shareMusic.bind(target)})
             try{
@@ -55,7 +55,7 @@ export function install(ctx:Plugin){
         .option('config','-C <config:object> 配置请求config')
         .option('data','-d <data:object> post数据')
         .action(async ({session,options},url)=>{
-            const res=await ctx.app.axios.post(url,options.data,options.config)
+            const res=await ctx.app.axios.post(encodeURI(url),options.data,options.config)
             const target=session['group']||session['friend']
             if(options.callback) return options.callback.apply({result:res,shareMusic:target.shareMusic.bind(target)})
             try{

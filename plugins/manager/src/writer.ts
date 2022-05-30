@@ -16,7 +16,7 @@ declare module '@oitq/service-console' {
 export default class ConfigWriter {
     private loader: Loader
     private plugins: {}
-    static using=['CLI'] as const
+    static using:readonly (keyof Plugin.Services)[]=['CLI'] as any
     constructor(private ctx: Plugin) {
         this.loader = ctx.loader||ctx.app.loader
         this.plugins = ctx.app.config.plugins

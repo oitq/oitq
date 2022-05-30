@@ -6,8 +6,12 @@
   "scripts": {
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "build": "npm run build -workspaces",
+    "compile": "ts-node ./build/compile.ts",
+    "dtsc": "ts-node ./build/dtsc.ts",
+    "build": "npm run compile && npm run dtsc && npm run build:fe",
     "build:base": "npm run build -w @oitq/utils -w @oitq/loader -w oitq -w @oitq/cli",
+    "build:services": "npm run build -w @oitq/service-database -w @oitq/service-http-server -w @oitq/service-onebot -w @oitq/service-console",
+    "build:client": "npm run build -w @oitq/client",
     "build:fe": "ts-node ./build/frontend.ts",
     "dev": "npm run dev -w test",
     "start": "npm start -w test",
@@ -49,7 +53,6 @@
     "esbuild-register": "^3.3.2",
     "escape-string-regexp": "^5.0.0",
     "fs-extra": "^10.1.0",
-    "globby": "^13.1.1",
     "js-yaml": "^4.1.0",
     "kleur": "^4.1.4",
     "rollup": "^2.75.0",
@@ -61,6 +64,7 @@
     "vitepress": "^0.22.4"
   },
   "dependencies": {
+    "dtsc": "^1.1.0",
     "oicq": "^2.2.1"
   }
 }

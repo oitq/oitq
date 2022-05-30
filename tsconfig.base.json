@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "es2019",
     "module": "commonjs",
     "declaration": true,
-    "esModuleInterop": true,
-    "experimentalDecorators": true,
+    "emitDeclarationOnly": true,
+    "composite": true,
+    "incremental": true,
     "skipLibCheck": true,
-    "incremental": false,
-    "emitDecoratorMetadata": true,
-    "moduleResolution": "node"
-  },
-  "include": ["src"]
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "strictBindCallApply": true
+  }
 }
