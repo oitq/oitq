@@ -3,12 +3,6 @@
   "description": "Setup a Oitq application",
   "version": "0.0.3",
   "main": "lib/index.js",
-  "scripts": {
-    "compile": "tsc --project tsconfig.json",
-    "alias": "tsc-alias -p tsconfig.json",
-    "build": "npm run compile && npm run alias",
-    "pub": "npm publish --access public"
-  },
   "engines": {
     "node": ">=12.0.0"
   },

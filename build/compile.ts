@@ -6,7 +6,6 @@ import { getPackages, PackageJson, requireSafe } from './utils'
 import cac from 'cac'
 
 const { args } = cac().help().parse()
-
 const ignored = [
     'This call to "require" will not be bundled because the argument is not a string literal',
     'Indirect calls to "require" will not be bundled',

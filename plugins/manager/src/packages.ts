@@ -76,7 +76,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
         packages.unshift({
             name: '',
             shortname: '',
-            config: omit(this.ctx.app.config, ['plugins']),
+            config: omit(this.ctx.app.config, ['plugins','services']),
         })
 
         return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))
@@ -90,12 +90,12 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
             if (name.startsWith('@')) {
                 const files = await fsp.readdir(base2).catch(() => [])
                 for (const name2 of files) {
-                    if (name === '@oitq' && name2.startsWith('plugin-') || name2.startsWith('oitq-plugin-')) {
+                    if (name === '@oitq' && (name2.startsWith('plugin-') || name2.startsWith('service-'))) {
                         this.loadPackage(name + '/' + name2, base2 + '/' + name2)
                     }
                 }
             } else {
-                if (name.startsWith('oitq-plugin-')) {
+                if (name.startsWith('oitq-plugin-') || name.startsWith('oitq-service-')) {
                     this.loadPackage(name, base2)
                 }
             }
@@ -125,13 +125,13 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
 
         // workspace packages are followed by symlinks
         result.workspace = data.$workspace
-        result.shortname = data.name.replace(/(oitq-|^@oitq\/)plugin-/, '')
+        result.shortname = data.name.replace(/(oitq-|^@oitq\/)(plugin|service)-/, '')
 
 
         // check plugin state
-        const { plugins } = this.ctx.app.config
-        result.root = result.shortname in plugins
-        result.config = plugins[result.shortname] || plugins['~' + result.shortname]
+        const { plugins,services } = this.ctx.app.config
+        result.root = result.shortname in plugins||result.shortname in services
+        result.config = plugins[result.shortname] || services[result.shortname]
 
         // make sure that result can be serialized into json
         JSON.stringify(result)

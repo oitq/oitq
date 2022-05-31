@@ -160,7 +160,7 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
         for(const shortcut of this.shortcuts){
             if(typeof shortcut.name==='string' && action.source){
                 args.push(...(shortcut.args||[]))
-                Object.assign(options,shortcut.option||{})
+                Object.assign(options,shortcut.options||{})
             }
             if(shortcut.name instanceof RegExp){
                 const matched=action.source.match(shortcut.name)
@@ -174,10 +174,10 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
                                 }
                             })
                         }
-                        if(shortcut.option){
-                            Object.keys(shortcut.option).forEach(key=>{
-                                if(this.options[key] && typeof shortcut.option[key]==='string' && shortcut.option[key].includes(`$${index}`)){
-                                    options[key]=Action.parseValue(shortcut.option[key].replace(`$${index}`,str),'option',action,Object.values(this.options).find(opt=>opt.name=key))
+                        if(shortcut.options){
+                            Object.keys(shortcut.options).forEach(key=>{
+                                if(this.options[key] && typeof shortcut.options[key]==='string' && shortcut.options[key].includes(`$${index}`)){
+                                    options[key]=Action.parseValue(shortcut.options[key].replace(`$${index}`,str),'option',action,Object.values(this.options).find(opt=>opt.name=key))
                                 }
                             })
                         }
@@ -218,7 +218,7 @@ export namespace Command{
         name?: string | RegExp;
         fuzzy?: boolean;
         args?: any[];
-        option?: Record<string, any>;
+        options?: Record<string, any>;
     }
     export interface OptionConfig<T extends Action.Type = Action.Type> {
         value?: any

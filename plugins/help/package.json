@@ -1,6 +1,6 @@
 {
-  "main": "index.js",
-  "name": "help",
+  "main": "lib/index.js",
+  "name": "@oitq/plugin-help",
   "description": "帮助插件",
   "version": "0.0.1",
   "repository": {

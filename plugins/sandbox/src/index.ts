@@ -46,9 +46,9 @@ export function install(ctx:Plugin){
         .option('start','-s 启动沙箱')
         .option('restart','-r 重启沙箱')
         .option('stop','-e 停止沙箱')
-        .shortcut(/^启动(沙箱|sandbox)$/,{option:{start:true}})
-        .shortcut(/^重启(沙箱|sandbox)$/,{option:{restart:true}})
-        .shortcut(/^停止(沙箱|sandbox)$/,{option:{stop:true}})
+        .shortcut(/^启动(沙箱|sandbox)$/,{options:{start:true}})
+        .shortcut(/^重启(沙箱|sandbox)$/,{options:{restart:true}})
+        .shortcut(/^停止(沙箱|sandbox)$/,{options:{stop:true}})
         .action(({session,options})=>{
             if(options.start && options.restart){
                 return 'start 和 restart 不能同时使用'

@@ -3,12 +3,6 @@
   "main": "lib/index.js",
   "version": "2.0.1-alpha",
   "description": "sandbox plugin",
-  "scripts": {
-    "compile": "tsc --project tsconfig.json",
-    "alias": "tsc-alias -p tsconfig.json",
-    "build": "npm run compile && npm run alias",
-    "pub": "npm publish --access public"
-  },
   "dependencies": {
     "assert": "^2.0.0",
     "cheerio": "^1.0.0-rc.10",

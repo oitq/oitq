@@ -73,17 +73,18 @@ export function send(plugin: Plugin) {
 
             if(options.user){
                 await bot.sendPrivateMsg(options.user, fromCqcode(message))
-                return
+                return true
             }
             if(options.group){
                 await bot.sendGroupMsg(options.group,fromCqcode(message))
-                return
+                return true
             }
             if(options.discuss){
                 await bot.sendDiscussMsg(options.discuss,fromCqcode(message))
-                return
+                return true
             }
-            return message
+            await session.sendMsg(message)
+            return true
         })
 }
 export function recall(plugin: Plugin, { recall = 10 }: RecallConfig) {

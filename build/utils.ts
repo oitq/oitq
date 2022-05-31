@@ -16,13 +16,7 @@ export async function getPackages(args: readonly string[]) {
         const names = await readdir(`${cwd}/${seg}`).catch<string[]>(() => [])
         return names.map(name => `${seg}/${name}`).filter(name => !name.includes('.') && !categories.includes(name))
     }))).flat()
-
-    return args.length ? args.map((name) => {
-        for (const category of categories) {
-            const folder = category + '/' + name
-            if (folders.includes(folder)) return folder
-        }
-    }).filter(Boolean) : folders
+    return args.length ? folders.filter(folder=>args.includes(folder)) : folders
 }
 
 export function requireSafe(id: string) {

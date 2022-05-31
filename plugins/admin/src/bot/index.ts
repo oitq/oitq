@@ -1,6 +1,7 @@
 import {Plugin} from 'oitq';
 import * as group from './group'
 import * as privatePlugin from './private'
+import * as child from './childBot'
 export const name='admin.bot'
 import {} from '@oitq/service-database'
 export const using=['database'] as const
@@ -8,6 +9,7 @@ export function install(ctx:Plugin){
     ctx.app.on('continue',async (session)=>session.user.ignore)
     ctx.plugin(privatePlugin)
     ctx.plugin(group)
+    ctx.plugin(child)
     ctx.command('admin/ignore [...qq:qq]','message')
         .desc('忽略指定用户的信息')
         .option('list','-l 显示忽略用户列表')

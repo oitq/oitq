@@ -4,12 +4,6 @@
   "version": "0.0.1-2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
-  "scripts": {
-    "compile": "tsc --project tsconfig.json",
-    "alias": "tsc-alias -p tsconfig.json",
-    "build": "npm run compile && npm run alias",
-    "pub": "npm publish --access public"
-  },
   "files": [
     "lib",
     "dist"

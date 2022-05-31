@@ -1,4 +1,3 @@
-import * as path from "path";
 import {App} from "./app";
 import {Bot} from "./bot";
 

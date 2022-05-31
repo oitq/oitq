@@ -68,7 +68,8 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
         })
 
         this.extend((bot) => {
-            const config = this.plugin.app.config.bots[bot.app.bots.indexOf(bot)]
+            const index=this.plugin.loader.config.bots.findIndex(c=>c.uin===bot.uin)
+            const config = this.plugin.loader.config.bots[index]||{}
             return {
                 ...pick(bot, ['uin', 'nickname', 'status']),
                 config: config,

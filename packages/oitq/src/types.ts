@@ -15,7 +15,6 @@ type ServiceEventMap = {
 // bot
 export type TargetType = 'group' | 'private' | 'discuss'
 export type ChannelId = `${TargetType}:${number}`
-export type LoginType = 'qrcode' | 'password'
 // session
 export type Filter=(session:NSession)=>boolean
 export type ToSession<A extends any[] = []> = A extends [object, ...infer O] ? Extend<Define<Session, 'args', O>, A[0]> : Define<Session, 'args', A>

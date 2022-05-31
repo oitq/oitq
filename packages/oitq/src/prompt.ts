@@ -132,15 +132,15 @@ export namespace Prompt{
         }
     }
     export function formatOutput<T extends keyof TypeKV>(prev:any,answer:Dict,options:Options<T>){
-        let result:Sendable=[]
+        let result:Sendable[]=[]
         if(!options.name && !options.prefix) throw new Error('name/prefix is required')
         const titleArr=[
-            `${options.message||(getPrefix(options.type as keyof TypeKV)+(options.action||'')+options.label||options.name||'')}`,
+            options.message||`${(getPrefix(options.type as keyof TypeKV)+(options.action||'')+options.label||options.name||'')}`,
             `${options.initial !==undefined && !['select','multipleSelect'].includes(options.type as keyof TypeKV)?`默认：${options.initial}`:''}`,
             `${['list','multipleSelect'].includes(options.type as keyof TypeKV)?`多项使用'${options.separator}'分隔`:''}`
         ].filter(Boolean)
         if(options.prefix){titleArr.shift()}
-        result=result.concat(titleArr.join(','))
+        result=result.concat(titleArr)
         if(options.prefix)result.unshift(options.prefix)
         if (options.type==='confirm')result.push("\n输入y[es]或句号(.或。)以确认，其他内容取消(不区分大小写)")
         const choices=typeof options.choices==='function'?options.choices(prev,result,options):options.choices
@@ -159,6 +159,6 @@ export namespace Prompt{
                     '\n输入指定选项前边的索引即可'
                 )
         }
-        return result
+        return result.flat()
     }
 }

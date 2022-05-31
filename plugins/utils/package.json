@@ -3,12 +3,6 @@
   "main": "lib/index.js",
   "version": "2.0.1-5",
   "description": "utils plugin",
-  "scripts": {
-    "compile": "tsc --project tsconfig.json",
-    "alias": "tsc-alias -p tsconfig.json",
-    "build": "npm run compile && npm run alias",
-    "pub": "npm publish --access public"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/oitq/oitq.git"

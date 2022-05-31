@@ -3,12 +3,6 @@
   "main": "lib/index.js",
   "version": "2.0.1-4",
   "description": "rss plugin",
-  "scripts": {
-    "compile": "tsc --project tsconfig.json",
-    "alias": "tsc-alias -p tsconfig.json",
-    "build": "npm run compile && npm run alias",
-    "pub": "npm publish --access public"
-  },
   "dependencies": {
     "rss-feed-emitter": "^3.2.3"
   },

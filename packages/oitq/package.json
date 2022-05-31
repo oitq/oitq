@@ -8,12 +8,6 @@
     "oicq": "^2.2.1",
     "oicq2-cq-enable": "^1.0.3"
   },
-  "scripts": {
-    "compile": "tsc --project tsconfig.json",
-    "alias": "tsc-alias -p tsconfig.json",
-    "build": "npm run compile && npm run alias",
-    "pub": "npm publish --access public"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/oitq/oitq.git"

@@ -1,8 +1,4 @@
-import {Plugin} from "../../plugin";
-import {NSession} from '../../types'
-import {Command} from '../../command'
-
-import {template} from "@oitq/utils";
+import {Plugin,NSession,Command,template} from "oitq";
 
 interface HelpOptions {
     showHidden?: boolean

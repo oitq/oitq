@@ -6,6 +6,8 @@ import Installer from "./installer";
 import PackageProvider from "./packages";
 import ShopProvider from "./shop";
 import ConfigWriter from './writer'
+import ServiceProvider from "./services";
+export * from './services'
 export * from './bots'
 export * from './installer'
 export * from './packages'
@@ -40,6 +42,7 @@ declare module '@oitq/service-console' {
             bots: BotProvider
             shop:ShopProvider
             packages:PackageProvider
+            services:ServiceProvider
         }
     }
 }

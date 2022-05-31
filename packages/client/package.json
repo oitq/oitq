@@ -3,12 +3,6 @@
   "main": "client/index.ts",
   "version": "0.0.2",
   "description": "client for oitq",
-  "scripts": {
-    "compile": "tsc --project tsconfig.json",
-    "alias": "tsc-alias -p tsconfig.json",
-    "build": "npm run compile && npm run alias",
-    "pub": "npm publish --access public"
-  },
   "bin": {
     "oitq-console": "lib/bin.js"
   },

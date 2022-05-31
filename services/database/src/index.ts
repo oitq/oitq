@@ -37,7 +37,7 @@ export default class Database extends Service {
     private modelDecl: Record<string, TableDecl> = {}
     public sequelize: Sequelize
 
-    constructor(public plugin: Plugin, public options: Options) {
+    constructor(plugin: Plugin, public options: Options) {
         super(plugin, 'database')
         this.define('User', User)
     }

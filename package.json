@@ -7,16 +7,14 @@
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "compile": "ts-node ./build/compile.ts",
+    "clean": "ts-node ./build/clean.ts",
     "dtsc": "ts-node ./build/dtsc.ts",
-    "build": "npm run compile && npm run dtsc && npm run build:fe",
-    "build:base": "npm run build -w @oitq/utils -w @oitq/loader -w oitq -w @oitq/cli",
-    "build:services": "npm run build -w @oitq/service-database -w @oitq/service-http-server -w @oitq/service-onebot -w @oitq/service-console",
-    "build:client": "npm run build -w @oitq/client",
+    "build": "npm run compile && npm run dtsc",
     "build:fe": "ts-node ./build/frontend.ts",
     "dev": "npm run dev -w test",
     "start": "npm start -w test",
     "bump": "node ./bump.js",
-    "pub": "npm run pub -workspaces",
+    "pub": "ts-node ./build/publish.ts",
     "deploy-gh": "bash publish.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -49,14 +47,16 @@
     "@vitejs/plugin-vue": "^2.3.3",
     "@vueuse/core": "^8.5.0",
     "cal": "^0.0.4",
+    "dtsc": "^1.1.0",
     "esbuild": "^0.14.38",
     "esbuild-register": "^3.3.2",
     "escape-string-regexp": "^5.0.0",
     "fs-extra": "^10.1.0",
-    "js-yaml": "^4.1.0",
     "kleur": "^4.1.4",
+    "latest-version": "^5.1.0",
     "rollup": "^2.75.0",
     "source-map-support": "^0.5.21",
+    "ts-node": "^10.8.0",
     "tsc-alias": "^1.5.0",
     "tsconfig-paths": "^3.12.0",
     "typescript": "^4.5.4",
@@ -64,7 +64,6 @@
     "vitepress": "^0.22.4"
   },
   "dependencies": {
-    "dtsc": "^1.1.0",
     "oicq": "^2.2.1"
   }
 }
