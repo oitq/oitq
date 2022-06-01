@@ -4,8 +4,10 @@ import * as privatePlugin from './private'
 import * as child from './childBot'
 export const name='admin.bot'
 import {} from '@oitq/service-database'
+import {ChildConfig} from "./childBot";
 export const using=['database'] as const
-export function install(ctx:Plugin){
+export interface BotConfig extends ChildConfig{}
+export function install(ctx:Plugin,config?:BotConfig){
     ctx.app.on('continue',async (session)=>session.user.ignore)
     ctx.plugin(privatePlugin)
     ctx.plugin(group)

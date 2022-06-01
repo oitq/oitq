@@ -25,7 +25,7 @@ interface RouteMetaExtension {
     icon?: string
     order?: number
     authority?: number
-    position?: Computed<'top' | 'bottom' | 'hidden'>
+    position?: Computed<'top' | 'left' | 'hidden'>
 }
 
 export interface PageOptions extends RouteMetaExtension, PageExtension {
@@ -95,7 +95,7 @@ export class Context {
             meta: {
                 order: 0,
                 authority: 0,
-                position: 'top',
+                position: 'left',
                 fields: [],
                 badge: badge ? [badge] : [],
                 ...rest,
@@ -203,7 +203,7 @@ router.beforeEach(async (to, from) => {
     }
 
     const routes = router.getRoutes()
-        .filter(item => item.meta.position === 'top')
+        .filter(item => item.meta.position === 'left')
         .sort((a, b) => b.meta.order - a.meta.order)
     const path = routes[0]?.path || '/blank'
     return {

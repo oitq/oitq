@@ -1,0 +1,40 @@
+{
+  "name": "@oitq/plugin-manager",
+  "description": "Manage your bots and plugins with console",
+  "version": "0.0.1-2",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "author": "凉菜 <admin@liucl.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oitq/oitq.git",
+    "directory": "plugins/frontend/manager"
+  },
+  "bugs": {
+    "url": "https://github.com/oitq/oitq/issues"
+  },
+  "homepage": "https://docs.liucl.cn",
+  "keywords": [
+    "bot",
+    "oitq",
+    "plugin",
+    "manager",
+    "server",
+    "required:console"
+  ],
+  "devDependencies": {
+    "@types/cross-spawn": "^6.0.2",
+    "@types/which-pm-runs": "^1.0.0"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.3",
+    "ns-require": "^1.1.2",
+    "semver": "^7.3.7",
+    "which-pm-runs": "^1.1.0"
+  }
+}

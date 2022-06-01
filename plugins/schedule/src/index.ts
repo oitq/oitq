@@ -8,9 +8,7 @@ export interface Config {
     minInterval?: number
 }
 export function install(ctx: Plugin, { minInterval }: Config={minInterval:60000}) {
-    ctx.app.before('database.ready',()=>{
-        ctx.database.define('Schedule',Schedule)
-    })
+    ctx.database.define('Schedule',Schedule)
     async function hasSchedule(id: number) {
         const data = await ctx.database.models.Schedule.findAll({where:{id}})
         return data.length

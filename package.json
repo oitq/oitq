@@ -22,6 +22,7 @@
     "packages/*",
     "plugins/*",
     "plugins/games/*",
+    "plugins/frontend/*",
     "services/*",
     "test",
     "docs"

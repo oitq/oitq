@@ -3,6 +3,7 @@ import {Sequelize, Model, Options, DataType, ModelStatic} from "sequelize";
 
 export * from 'sequelize'
 import {User} from "./models";
+export {User} from './models'
 
 export namespace TableColumn {
     export interface Config {
@@ -30,7 +31,7 @@ declare module 'oitq' {
     }
 
     export interface Session {
-        user: Database.Models['User']
+        user: User
     }
 }
 export default class Database extends Service {
@@ -53,11 +54,10 @@ export default class Database extends Service {
     start() {
         this.sequelize = new Sequelize({...this.options, logging: (text) => this.logger.debug(text)})
         this.plugin.app.before('start', async () => {
-            await this.plugin.app.parallel('before-database.ready')
             Object.entries(this.modelDecl).forEach(([name, decl]) => {
                 this.sequelize.define(name, decl,{timestamps:false})
             })
-            await this.plugin.app.parallel('before-database.sync')
+            await this.plugin.app.parallel('before-database.ready')
             await this.sequelize.sync({alter: true})
             this.plugin.app.emit('database.ready')
         })
@@ -101,8 +101,3 @@ export default class Database extends Service {
     }
 }
 
-export namespace Database {
-    export interface Models {
-        User: User
-    }
-}

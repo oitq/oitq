@@ -163,6 +163,18 @@ export class Plugin extends EventThrower {
         this.middleware(middleware)
         return this
     }
+    setTimeout(callback:Function,ms:number,...args):Dispose{
+        const timer=setTimeout(callback,ms,...args)
+        const dispose=()=>{clearTimeout(timer);return true}
+        this.disposes.push(dispose)
+        return dispose
+    }
+    setInterval(callback:Function,ms:number,...args):Dispose{
+        const timer=setInterval(callback,ms,...args)
+        const dispose=()=>{clearInterval(timer);return true}
+        this.disposes.push(dispose)
+        return dispose
+    }
     using<T extends PluginManager.PluginHook>(using: readonly (keyof Plugin.Services)[], plugin:T,config?:PluginManager.Option<T>) {
         if(typeof plugin==='function'){
             plugin={install:plugin} as T

@@ -1,7 +1,7 @@
 {
-  "name": "@oitq/plugin-manager",
-  "description": "Manage your bots and plugins with console",
-  "version": "0.0.1-2",
+  "name": "@oitq/plugin-terminal",
+  "description": "frontend terminal with console",
+  "version": "0.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/oitq/oitq.git",
-    "directory": "plugins/manager"
+    "directory": "plugins/frontend/auth"
   },
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
@@ -21,22 +21,10 @@
   "homepage": "https://docs.liucl.cn",
   "keywords": [
     "bot",
-    "chatbot",
     "oitq",
     "plugin",
-    "shop",
-    "manager",
+    "terminal",
     "server",
     "required:console"
-  ],
-  "devDependencies": {
-    "@types/cross-spawn": "^6.0.2",
-    "@types/which-pm-runs": "^1.0.0"
-  },
-  "dependencies": {
-    "cross-spawn": "^7.0.3",
-    "ns-require": "^1.1.2",
-    "semver": "^7.3.7",
-    "which-pm-runs": "^1.1.0"
-  }
+  ]
 }

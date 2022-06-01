@@ -6,7 +6,7 @@
       </transition>
       <el-scrollbar height="100vh - 64px">
         <el-menu router :collapse="isCollapse">
-          <asideSubMenu v-for="menu in getRoutes('top')" :menu="menu" :key="menu.path">{{menu}}</asideSubMenu>
+          <asideSubMenu v-for="menu in getRoutes('left')" :menu="menu" :key="menu.path">{{menu}}</asideSubMenu>
         </el-menu>
       </el-scrollbar>
       <el-affix position="bottom" class="aside-control">
@@ -51,14 +51,13 @@
 </template>
 
 <script lang="ts" setup>
-import {store} from '@oitq/client'
 import {computed, ref} from 'vue'
 import {useRoute} from 'vue-router'
-import { routes, getValue } from '@oitq/client'
+import { routes, getValue,store } from '@oitq/client'
 import { useDark } from '@vueuse/core'
 import asideSubMenu from './subMenu.vue'
-function getRoutes(position: 'top' | 'bottom') {
-  const scale = position === 'top' ? 1 : -1
+function getRoutes(position: 'top' | 'left') {
+  const scale = position === 'left' ? 1 : -1
   return routes.value
       .filter(r => getValue(r.meta.position) === position)
       .sort((a, b) => scale * (b.meta.order - a.meta.order))

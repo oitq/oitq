@@ -1,0 +1,30 @@
+{
+  "name": "@oitq/plugin-auth",
+  "description": "frontend auth with console",
+  "version": "0.0.1",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "author": "凉菜 <admin@liucl.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oitq/oitq.git",
+    "directory": "plugins/frontend/auth"
+  },
+  "bugs": {
+    "url": "https://github.com/oitq/oitq/issues"
+  },
+  "homepage": "https://docs.liucl.cn",
+  "keywords": [
+    "bot",
+    "oitq",
+    "plugin",
+    "auth",
+    "server",
+    "required:console"
+  ]
+}

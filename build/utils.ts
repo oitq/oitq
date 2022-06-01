@@ -8,7 +8,8 @@ export const cwd = resolve(__dirname, '..')
 const categories = [
     'packages',
     'plugins',
-    'services'
+    'services',
+    "plugins/frontend"
 ]
 
 export async function getPackages(args: readonly string[]) {

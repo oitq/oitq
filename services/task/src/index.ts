@@ -31,11 +31,9 @@ export default class Tasks extends Service {
 
     constructor(plugin: Plugin) {
         super(plugin, 'tasks', true);
+        plugin.database.define('Task', Task)
+        plugin.database.define('TaskStep', TaskStep)
         plugin.app.before('database.ready', () => {
-            plugin.database.define('Task', Task)
-            plugin.database.define('TaskStep', TaskStep)
-        })
-        plugin.app.before('database.sync', () => {
             const {Task, TaskStep} = plugin.database.models
             Task.hasMany(TaskStep, {as: 'steps'})
             TaskStep.belongsTo(Task)

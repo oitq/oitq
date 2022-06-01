@@ -1,8 +1,8 @@
 import { readFileSync } from 'fs'
-import { PackageJson } from '@oitq/shop'
+import { PackageJson as Pkg } from '@oitq/shop'
 import { defineProperty } from 'oitq'
 
-export interface LocalPackage extends PackageJson {
+export interface LocalPackage extends Pkg {
     private?: boolean
     $workspace?: boolean
 }

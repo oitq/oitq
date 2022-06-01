@@ -13,9 +13,7 @@ export const using=['database'] as const
 export default class QAManager extends Service{
     constructor(ctx:Plugin) {
         super(ctx,'qa',true)
-        ctx.app.before('database.ready',()=>{
-            ctx.database.define('QA',QA)
-        })
+        ctx.database.define('QA',QA)
     }
     start(){
         this.plugin.plugin(teach)
