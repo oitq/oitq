@@ -1,7 +1,7 @@
 {
   "name": "@oitq/client",
   "main": "client/index.ts",
-  "version": "0.0.2",
+  "version": "0.0.3-1",
   "description": "client for oitq",
   "bin": {
     "oitq-console": "lib/bin.js"

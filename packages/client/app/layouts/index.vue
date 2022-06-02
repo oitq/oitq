@@ -22,19 +22,29 @@
     </el-aside>
     <el-container>
       <el-header height="40px">
-        <div class="toolbar">
-          <el-dropdown>
-            <el-icon style="margin-right: 8px; margin-top: 1px">
-              <setting/>
-            </el-icon>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item>Tom</el-dropdown-item>
-                <el-dropdown-item>Info</el-dropdown-item>
-                <el-dropdown-item>Logout</el-dropdown-item>
-              </el-dropdown-menu>
+        <el-menu router mode="horizontal">
+          <asideSubMenu v-for="menu in getRoutes('top')" :menu="menu" :key="menu.path">{{menu}}</asideSubMenu>
+        </el-menu>
+        <div v-if="store.user && store.user.token" class="toolbar" v-for="toolkit of toolkits" :key="toolkit.name">
+          <el-popover
+              placement="bottom"
+              :title="toolkit.name"
+              :width="200"
+              trigger="hover"
+          >
+            <template #reference>
+              <el-badge :value="toolkit.badge?toolkit.badge():''" type="error">
+                <template v-if="toolkit.icon">
+                  <component :is="toolkit.icon" v-if="typeof toolkit.icon!=='string'"></component>
+                  <el-icon v-else>
+                    <component :is="toolkit.icon"></component>
+                  </el-icon>
+                </template>
+                <el-button v-else>{{toolkit.name}}</el-button>
+              </el-badge>
             </template>
-          </el-dropdown>
+            <component :is="toolkit.component"></component>
+          </el-popover>
         </div>
       </el-header>
       <el-main>
@@ -53,7 +63,7 @@
 <script lang="ts" setup>
 import {computed, ref} from 'vue'
 import {useRoute} from 'vue-router'
-import { routes, getValue,store } from '@oitq/client'
+import { routes, getValue,store,toolkits } from '@oitq/client'
 import { useDark } from '@vueuse/core'
 import asideSubMenu from './subMenu.vue'
 function getRoutes(position: 'top' | 'left') {
@@ -121,6 +131,12 @@ html,body{
 }
 .el-header{
   box-shadow: var(--shadow-bottom);
+  display: flex;
+  .el-menu{
+    flex: auto;
+    overflow-x: auto;
+    border-bottom: none;
+  }
 }
 .el-main{
   padding:12px;

@@ -1,4 +1,4 @@
-import { Awaitable, Plugin, omit, pick } from 'oitq'
+import {Awaitable, Plugin, omit, pick, Time} from 'oitq'
 import { DataService, SocketHandle } from '@oitq/service-console'
 import {User,DataTypes} from '@oitq/service-database'
 import { resolve } from 'path'
@@ -36,12 +36,13 @@ export type UserAuth = Pick<User, 'user_id' | 'name' | 'authority' | 'token' | '
 export type UserLogin = Pick<User, 'user_id' | 'name' | 'token' | 'expire'>
 export type UserUpdate = Partial<Pick<User, 'name' | 'password'>>
 
-const authFields = ['name', 'authority', 'id', 'expire', 'token'] as (keyof UserAuth)[]
+const authFields = ['name', 'authority', 'user_id', 'expire', 'token'] as (keyof UserAuth)[]
 
 function setAuthUser(handle: SocketHandle, value: UserAuth) {
     handle.user = value
     handle.send({ type: 'data', body: { key: 'user', value } })
     handle.refresh()
+    return true
 }
 
 class AuthService extends DataService<UserAuth> {
@@ -53,7 +54,7 @@ class AuthService extends DataService<UserAuth> {
         plugin.database.extend('User', {
             password: DataTypes.STRING,
             token: DataTypes.TEXT,
-            expire: DataTypes.INTEGER,
+            expire: DataTypes.BIGINT,
         })
 
         plugin.console.addEntry({
@@ -65,7 +66,7 @@ class AuthService extends DataService<UserAuth> {
     }
 
     initLogin() {
-        const { plugin, config } = this
+        const { plugin, config={loginTokenExpire:Time.minute*10,authTokenExpire:Time.week}}  = this
         const states: Record<string, [string, number, SocketHandle]> = {}
 
         plugin.console.addListener('login/password', async function (name, password) {
@@ -110,7 +111,7 @@ class AuthService extends DataService<UserAuth> {
             return { user_id: user.user_id, name: user.name, token, expire }
         })
 
-        plugin.middleware(async (session, next) => {
+        plugin.middleware(async (session) => {
             const state = states[session.user_id]
             if (state && state[0] === session.cqCode) {
                 const {user} = session
@@ -121,7 +122,7 @@ class AuthService extends DataService<UserAuth> {
                 }
                 return setAuthUser(state[2], user)
             }
-            return next()
+            return
         }, true)
 
         plugin.on('console/intercept', (handle, listener) => {
@@ -132,6 +133,8 @@ class AuthService extends DataService<UserAuth> {
         })
 
         plugin.console.addListener('user/logout', async function () {
+            if(!this.user.user_id) return
+            delete states[this.user.user_id]
             setAuthUser(this, null)
         })
 
@@ -148,5 +151,6 @@ namespace AuthService {
         loginTokenExpire?: number
     }
 }
-
-export default AuthService
+export function install(plugin:Plugin,config:AuthService.Config){
+    plugin.plugin(AuthService,config)
+}

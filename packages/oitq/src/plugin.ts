@@ -252,13 +252,13 @@ export class Plugin extends EventThrower {
     command<D extends string>(def: D,triggerEvent:keyof EventMap): Command<Action.ArgumentType<D>> {
         const namePath = def.split(' ', 1)[0]
         const decl = def.slice(namePath.length)
-        const segments = namePath.split(/(?=[./])/g)
+        const segments = namePath.split(/(?=[/])/g)
 
         let parent: Command, nameArr=[]
         while (segments.length){
             const segment=segments.shift()
             const code = segment.charCodeAt(0)
-            const tempName = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
+            const tempName = code === 47 ? segment.slice(1) : segment
             nameArr.push(tempName)
             if(segments.length)parent=this.app.commandList.find(cmd=>cmd.name===tempName)
             if(!parent && segments.length) throw Error(`cannot find parent command:${nameArr.join('.')}`)

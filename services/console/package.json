@@ -1,7 +1,7 @@
 {
   "name": "@oitq/service-console",
   "main": "lib/index.js",
-  "version": "0.0.1-2",
+  "version": "0.0.1-4",
   "description": "web console for oitq",
   "repository": {
     "type": "git",
@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/oitq/oitq#readme",
   "dependencies": {
+    "@vitejs/plugin-vue": "^2.3.3",
     "koa-connect": "^2.1.0",
     "open": "^8.4.0",
     "uuid": "^8.3.2"

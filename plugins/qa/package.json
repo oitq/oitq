@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-qa",
   "main": "lib/index.js",
-  "version": "2.0.1-1",
+  "version": "2.0.1-3",
   "description": "qa plugin",
   "repository": {
     "type": "git",

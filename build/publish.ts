@@ -16,6 +16,7 @@ function getVersion(name: string, isNext = false) {
 
 ;(async () => {
     const folders = await getPackages(args)
+    console.log(folders)
     const bumpMap: Record<string, PackageJson> = {}
     await Promise.all(folders.map(async (name) => {
         let meta: PackageJson
@@ -38,8 +39,9 @@ function getVersion(name: string, isNext = false) {
 
     function publish(folder: string, name: string, version: string, tag: string) {
         console.log(`publishing ${name}@${version} ...`)
+        console.log('folder',folder)
         return spawnAsync([
-            'npm', 'publish', folder,
+            'yarn', 'publish', folder,
             '--new-version', version,
             '--tag', tag,
             '--access', 'public',

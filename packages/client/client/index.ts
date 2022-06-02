@@ -1,8 +1,9 @@
 import { Console } from '@oitq/service-console'
-import { Dict } from 'oitq'
+import {Dict, remove} from 'oitq'
 import { App, Component, defineComponent, h, markRaw, reactive, ref, Ref, resolveComponent, watch } from 'vue'
 import {createRouter, createWebHistory, RouteRecordNormalized, START_LOCATION} from 'vue-router'
 import { config, Store, store } from './data'
+import {ElMessage} from "element-plus";
 
 export * from './data'
 
@@ -20,7 +21,14 @@ export interface PageExtension {
     fields?: (keyof Console.Services)[]
     badge?: () => number
 }
-
+export interface ToolkitOptions{
+    id?:string
+    order?:number
+    component:Component,
+    icon?:string
+    name:string,
+    badge?:()=>number
+}
 interface RouteMetaExtension {
     icon?: string
     order?: number
@@ -41,7 +49,7 @@ declare module 'vue-router' {
 }
 
 export const views = reactive<Record<string, ViewOptions[]>>({})
-
+export const toolkits=reactive<ToolkitOptions[]>([])
 export const router = createRouter({
     history: createWebHistory(config.uiPath),
     linkActiveClass: 'active',
@@ -85,7 +93,15 @@ export class Context {
             if (index >= 0) list.splice(index, 1)
         })
     }
-
+    addToolkit(options:ToolkitOptions){
+        toolkits.push(options)
+        this.disposables.push(()=>{
+            const index = toolkits.findIndex(item=>item===options)
+            if(index>=0){
+                toolkits.splice(index,1)
+            }
+        })
+    }
     addPage(options: PageOptions) {
         const { path, name, component, badge, ...rest } = options
         const dispose = router.addRoute({
@@ -95,7 +111,7 @@ export class Context {
             meta: {
                 order: 0,
                 authority: 0,
-                position: 'left',
+                position: typeof options.position==='function'?options.position:options.position||'left',
                 fields: [],
                 badge: badge ? [badge] : [],
                 ...rest,
@@ -144,7 +160,7 @@ export class Context {
 }
 
 export const root = new Context()
-
+export const message=ElMessage
 export function defineExtension(callback: Extension) {
     return callback
 }

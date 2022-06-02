@@ -40,7 +40,7 @@ export default (ctx:Context)=>{
         name: '依赖管理',
         icon: 'paperclip',
         order: 610,
-        authority: 4,
+        authority: 7,
         component: Dependency,
         fields: ['shop', 'dependencies'],
         badge: () => overrideCount.value,

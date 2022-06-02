@@ -1,4 +1,4 @@
-import {Plugin, Service} from "oitq";
+import {NSession, Plugin, Service} from "oitq";
 import {Sequelize, Model, Options, DataType, ModelStatic} from "sequelize";
 
 export * from 'sequelize'
@@ -61,7 +61,7 @@ export default class Database extends Service {
             await this.sequelize.sync({alter: true})
             this.plugin.app.emit('database.ready')
         })
-        this.plugin.app.before('attach', async (session) => {
+        this.plugin.app.before('attach', async (session:NSession) => {
             const {sender: {nickname, user_id}, user} = session
             if (user) return
             const [userInfo] = await this.models.User.findOrCreate({
@@ -69,7 +69,7 @@ export default class Database extends Service {
                     user_id: session.user_id
                 },
                 defaults: {
-                    authority: 1,
+                    authority: session.bot.isMaster(session.user_id)?7:session.bot.isAdmin(session.user_id)?4:1,
                     name: nickname,
                     user_id,
                     ignore: false
