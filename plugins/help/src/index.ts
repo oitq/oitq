@@ -67,11 +67,11 @@ async function showHelp(command: Command, session: NSession, config: HelpOptions
     const output = [`${command.name}${
         command.args.length ? ' ' + command.args.map(arg => {
             return arg.required ? `<${arg.variadic ? '...' : ''}${arg.name}:${arg.type}>` : `[${arg.variadic ? '...' : ''}${arg.name}:${arg.type}]`
-        }) : ''
+        }).join(' ') : ''
     }     ${command.descriptions.join()}`]
 
     if (command.aliasNames.length) {
-        output.push(template('internal.command-aliases', command.aliasNames.join('，')))
+        output.push(template('internal.command-aliases', command.aliasNames.join(',')))
     }
 
 

@@ -7,9 +7,9 @@ import fs from "fs";
 export const name='request'
 export const using=['httpServer'] as const
 export function install(ctx:Plugin){
-    ctx.command('utils/axios','message')
+    const p=ctx.command('utils/axios','message')
         .desc('请求工具')
-    ctx.command('utils/axios.get <url>','message')
+    p.subcommand('axios.get <url>','message')
         .desc('发起get请求')
         .option('callback','-c <callback:function> 回调函数')
         .option('config','-C <config:object> 配置请求config')
@@ -23,7 +23,7 @@ export function install(ctx:Plugin){
                 return typeof res==='string'?res:undefined
             }
         })
-    ctx.command('utils/axios.load <url>','message')
+    p.subcommand('axios.load <url>','message')
         .desc('加载资源')
         .option('callback','-c <callback:function> 回调函数')
         .option('type','-t [type] 资源类型，可选值：image,music,video，默认：image',{initial:'image'})
@@ -49,7 +49,7 @@ export function install(ctx:Plugin){
                 return e.message
             }
         })
-    ctx.command('utils/axios.post <url>','message')
+    p.subcommand('axios.post <url>','message')
         .desc('发起post请求')
         .option('callback','-c <callback:function> 回调函数')
         .option('config','-C <config:object> 配置请求config')

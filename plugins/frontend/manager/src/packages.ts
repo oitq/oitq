@@ -35,7 +35,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
             this.updatePackage(plg, plg.pkg.name)
         })
 
-        this.ctx.app.on('plugin.destroy', async (plg) => {
+        this.ctx.app.on('plugin-destroy', async (plg) => {
             this.updatePackage(plg, null)
         })
     }

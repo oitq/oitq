@@ -42,7 +42,7 @@ export class App extends Plugin{
             }
         }
         for(const bot of this.bots){
-            await bot.login()
+            await bot.login(bot.options.password)
             await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
         }
         this.emit('ready')

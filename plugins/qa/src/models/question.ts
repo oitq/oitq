@@ -3,7 +3,10 @@ export const QA={
     question:DataTypes.TEXT,
     answer:DataTypes.TEXT,
     isReg:DataTypes.BOOLEAN,
-    probability:DataTypes.FLOAT,
+    probability:{
+        type:DataTypes.FLOAT,
+        defaultValue:1
+    },
     redirect:DataTypes.TEXT,
     belongs:{
         type:DataTypes.TEXT,

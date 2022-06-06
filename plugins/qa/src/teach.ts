@@ -247,7 +247,7 @@ export default function install(ctx: Plugin) {
                         name:'confirm',
                         message:'已存在相同问答，是否继续添加？'
                     })
-                    if(confirm) return '已取消添加'
+                    if(!confirm) return '已取消添加'
                 }
                 dialogue = await ctx.database.models.QA.create({
                     ...data,

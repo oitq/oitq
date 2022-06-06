@@ -144,7 +144,7 @@ export namespace Bot{
     export interface Config {
         uin?: number
         config?: ClientConfig,
-        nickname?: string | string[]
+        password?:string
         master?: number // 当前机器人主人
         admins?: number[] // 当前机器人管理员
     }

@@ -1,6 +1,7 @@
 import {Plugin,Service} from "oitq";
 import {QA} from "./models";
 import teach from './teach'
+import QAProvider from "./provider";
 import receiver from './receiver'
 declare module 'oitq'{
     namespace Plugin{
@@ -16,6 +17,7 @@ export default class QAManager extends Service{
         ctx.database.define('QA',QA)
     }
     start(){
+        this.plugin.plugin(QAProvider)
         this.plugin.plugin(teach)
         this.plugin.plugin(receiver)
     }

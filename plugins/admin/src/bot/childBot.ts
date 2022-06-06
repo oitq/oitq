@@ -25,7 +25,7 @@ async function loginBot(session: NSession, bot: Bot, password): Promise<[boolean
                     message: ['请扫描登录二维码后回复任意内容继续\n', segment.image(sess.image)]
                 })
                 if (!confirm) return resolve([false, '用户取消登录'])
-                bot.login(password)
+                await bot.login()
             }),
             session.app.on('bot.system.login.device', async (sess) => {
                 if (sess.bot !== bot) return
@@ -83,11 +83,24 @@ export function install(plugin: Plugin,config:ChildConfig={bot_login_type:'qrcod
         }
     })
     plugin.database.define('Bot', {
-        uin: DataTypes.INTEGER,
-        password: DataTypes.STRING,
+        uin: {
+            type: DataTypes.BIGINT,
+            primaryKey: true
+        },
+        parent:DataTypes.BIGINT,
+        children:{
+            type:DataTypes.TEXT,
+            get() {
+                return JSON.parse(this.getDataValue('children') || '[]') || []
+            },
+            set(value: unknown) {
+                this.setDataValue('children', JSON.stringify(value) as any)
+            },
+            defaultValue:JSON.stringify([])
+        },
         config: {
             type: DataTypes.TEXT,
-            defaultValue: '{}',
+            defaultValue: JSON.stringify({}),
             get() {
                 return JSON.parse(this.getDataValue('config') || '{}') || []
             },
@@ -96,18 +109,15 @@ export function install(plugin: Plugin,config:ChildConfig={bot_login_type:'qrcod
             }
         }
     })
-    plugin.app.before('database.ready', () => {
-        const {Bot} = plugin.database.models
-        Bot.hasMany(Bot, {as: 'children'})
-        Bot.belongsTo(Bot, {as: 'parent'})
-    })
     plugin.app.on('database.ready', () => {
         plugin.app.on('bot-add', async (bot) => {
-            const botInstance = (await plugin.database.model('Bot').findOne({
+            const [botInstance] = (await plugin.database.model('Bot').findOrCreate({
                 where: {uin: bot.uin},
-                include: {
-                    model: plugin.database.model('Bot'),
-                    as: 'children'
+                defaults: {
+                    config: bot.options,
+                    password:bot.options.password,
+                    parent:null,
+                    children:[]
                 }
             }))
             if(!botInstance) return
@@ -149,15 +159,15 @@ export function install(plugin: Plugin,config:ChildConfig={bot_login_type:'qrcod
                 const user = await plugin.database.model('User').findOne({where: {user_id: session.user_id}})
                 const [parent] = await plugin.database.model('Bot').findOrCreate({
                     where: {uin: session.bot.uin},
-                    defaults: {parentId: null, config: session.bot.options}
+                    defaults: {parent: null, config: session.bot.options,children:[uin]}
                 })
                 const [child] = await plugin.database.model('Bot').findOrCreate({
                     where: {uin},
                     defaults: {
-                        parentId: parent.toJSON().id,
-                        password,
+                        parent: uin,
                         config: {
                             uin,
+                            password,
                             master: session.user_id,
                             config: {
                                 platform: options.platform
@@ -166,7 +176,7 @@ export function install(plugin: Plugin,config:ChildConfig={bot_login_type:'qrcod
                     }
                 })
                 user.update({bots: [...user.toJSON().bots, uin]})
-                child.update({parentId: parent.toJSON().id})
+                child.update({parent: parent.toJSON().uin})
                 return '登录成功'
             }
             plugin.app.removeBot(bot.uin)
