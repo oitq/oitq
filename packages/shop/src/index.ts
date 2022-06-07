@@ -13,7 +13,7 @@ export interface BasePackage {
     description: string
 }
 
-export interface PackageJson extends BasePackage {
+export interface PkgJson extends BasePackage {
     keywords: string[]
     dependencies?: Dict<string>
     devDependencies?: Dict<string>
@@ -21,7 +21,7 @@ export interface PackageJson extends BasePackage {
     optionalDependencies?: Dict<string>
 }
 
-export interface RemotePackage extends PackageJson {
+export interface RemotePkg extends PkgJson {
     deprecated?: string
     author: User
     maintainers: User[]
@@ -36,7 +36,7 @@ export interface RemotePackage extends PackageJson {
 }
 
 export interface Registry extends BasePackage {
-    versions: Dict<RemotePackage>
+    versions: Dict<RemotePkg>
     time: {
         created: string
         modified: string
@@ -81,7 +81,7 @@ export interface AnalyzedPackage extends SearchPackage, ScoreDetail {
     official: boolean
     size: number
     license: string
-    versions: RemotePackage[]
+    versions: RemotePkg[]
 }
 
 export interface ScanConfig {
@@ -107,13 +107,13 @@ export default async function scan(config: ScanConfig) {
         if (!official && !community) return
 
         const registry = await request<Registry>(`/${name}`)
-        const versions = Object.values(registry.versions).filter((remote:RemotePackage) => {
+        const versions = Object.values(registry.versions).filter((remote:RemotePkg) => {
             const { dependencies, peerDependencies, deprecated } = remote
             const declaredVersion = { ...dependencies, ...peerDependencies }['oitq']
             try {
                 return !deprecated && declaredVersion && intersects(version, declaredVersion)
             } catch {}
-        }).reverse() as RemotePackage[]
+        }).reverse() as RemotePkg[]
         if (!versions.length) return
 
         const latest = registry.versions[versions[0].version]

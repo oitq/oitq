@@ -20,7 +20,7 @@ export type Filter=(session:NSession)=>boolean
 export type ToSession<A extends any[] = []> = A extends [object, ...infer O] ? Extend<Define<Session, 'args', O>, A[0]> : Define<Session, 'args', A>
 export type NSession<E extends keyof EventMap='message'> = ToSession<Parameters<EventMap[E]>>
 // plugin
-export type Middleware=(session:NSession<any>,next?:() => Promise<any>)=>Awaitable<boolean|Sendable|void>
+export type Middleware=(session:NSession<any>)=>Awaitable<boolean|Sendable|void>
 export type MsgChannelId=`${number}-${TargetType}:${number}`
 // eventMap
 export type BeforeEventMap = { [E in keyof AppEventMap & string as OmitSubstring<E, 'before-'>]: AppEventMap[E] }

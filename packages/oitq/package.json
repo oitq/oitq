@@ -2,10 +2,11 @@
   "name": "oitq",
   "main": "lib/index.js",
   "typings": "lib/node.d.ts",
-  "version": "2.0.4-21",
+  "version": "2.0.5-1",
   "description": "oitq framework for oicq",
   "dependencies": {
     "oicq": "^2.2.1",
+    "@oitq/utils": "^0.1.4",
     "oicq2-cq-enable": "^1.0.3"
   },
   "repository": {

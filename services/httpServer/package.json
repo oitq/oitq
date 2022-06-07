@@ -1,7 +1,7 @@
 {
   "name": "@oitq/service-http-server",
   "main": "lib/index.js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "httpServer service",
   "repository": {
     "type": "git",

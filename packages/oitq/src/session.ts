@@ -47,8 +47,8 @@ export class Session {
 
     middleware(middleware: Middleware) {
         const channelId = this.getFromUrl()
-        return this.app.middleware((session,next) => {
-            if (session.getFromUrl() !== channelId) return next()
+        return this.app.middleware((session) => {
+            if (session.getFromUrl() !== channelId) return
             middleware(session);
             return true
         }, true)

@@ -73,8 +73,8 @@ export class Bot extends Client {
     }
     waitMessage(filter:Filter,timout=this.app.config.delay.prompt):Promise<NSession|void>{
         return new Promise<NSession|void>((resolve => {
-            const dispose=this.app.middleware(async (session,next)=>{
-                if(session.event_name!=='message'|| !filter(session as NSession))return next()
+            const dispose=this.app.middleware(async (session)=>{
+                if(session.event_name!=='message'|| !filter(session as NSession))return
                 else{
                     dispose()
                     resolve(session as NSession)

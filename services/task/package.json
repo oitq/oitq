@@ -1,7 +1,7 @@
 {
   "name": "@oitq/service-task",
   "main": "lib/index.js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "task manage for oitq",
   "repository": {
     "type": "git",

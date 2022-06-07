@@ -68,5 +68,5 @@ export async function triggerTeach(ctx: Plugin, session: NSession) {
 }
 
 export default function install(plugin: Plugin) {
-    plugin.middleware((session: NSession<any>,next) =>session.event_name==='message'?triggerTeach(plugin, session as NSession):next())
+    plugin.middleware((session: NSession<any>) =>session.event_name==='message'?triggerTeach(plugin, session as NSession):null)
 }

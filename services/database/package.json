@@ -1,7 +1,7 @@
 {
   "name": "@oitq/service-database",
   "main": "lib/index.js",
-  "version": "0.0.2",
+  "version": "0.0.2-1",
   "description": "database service",
   "devDependencies": {
     "querystring": "^0.2.1"

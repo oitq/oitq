@@ -278,7 +278,7 @@ export class Plugin extends EventThrower {
             return true
         })
         this.app.emit('command-add',command)
-        return Object.create(command)
+        return command as any
     }
     async execute(session:NSession,content=session.cqCode||''):Promise<boolean|Sendable|void> {
         const argv = Action.parse(content)

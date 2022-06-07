@@ -1,15 +1,15 @@
 import { readFileSync } from 'fs'
-import { PackageJson as Pkg } from '@oitq/shop'
+import { PkgJson } from '@oitq/shop'
 import { defineProperty } from 'oitq'
 
-export interface LocalPackage extends Pkg {
+export interface LocalPkg extends PkgJson {
     private?: boolean
     $workspace?: boolean
 }
 
 export function loadManifest(name: string) {
     const filename = require.resolve(name + '/package.json')
-    const meta: LocalPackage = JSON.parse(readFileSync(filename, 'utf8'))
+    const meta: LocalPkg = JSON.parse(readFileSync(filename, 'utf8'))
     meta.dependencies ||= {}
     defineProperty(meta, '$workspace', !filename.includes('node_modules'))
     return meta

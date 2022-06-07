@@ -21,6 +21,7 @@ export interface Respondent {
 export interface BasicConfig extends RecallConfig {
     echo?:boolean
     send?: boolean
+    github?:boolean
     feedback?: number | number[]|{
         operator:number|number[]
         timeout?:number
@@ -146,8 +147,8 @@ export function feedback(plugin: Plugin, {operators,timeout=1000*60*60}: { opera
         })
 }
 export function respondent(plugin: Plugin, respondents: Respondent[]) {
-    plugin.middleware((session,next) => {
-        if(session.event_name!=='message')return next()
+    plugin.middleware((session) => {
+        if(session.event_name!=='message')return
         const message = session.cqCode.trim()
         for (const { match, reply } of respondents) {
             const capture = typeof match === 'string' ? message === match && [message] : message.match(match)
@@ -169,6 +170,16 @@ export function basic(plugin: Plugin, config: BasicConfig = {feedback:[]}) {
     const respondents = makeArray(config.respondent).filter(Boolean)
     if (respondents.length) plugin.plugin(respondent, respondents)
 }
+export function github(plugin:Plugin){
+    plugin.middleware((session)=>{
+        const mathReg=/(?:https?:\/\/)?(?:www\.)?github\.com\/([^/]+)\/([^/]+)\/?$/
+        const match=session.cqCode.match(mathReg)
+        if(!match)return
+        const [,owner,repo]=match
+        const url=`https://opengraph.github.com/repo/${owner}/${repo}`
+        return segment.image(url)
+    })
+}
 
 export interface Config extends BasicConfig {
     name?:string
@@ -178,7 +189,7 @@ export function install(plugin:Plugin,config:Config){
         .desc('基础功能')
     plugin.command('common/segment','message')
         .desc('生成指定消息段内容')
-
+    if(config&&config.github!==false)plugin.plugin(github)
     plugin.command('common/segment/face <id:integer>','message')
         .desc('发送一个表情')
         .action((_,id)=>segment.face(id))
