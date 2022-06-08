@@ -46,9 +46,9 @@ const app=createApp({
     ]
 })
 // 已函数形式添加一个插件
-app.plugin((ctx:Plugin)=>{
+app.plugin((plugin:Plugin)=>{
     // 监听私聊消息
-    ctx.on('bot.message.friend',(session)=>{
+    plugin.on('bot.message.friend',(session)=>{
         if(session.cqCode==='test'){
             return 'hello world'
         }
@@ -72,9 +72,9 @@ oitq 规定插件为函数类型或带有install函数的对象，
 
 ```typescript
 // example.ts
-import {Context} from 'oitq'
-export function install(ctx:Context){
-    ctx.on('bot.group.message',(session)=>{
+import {Plugin} from 'oitq'
+export function install(plugin:Plugin){
+    plugin.on('bot.group.message',(session)=>{
         // oitq将会自动将收到的消息转为CQ码存到会话的cqCode字段上，
         // 你也可以使用session.message 获取原来的message
         if(session.cqCode==='123'){
@@ -123,24 +123,4 @@ interface ChoiceItem{
     title:string,
     value:any
 }
-```
-## cli
-项目增加了cli指令，用于增加/删除和启动项目
-### usage
-此处提供两种用法：
-
-1.全局安装`@oitq/cli和oitq`
-```shell
-npm install -g @oitq/cli oitq
-oitq add //开启一个添加账号流程
-oitq remove // 开启一个移除账号流程
-oitq start // 启动项目 
-```
-2.如果不想全局安装，可使用软连接激活cli指令
-```shell
-npm install @oitq/cli oitq
-npm link @oitq/cli
-oitq add //开启一个添加账号流程
-oitq remove // 开启一个移除账号流程
-oitq start // 启动项目 
 ```
