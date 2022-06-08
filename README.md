@@ -8,12 +8,25 @@ npm install oitq
 yarn add oitq
 ```
 ## 样例
-1.通过oitq.config.json启动(需配合oitq.config.json使用)
+1.通过cli启动(需配合oitq.config.json使用)
+```shell
+npm install @oitq/cli
+# or
+yarn add @oitq/cli
+```
+package.json添加启动脚本
+```json
+"scripts":{
+"start":"oitq start . --log-level info"
+}
+```
+
+1.通过编写入口文件启动(需配合oitq.config.json使用)
 ```typescript
 import {createApp} from 'oitq'
 createApp().start()
 ```
-2.传入配置启动
+2.通过编写入口文件启动（无需oitq.config.json，在createApp时传入配置）
 
 ```typescript
 import {createApp,Plugin} from 'oitq'
