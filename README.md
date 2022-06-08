@@ -8,6 +8,12 @@ npm install oitq
 yarn add oitq
 ```
 ## 样例
+1.通过oitq.config.json启动(需配合oitq.config.json使用)
+```typescript
+import {createApp} from 'oitq'
+createApp().start()
+```
+2.传入配置启动
 
 ```typescript
 import {createApp,Plugin} from 'oitq'
