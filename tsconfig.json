@@ -6,6 +6,7 @@
     "esModuleInterop": true,
     "moduleResolution": "node",
     "strictBindCallApply": true,
+    "declaration": false
   },
   "include": [
     "build",

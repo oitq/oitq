@@ -1,6 +1,6 @@
 import { BuildOptions } from 'esbuild'
 
-interface InputBuildOptions extends BuildOptions {
+export interface InputBuildOptions extends BuildOptions {
     entryPoints: string[]
 }
 

@@ -138,7 +138,6 @@ async function compile(name: string) {
 
 ;(async () => {
     const folders = await getPackages(args)
-    console.log(folders)
     await Promise.all(folders.map(compile))
 
     process.exit(code)

@@ -1,10 +1,10 @@
 {
   "name": "@oitq/client",
   "main": "client/index.ts",
-  "version": "0.0.3-1",
+  "version": "0.0.3-2",
   "description": "client for oitq",
   "bin": {
-    "oitq-console": "lib/bin.js"
+    "oitq-client": "lib/bin.js"
   },
   "repository": {
     "type": "git",
