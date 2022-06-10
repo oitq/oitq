@@ -143,3 +143,9 @@ interface ChoiceItem{
     value:any
 }
 ```
+# 鸣谢
+1. [koishi](https://github.com/koishijs/koishi) 本项目是基于koishi的源码进行了改造
+2. [oicq](https://github.com/takayama-lily/oicq) 提供底层协议支持
+# 其他
+
+[![group:860669870](https://img.shields.io/badge/group-860669870-blue)](https://jq.qq.com/?_wv=1027&k=B22VGXov)
