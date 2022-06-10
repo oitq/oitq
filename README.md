@@ -8,7 +8,8 @@ npm install oitq
 yarn add oitq
 ```
 ## 样例
-1.通过cli启动(需配合oitq.config.json使用)
+### 1. 通过cli启动(需配合oitq.config.json使用)
+
 ```shell
 npm install @oitq/cli
 # or
@@ -21,12 +22,12 @@ package.json添加启动脚本
 }
 ```
 
-1.通过编写入口文件启动(需配合oitq.config.json使用)
+###2. 通过编写入口文件启动(需配合oitq.config.json使用)
 ```typescript
 import {createApp} from 'oitq'
 createApp().start()
 ```
-2.通过编写入口文件启动（无需oitq.config.json，在createApp时传入配置）
+###3. 通过编写入口文件启动（无需oitq.config.json，在createApp时传入配置）
 
 ```typescript
 import {createApp,Plugin} from 'oitq'
@@ -145,7 +146,8 @@ interface ChoiceItem{
 ```
 # 鸣谢
 1. [koishi](https://github.com/koishijs/koishi) 本项目是基于koishi的源码进行了改造
-2. [oicq](https://github.com/takayama-lily/oicq) 提供底层协议支持
+3. [oicq](https://github.com/takayama-lily/oicq) 提供底层协议支持
+2. [prompts](https://github.com/terkelg/prompts) 本项目prompt功能代码参考了terkelg的prompts
 # 其他
 
 [![group:860669870](https://img.shields.io/badge/group-860669870-blue)](https://jq.qq.com/?_wv=1027&k=B22VGXov)
