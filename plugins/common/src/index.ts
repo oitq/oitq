@@ -110,11 +110,11 @@ export function recall(plugin: Plugin, { recall = 10 }: RecallConfig) {
                 if (index && delay) await sleep(delay)
                 try {
                     await session.bot.deleteMsg(removal[index])
-                    return true
                 } catch (error) {
                     plugin.getLogger('bot').warn(error)
                 }
             }
+            return true
         })
 }
 export function feedback(plugin: Plugin, {operators,timeout=1000*60*60}: { operators:number[],timeout?:number }) {
@@ -208,6 +208,14 @@ export function install(plugin:Plugin,config:Config){
     plugin.command('common/segment/poke','message')
         .desc('发送戳一戳【随机一中类型】')
         .action((_,qq)=>segment.poke(parseInt((Math.random()*7).toFixed(0))))
+    plugin.command('common/exec <command:text>','message')
+        .desc('解析模板语法')
+        .action(async ({session},command)=>{
+            if(!command.match(/\$\(.*\)/))return `模板语法错误：${command}`
+            const result=await session.executeTemplate(command)
+            if(result && typeof result==='string')return result
+            return true
+        })
     plugin.plugin(basic,config)
     plugin.plugin(callme)
     plugin.plugin(music)

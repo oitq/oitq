@@ -124,6 +124,9 @@ class HttpService extends DataService<string[]> {
             base:'/vite/',
             server: {
                 middlewareMode: true,
+                fs: {
+                    strict: false,
+                }
             },
             plugins: [vuePlugin()],
             resolve: {

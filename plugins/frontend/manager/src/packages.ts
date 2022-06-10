@@ -1,6 +1,6 @@
 import {App, Dict, omit, pick, Plugin, remove } from 'oitq'
 import { DataService } from '@oitq/service-console'
-import { PackageJson } from '@oitq/shop'
+import { PkgJson } from '@oitq/shop'
 import { promises as fsp } from 'fs'
 import { dirname } from 'path'
 import ns from 'ns-require'
@@ -143,7 +143,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
 namespace PackageProvider {
     export interface Config {}
 
-    export interface Data extends Partial<PackageJson> {
+    export interface Data extends Partial<PkgJson> {
         id?: string
         root?: boolean
         config?: any

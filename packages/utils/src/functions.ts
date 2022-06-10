@@ -84,4 +84,53 @@ export function defineProperty<T, K extends keyof any>(object: T, key: K, value:
 export function defineProperty<T, K extends keyof any>(object: T, key: K, value: any) {
     Object.defineProperty(object, key, { writable: true, value })
 }
-
+// 深度合并对象、数组
+export function deepMerge<T extends object>(target: T, ...sources: Partial<T>[]): T {
+    sources.forEach(source => {
+        if (source) {
+            Object.keys(source).forEach(key => {
+                const sourceValue = source[key]
+                const targetValue = target[key]
+                if (Array.isArray(sourceValue)) {
+                    if (!Array.isArray(targetValue)) {
+                        target[key] = []
+                    }
+                    target[key] = targetValue.concat(sourceValue)
+                } else if (typeof sourceValue === 'object') {
+                    if (!targetValue) {
+                        target[key] = {}
+                    }
+                    deepMerge(targetValue, sourceValue)
+                } else {
+                    target[key] = sourceValue
+                }
+            })
+        }
+    })
+    return target
+}
+// 深拷贝
+export function deepCopy<T extends object>(source: T): T {
+    return JSON.parse(JSON.stringify(source))
+}
+// 快排
+export function quickSort<T>(arr: T[], compareFn?: (a: T, b: T) => number): T[] {
+    if (!compareFn) {
+        compareFn = (a, b) => a > b ? 1 : a < b ? -1 : 0
+    }
+    if (arr.length <= 1) {
+        return arr
+    }
+    const pivot = arr[0]
+    const left = []
+    const right = []
+    for (let i = 1; i < arr.length; i++) {
+        const item = arr[i]
+        if (compareFn(item, pivot) < 0) {
+            left.push(item)
+        } else {
+            right.push(item)
+        }
+    }
+    return [...quickSort(left, compareFn), pivot, ...quickSort(right, compareFn)]
+}

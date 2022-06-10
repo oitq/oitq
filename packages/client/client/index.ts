@@ -1,5 +1,5 @@
 import { Console } from '@oitq/service-console'
-import {Dict, remove} from 'oitq'
+import {Dict} from 'oitq'
 import { App, Component, defineComponent, h, markRaw, reactive, ref, Ref, resolveComponent, watch } from 'vue'
 import {createRouter, createWebHistory, RouteRecordNormalized, START_LOCATION} from 'vue-router'
 import { config, Store, store } from './data'

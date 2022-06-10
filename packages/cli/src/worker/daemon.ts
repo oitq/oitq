@@ -35,7 +35,7 @@ export function install(plugin: Plugin, config: Config = {}) {
         })
         .option('restart', '-r  重新启动')
         .shortcut('关机')
-        .shortcut('重启', { option: { restart: true } })
+        .shortcut('重启', { options: { restart: true } })
         .action(async ({ options, session }) => {
             const channelId = [session.message_type,session.group_id||session.discuss_id||session.user_id].join(':');
             if (!options.restart) {

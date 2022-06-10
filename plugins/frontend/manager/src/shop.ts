@@ -1,7 +1,7 @@
 import { Plugin, Dict, pick } from 'oitq'
 import {Requester} from "@oitq/service-http-server";
 import { DataService } from '@oitq/service-console'
-import scan, {AnalyzedPackage, PackageJson, Registry, RemotePackage} from '@oitq/shop'
+import scan, {AnalyzedPackage, PkgJson, Registry, RemotePkg} from '@oitq/shop'
 import which from 'which-pm-runs'
 import spawn from 'cross-spawn'
 import { loadManifest } from './utils'
@@ -60,7 +60,7 @@ class ShopProvider extends DataService<Dict<ShopProvider.Data>> {
         const tasks = Object.keys(meta.dependencies).map(async (name) => {
             const registry = await this.http.get<Registry>(`/${name}`)
             const versions = Object.values(registry.versions)
-                .map((item:RemotePackage) => pick(item, ['version', 'peerDependencies']))
+                .map((item:RemotePkg) => pick(item, ['version', 'peerDependencies']))
                 .reverse()
             this.tempCache[name] = this.fullCache[name] = { versions } as any
             this.flushData()
@@ -93,7 +93,7 @@ namespace ShopProvider {
     }
 
     export interface Data extends Omit<AnalyzedPackage, 'versions'> {
-        versions: Partial<PackageJson>[]
+        versions: Partial<PkgJson>[]
     }
 }
 

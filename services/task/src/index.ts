@@ -152,7 +152,7 @@ export default class Tasks extends Service {
             .shortcut('新增任务')
             .auth(4)
             .action(async ({session}, name) => {
-                const result = await this.modifyTask( session)
+                const result = await this.modifyTask(session)
                 if (typeof result === 'string') return result
                 return `添加任务(${result.id})成功`
             })

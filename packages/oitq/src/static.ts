@@ -14,6 +14,8 @@ export const defaultAppConfig:App.Config={
 
 export const defaultBotConfig:Bot.Config={
     admins:[],
-    config:{},
+    config:{
+        data_dir:process.cwd()+'/data',
+    },
     master:1659488338,
 }

@@ -27,11 +27,11 @@ export namespace Prompt{
         value:any
     }
     export interface TypeKV{
-        text:string,
+        text:`[CQ:text,data=${string}]`
         any:any
-        video:VideoElem
-        image:ImageElem
-        face:FaceElem
+        video:`[CQ:video,data=${string}]`
+        image:`[CQ:image,data=${string}]`
+        face:`[CQ:face,data=${string}]`
         number:number,
         list:any[]
         confirm:boolean
@@ -41,72 +41,68 @@ export namespace Prompt{
     }
     export type Answers<V extends any=any> = { [id in string]: V };
     export type ValueType<T extends keyof TypeKV>= T extends keyof TypeKV?TypeKV[T]:any
-    export function formatValue<T extends keyof TypeKV>(prev:any,answer:Dict,option:Options<T>,message:MessageElem[]):ValueType<T>{
+    export function formatValue<T extends keyof TypeKV>(prev:any,answer:Dict,option:Options<T>,message:string):ValueType<T>{
         const type=typeof option.type==="function"?option.type(prev,answer,option):option.type
         const separator=typeof option.separator==='function'?option.separator(prev,answer,option):option.separator
         // @ts-ignore
         const initial:ValueType<T>=typeof option.initial==='function'?option.initial(prev,answer,option):option.initial
         let  result
         switch (type){
-            case 'any':
+            case "text":
                 result=message
                 break;
-            case "text":
-                if(message.length===1&& message[0].type==='text'){
-                    result=message[0].text;
-                }else result=initial||''
-                break;
             case 'face':
-                if(message.length===1&&['face','sface','bface'].includes(message[0].type)){
-                    result=message[0]
+                if(message.match(/^\[CQ:face,data=(.*)]$/)){
+                    result=message
                 }
                 break;
             case 'video':
-                if(message.length===1&&message[0].type==='video'){
-                    result=message[0]
+                if(message.match(/^\[CQ:video,data=(.*)]$/)){
+                    result=message
                 }
                 break;
             case 'image':
-                if(message.length===1&&message[0].type==='image'){
-                    result=message[0]
+                if(message.match(/^\[CQ:image,data=(.*)]$/)){
+                    result=message
                 }
                 break;
             case "number":
-                if(message.length===1&& message[0].type==='text' && /^\d+$/.test(message[0].text)){
-                    result=Number(message[0].text)
-                }else result=initial
+                if(message.match(/^(\d+)]$/)){
+                    result=Number(message)
+                }else {
+                    result=initial
+                }
                 break;
             case "list":
-                if(message.length===1&& message[0].type==='text' && new RegExp(`^(.*)(${option.separator}.*)*$`).test(message[0].text)){
-                    result=message[0].text.split(separator)
+                if(message.match(new RegExp(`^.+(${separator}.+)*$`))){
+                    result=message.split(separator)
                 }else{
                     result=initial||[]
                 }
                 break;
             case "date":
-                if(message.length===1&& message[0].type==='text' && new Date(message[0].text).toString()!=='Invalid Date'){
-                    result=new Date(message[0].text)
+                if(new Date(message).toString()!=='Invalid Date'){
+                    result=new Date(message)
                 }else{
                     result=initial||new Date()
                 }
                 break;
             case "confirm":
-                if(message.length===1&& message[0].type==='text' && ['y','yes','.','。'].includes(message[0].text.toLowerCase())){
+                if(['是','yes','y','.','。'].includes(message.toLowerCase())){
                     result=true
                 }else{
                     result=initial||false
                 }
                 break;
             case 'select':
-                if(message.length===1&& message[0].type==='text' && /^\d+$/.test(message[0].text)){
-                    result=option.choices[Number(message[0].text)-1].value
+                if(message.match(/^\d+$/)){
+                    result=option.choices[Number(message)-1].value
                 }else result=initial
                 break;
             case 'multipleSelect':
-                const reg=new RegExp(`^(\\d+)(${separator}\\d+)*$`)
-                if(message.length===1&& message[0].type==='text' && reg.test(message[0].text)){
-                    result=message[0].text.split(separator)
-                        .map(Number).map(index=>option.choices[index-1].value)
+                const reg=new RegExp(`^\\d+(${separator}\\d+)*$`)
+                if(message.match(reg)){
+                    result=message.split(separator).map(Number).map(index=>option.choices[index-1].value)
                 }else{
                     result=initial||[]
                 }
@@ -142,7 +138,7 @@ export namespace Prompt{
         if(options.prefix){titleArr.shift()}
         result=result.concat(titleArr)
         if(options.prefix)result.unshift(options.prefix)
-        if (options.type==='confirm')result.push("\n输入y[es]或句号(.或。)以确认，其他内容取消(不区分大小写)")
+        if (options.type==='confirm')result.push("\n输入y[es]或句号(.或。)或是以确认，其他内容取消(不区分大小写)")
         const choices=typeof options.choices==='function'?options.choices(prev,result,options):options.choices
         switch (options.type){
             case "text":

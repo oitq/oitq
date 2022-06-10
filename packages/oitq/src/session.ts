@@ -62,7 +62,7 @@ export class Session {
             this.sendMsg(Prompt.formatOutput(prev, answer, options))
             const dispose = this.middleware((session) => {
                 const cb = () => {
-                    let result = Prompt.formatValue(prev, answer, options, session.message)
+                    let result = Prompt.formatValue(prev, answer, options, session.cqCode)
                     dispose()
                     resolve(result)
                     clearTimeout(timer)

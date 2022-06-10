@@ -9,7 +9,8 @@ export default (ctx: Context) => {
             message.error(typeof e==='string'?e:e.message)
         })
     }
-    ctx.disposables.push(router.beforeEach((route) => {
+    ctx.disposables.push(
+        router.beforeEach((route) => {
         if ((route.meta.authority || route.meta.fields.includes('user')) && !store.user) {
             // handle router.back()
             return history.state.forward === '/login' ? '/' : '/login'

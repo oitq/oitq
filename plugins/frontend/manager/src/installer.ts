@@ -1,6 +1,6 @@
 import { Plugin, defineProperty, Dict } from 'oitq'
 import { DataService } from '@oitq/service-console'
-import { PackageJson } from '@oitq/shop'
+import { PkgJson } from '@oitq/shop'
 import { resolve } from 'path'
 import { promises as fsp } from 'fs'
 import { loadManifest } from './utils'
@@ -24,7 +24,7 @@ export interface Dependency {
 }
 
 class Installer extends DataService<Dict<Dependency>> {
-    private manifest: PackageJson
+    private manifest: PkgJson
     private _payload: Dict<Dependency>
 
     constructor(public ctx: Plugin) {

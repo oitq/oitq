@@ -1,6 +1,5 @@
-import {Command, Plugin} from 'oitq'
+import {Command, Plugin,ChannelId, NSession} from 'oitq'
 import {} from '@oitq/service-database'
-import {ChannelId, NSession} from "oitq/lib";
 
 export const using = ['database'] as const
 export const name='admin.auth'
@@ -24,7 +23,7 @@ export function install(plugin: Plugin) {
                 if(!user) return `未找到用户：${user_id}`
                 if(user.toJSON().authority>=session.user.authority) return '你不能设置同级或上级的权限等级'
                 const success = await user.update({authority}, {where: {user_id}})
-                return `已调用：设置${user_id}的权限为${authority},成功数:${success}`
+                return `已调用：设置${user_id}的权限为${authority}`
             } catch (e) {
                 return `设置失败,错误信息:${e.message}`
             }
