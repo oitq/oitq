@@ -2,8 +2,11 @@
   "name": "oitq",
   "main": "lib/index.js",
   "typings": "lib/node.d.ts",
-  "version": "2.0.5-2",
+  "version": "2.0.5-3",
   "description": "oitq framework for oicq",
+  "engines": {
+    "node": ">= v14"
+  },
   "dependencies": {
     "oicq": "^2.2.1",
     "@oitq/utils": "^0.1.4",
@@ -11,7 +14,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/oitq/oitq.git"
+    "url": "git+https://github.com/oitq/oitq.git",
+    "directory": "packages/oitq"
   },
   "files": [
     "lib/**/*.js",
