@@ -32,6 +32,7 @@ export namespace Prompt{
         video:`[CQ:video,data=${string}]`
         image:`[CQ:image,data=${string}]`
         face:`[CQ:face,data=${string}]`
+        qq:number
         number:number,
         list:any[]
         confirm:boolean
@@ -61,6 +62,17 @@ export namespace Prompt{
                     result=message
                 }
                 break;
+            case 'qq':{
+                if(message.match(/^\[CQ:at,type=at,qq=(.*)]$/)){
+                    message=message.match(/^\[CQ:at,type=at,qq=(.*)]$/)[1]
+                }
+                if(message.match(/^\d+$/)){
+                    result=+message
+                }else{
+                    result=initial||100000
+                }
+                break;
+            }
             case 'image':
                 if(message.match(/^\[CQ:image,data=(.*)]$/)){
                     result=message
