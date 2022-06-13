@@ -320,7 +320,7 @@ export class OneBot {
             if (echo) {
                 result.echo = echo
             }
-            return JSON.stringify({...result, data: ret})
+            return JSON.stringify(result)
         } else {
             throw new NotFoundError()
         }
