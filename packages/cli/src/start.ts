@@ -6,10 +6,11 @@ import {
     dir,
     hyphenate,
     defaultAppConfig, App, getAppConfigPath,
-    readConfig, writeConfig,  getBotConfigPath, defaultBotConfig,
+    readConfig, writeConfig,
     Dict
 } from "oitq";
 import {createIfNotExist} from "@oitq/utils";
+import * as os from "os";
 
 let child: ChildProcess
 
@@ -97,8 +98,8 @@ export default function registerStartCommand(cli: CAC) {
             const { logLevel, watch, ...rest } = options
             if(!configPath)configPath=dir
             else configPath=path.join(process.cwd(),configPath)
-            createIfNotExist(path.join(dir,'configFilePath'),configPath)
-            writeConfig(path.join(dir,'configFilePath'),configPath)
+            createIfNotExist(path.join(os.homedir(),'configFilePath'),configPath)
+            writeConfig(path.join(os.homedir(),'configFilePath'),configPath)
             createIfNotExist(getAppConfigPath(configPath),defaultAppConfig)
             let appOptions: App.Config = readConfig(getAppConfigPath(configPath))
             try {

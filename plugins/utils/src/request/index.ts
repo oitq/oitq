@@ -16,7 +16,7 @@ export function install(ctx:Plugin){
         .action(async ({session,options},url)=>{
             const res=await ctx.app.axios.get(encodeURI(url),options.config)
             const target=session['group']||session['friend']
-            if(options.callback) return options.callback.apply({result:res,shareMusic:target.shareMusic.bind(target)})
+            if(options.callback) return options.callback.apply({result:res,shareMusic:target.shareMusic.bind(target),segment})
             try{
                 return JSON.stringify(res,null,2)
             }catch {
@@ -32,7 +32,8 @@ export function install(ctx:Plugin){
                 const res=await ctx.app.axios.get(encodeURI(url),{
                     responseType: 'arraybuffer'
                 })
-                if(options.callback) return options.callback.apply(res)
+                const target=session['group']||session['friend']
+                if(options.callback) return options.callback.apply({result:res,shareMusic:target.shareMusic.bind(target),segment})
                 switch (options.type){
                     case 'music':
                         return toCqcode({message:[segment.record(`base64://${Buffer.from(res,'binary').toString('base64')}`)]})
@@ -57,7 +58,7 @@ export function install(ctx:Plugin){
         .action(async ({session,options},url)=>{
             const res=await ctx.app.axios.post(encodeURI(url),options.data,options.config)
             const target=session['group']||session['friend']
-            if(options.callback) return options.callback.apply({result:res,shareMusic:target.shareMusic.bind(target)})
+            if(options.callback) return options.callback.apply({result:res,shareMusic:target.shareMusic.bind(target),segment})
             try{
                 return JSON.stringify(res,null,2)
             }catch {

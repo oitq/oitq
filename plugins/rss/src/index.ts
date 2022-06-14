@@ -1,4 +1,5 @@
 import {Plugin, NSession,MsgChannelId} from 'oitq'
+import {segment} from "oicq";
 import {DataTypes,TableDecl} from "@oitq/service-database";
 import RssFeedEmitter from 'rss-feed-emitter'
 
@@ -130,7 +131,7 @@ export function install(ctx: Plugin, config: Config) {
         logger.debug('receive', payload.title)
         const source = payload.meta.link
         if (!feedMap[source]) return
-        const message = callbackMap[source]?callbackMap[source].apply(payload):`${payload.meta.title} (${payload.author})\n${payload.title}\n${payload.link}`
+        const message = callbackMap[source]?callbackMap[source].apply({...payload,segment}):`${payload.meta.title} (${payload.author})\n${payload.title}\n${payload.link}`
         await ctx.app.broadcast([...feedMap[source]], message)
     })
     ctx.command('rss <title:string> <url:string>', 'message')
