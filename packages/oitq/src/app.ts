@@ -7,6 +7,7 @@ import {defaultAppConfig, dir} from './static'
 import * as path from "path";
 import {Middleware,ChannelId,MsgChannelId} from "./types";
 import {Command} from "./command";
+import ConfigLoader from "@oitq/loader";
 export class App extends Plugin{
     public app=this
     public parent=this
@@ -57,16 +58,9 @@ export namespace App{
         maxListeners?:number,
     }
 }
-export const getAppConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'oitq.config.json')
-export const getBotConfigPath=(baseDir=process.cwd())=>path.join(baseDir,'bot.default.json')
-export function createApp(config:string|App.Config=getAppConfigPath(dir)){
-    if(typeof config==='string'){
-        createIfNotExist(config,defaultAppConfig)
-        try{
-            config=readConfig(config) as App.Config
-        }catch {
-            config={}
-        }
+export function createApp(config?:string|App.Config){
+    if(!config || typeof config==='string'){
+        config=new ConfigLoader(config as string).readConfig()
     }
     return new App(merge(defaultAppConfig,config))
 }

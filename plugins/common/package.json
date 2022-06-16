@@ -1,7 +1,7 @@
 {
   "name": "@oitq/plugin-common",
   "main": "lib/index.js",
-  "version": "2.0.3-5",
+  "version": "2.0.3-6",
   "description": "common plugin",
   "repository": {
     "type": "git",

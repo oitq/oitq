@@ -1,4 +1,4 @@
-import {Plugin,getAppConfigPath,dir} from 'oitq'
+import {Plugin} from 'oitq'
 import ConfigLoader from '@oitq/loader'
 export const name='admin.config.oitq'
 export function install(ctx:Plugin){
@@ -13,7 +13,7 @@ export function install(ctx:Plugin){
         .action(async ({session,options},key,value)=>{
             const keys:string[]=[]
             if(key)keys.push(...key.split('.'))
-            const cl=new ConfigLoader(getAppConfigPath(process.cwd()))
+            const cl=new ConfigLoader()
             cl.readConfig()
             let currentValue:any=cl.config
             let pre=currentValue

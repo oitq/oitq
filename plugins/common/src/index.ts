@@ -39,7 +39,7 @@ export function echo(plugin: Plugin) {
         .action(async ({session}, varName) => {
             let result: any = session
             if (!varName) return '请输入变量名'
-            if (varName.endsWith(')') && !session.bot.isMaster(session.user_id)) return `禁止调用函数:this.${varName}`
+            if (varName.match(/\(.*\)/) && !session.bot.isMaster(session.user_id)) return `禁止调用函数:this.${varName}`
             let varArr = varName.split('.')
             if (!session.bot.isMaster(session.user_id) && varArr.some(name => ['options', 'bot', 'app', 'config', 'password'].includes(name))) {
                 return `不可达的位置：${varName}`

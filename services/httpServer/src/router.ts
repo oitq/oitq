@@ -1,6 +1,6 @@
 import KoaRouter = require('@koa/router');
 import * as http from "http";
-import WebSocket, {Server} from 'ws'
+import {Server} from 'ws'
 import { parse } from 'url';
 type Path=string|RegExp
 export class Router extends KoaRouter {

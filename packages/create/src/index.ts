@@ -156,7 +156,6 @@ async function install() {
         }
         console.log(blue(`  ${agent === 'yarn' ? 'yarn' : `${agent} install`}`))
         console.log(blue(`  ${agent === 'yarn' ? 'yarn start' : `${agent} run start`}`))
-        console.log()
     }
 }
 

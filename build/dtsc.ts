@@ -119,7 +119,6 @@ interface Layer {
             }
         }
         if (layers.length && !layer.nodes.length) {
-            console.log(nodes)
             throw new Error('circular dependency detected')
         }
         layers.unshift(layer)

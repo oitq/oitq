@@ -296,7 +296,3 @@ namespace Watcher {
     }
 
 }
-export const name='Watcher'
-export function install(app:App,config:Watcher.Config){
-    new Watcher(app,config)
-}

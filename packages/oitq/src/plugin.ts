@@ -591,43 +591,6 @@ export class PluginManager {
         const pluginList:Partial<PluginDesc>[]=[]
         const modulePath = path.join(process.cwd(), "node_modules")
         const orgPath = path.join(modulePath, '@oitq')
-        // 列出的插件不展示内置插件
-        const builtinPath = path.join(__dirname, 'plugins')
-        const builtinPlugins = fs.readdirSync(builtinPath, {withFileTypes: true})
-        for (let file of builtinPlugins) {
-            if (file.isDirectory()) {
-                try {
-                    require.resolve(`${builtinPath}/${file.name}`)
-                    let pkgInfo:Partial<PkgInfo>={}
-                    try{
-                        const pkg=require(path.join(`${builtinPath}/${file.name}`,'package.json'))
-                        pkgInfo={
-                            name:pkg.name,
-                            author:pkg.author,
-                            description:pkg.description,
-                            repository:pkg.repository,
-                            version:pkg.version
-                        }
-                    }catch {}
-                    pluginList.push({
-                        name: file.name,
-                        type: PluginType.Builtin,
-                        ...pkgInfo
-                    })
-                } catch {
-                }
-            } else if (file.isFile() && ((file.name.endsWith('.ts') && !file.name.endsWith('d.ts')) || file.name.endsWith('.js'))) {
-                const fileName = file.name.replace(/\.ts|\.js/, '')
-                try {
-                    require.resolve(`${builtinPath}/${fileName}`)
-                    pluginList.push({
-                        name: fileName,
-                        type: PluginType.Builtin,
-                    })
-                } catch {
-                }
-            }
-        }
         if (fs.existsSync(this.plugin_dir)) {
             const customPlugins = fs.readdirSync(this.plugin_dir, {withFileTypes: true})
             for (let file of customPlugins) {
@@ -636,7 +599,7 @@ export class PluginManager {
                         require.resolve(`${this.plugin_dir}/${file.name}`)
                         let pkgInfo:Partial<PkgInfo>={}
                         try{
-                            const pkg=require(path.join(`${builtinPath}/${file.name}`,'package.json'))
+                            const pkg=require(path.join(`${this.plugin_dir}/${file.name}`,'package.json'))
                             pkgInfo={
                                 name:pkg.name,
                                 author:pkg.author,
@@ -662,7 +625,7 @@ export class PluginManager {
                     require.resolve(file.name)
                     let pkgInfo:Partial<PkgInfo>={}
                     try{
-                        const pkg=require(path.join(`${builtinPath}/${file.name}`,'package.json'))
+                        const pkg=require(path.join(file.name,'package.json'))
                         pkgInfo={
                             name:pkg.name,
                             author:pkg.author,
@@ -688,7 +651,7 @@ export class PluginManager {
                         require.resolve(`@oitq/${file.name}`)
                         let pkgInfo:Partial<PkgInfo>={}
                         try{
-                            const pkg=require(path.join(`${builtinPath}/${file.name}`,'package.json'))
+                            const pkg=require(path.join(file.name,'package.json'))
                             pkgInfo={
                                 name:pkg.name,
                                 author:pkg.author,

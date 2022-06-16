@@ -1,4 +1,6 @@
 import {Plugin,App, Dict, interpolate, valueMap } from 'oitq'
+import {resolve} from "path";
+import * as dotenv from 'dotenv'
 import ConfigLoader from '@oitq/loader'
 
 declare module 'oitq' {
@@ -14,10 +16,12 @@ const context = {
 export class Loader extends ConfigLoader<App.Config> {
     app: App
     config:App.Config
+    envfile: string
     cache: Dict<string> = {}
 
     constructor() {
         super(process.env.OITQ_CONFIG_FILE)
+        this.envfile = resolve(this.dirname, '.env')
         this.readConfig()
     }
 
@@ -32,9 +36,18 @@ export class Loader extends ConfigLoader<App.Config> {
             return valueMap(source, item => this.interpolate(item))
         }
     }
-
+    readConfig(): App.Config {
+        // load .env file into process.env
+        dotenv.config({ path: this.envfile })
+        return this.interpolate(super.readConfig())
+    }
+    writeConfig() {
+        // prevent hot reload when it's being written
+        if (this.app.watcher) this.app.watcher.suspend = true
+        super.writeConfig()
+    }
     loadPlugin(name:string,config?:any){
-        return this.app.plugin(name,config)
+        return this.app.plugin(name,this.interpolate(config))
     }
     destroyPlugin(name: string) {
         return this.app.pluginManager.destroy(name)
@@ -45,7 +58,7 @@ export class Loader extends ConfigLoader<App.Config> {
         if (!plugin) return
         plugin.dispose()
         const config = this.config.plugins[name]
-        return plugin.install(config)
+        return plugin.install(this.interpolate(config))
     }
     unloadPlugin(name: string) {
         const plugin = this.app.pluginManager.plugins.get(name)
@@ -56,7 +69,7 @@ export class Loader extends ConfigLoader<App.Config> {
     }
 
     createApp() {
-        this.app=new App(this.config)
+        this.app=new App(this.interpolate(this.config))
         this.app.loader=this
         return this.app
     }

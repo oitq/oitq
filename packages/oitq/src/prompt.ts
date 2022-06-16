@@ -27,11 +27,11 @@ export namespace Prompt{
         value:any
     }
     export interface TypeKV{
-        text:`[CQ:text,data=${string}]`
+        text:string
         any:any
-        video:`[CQ:video,data=${string}]`
-        image:`[CQ:image,data=${string}]`
-        face:`[CQ:face,data=${string}]`
+        video:`[CQ:video,${string}]`
+        image:`[CQ:image,${string}]`
+        face:`[CQ:face,${string}]`
         qq:number
         number:number,
         list:any[]
@@ -53,12 +53,12 @@ export namespace Prompt{
                 result=message
                 break;
             case 'face':
-                if(message.match(/^\[CQ:face,data=(.*)]$/)){
+                if(message.match(/^\[CQ:face,(.*)]$/)){
                     result=message
                 }
                 break;
             case 'video':
-                if(message.match(/^\[CQ:video,data=(.*)]$/)){
+                if(message.match(/^\[CQ:video,(.*)]$/)){
                     result=message
                 }
                 break;
@@ -74,7 +74,7 @@ export namespace Prompt{
                 break;
             }
             case 'image':
-                if(message.match(/^\[CQ:image,data=(.*)]$/)){
+                if(message.match(/^\[CQ:image,(.*)]$/)){
                     result=message
                 }
                 break;

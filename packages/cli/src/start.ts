@@ -1,16 +1,10 @@
 import { ChildProcess, fork } from 'child_process'
 import { resolve } from 'path'
 import { CAC } from 'cac'
-import * as path from 'path'
 import {
-    dir,
     hyphenate,
-    defaultAppConfig, App, getAppConfigPath,
-    readConfig, writeConfig,
     Dict
 } from "oitq";
-import {createIfNotExist} from "@oitq/utils";
-import * as os from "os";
 
 let child: ChildProcess
 
@@ -96,17 +90,10 @@ export default function registerStartCommand(cli: CAC) {
         .option('--watch [path]', 'watch and reload at change')
         .action(async (configPath,options) => {
             const { logLevel, watch, ...rest } = options
-            if(!configPath)configPath=dir
-            else configPath=path.join(process.cwd(),configPath)
-            createIfNotExist(path.join(os.homedir(),'configFilePath'),configPath)
-            writeConfig(path.join(os.homedir(),'configFilePath'),configPath)
-            createIfNotExist(getAppConfigPath(configPath),defaultAppConfig)
-            let appOptions: App.Config = readConfig(getAppConfigPath(configPath))
             try {
                 setEnvArg('OITQ_WATCH_ROOT', watch)
-                writeConfig(getAppConfigPath(configPath), appOptions)
                 process.env.OITQ_LOG_LEVEL = logLevel || 'off'
-                process.env.OITQ_CONFIG_FILE = getAppConfigPath(configPath) || ''
+                process.env.OITQ_CONFIG_FILE = configPath
                 createWorker(rest)
             } catch (e) {
                 console.log(e.message)
