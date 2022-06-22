@@ -113,7 +113,7 @@ export class Session {
         const session: NSession = this as any
         template = template.replace(/\$A/g, s('at', {type: 'all'}))
             .replace(/\$a/g, s('at', {id: session.user_id}))
-            .replace(/\$m/g, s('at', {id: session.bot.uin}))
+            .replace(/\$m/g, s('at', {id: session.bot.sid}))
             .replace(/\$s/g, () => session.sender['card'] || session.sender['title'] || session.sender.nickname)
         while (template.match(/\$\(.*\)/)) {
             const text = /\$\((.*)\)/.exec(template)[1]
@@ -126,7 +126,7 @@ export class Session {
         if(result && typeof result!=="boolean")return result
         return template
     }
-    async sendMsg(content:Sendable,channelId?:ChannelId){
+    async sendMsg(content:string,channelId?:ChannelId){
         if(!channelId && this.post_type!=='message')throw new Error('非message会话发送消息需要提供ChannelId')
         if(!channelId)channelId=this.getChannelId()
         const result=await this.bot.sendMsg(channelId,content)

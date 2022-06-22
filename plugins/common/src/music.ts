@@ -4,8 +4,9 @@ import lodash from "lodash";
 import querystring from "querystring";
 import {MusicPlatform} from "oicq";
 import {} from '@oitq/service-http-server'
+
 export const name = 'music'
-export const using=['axios'] as const
+export const using = ['axios'] as const
 const m_ERR_CODE = Object.freeze({
     ERR_SRC: "1",
     ERR_404: "2",
@@ -18,7 +19,7 @@ const m_ERR_MSG = Object.freeze({
     [m_ERR_CODE.ERR_API]: "歌曲查询出错",
 });
 
-async function musicQQ(keyword,plugin:Plugin) {
+async function musicQQ(keyword, plugin: Plugin) {
     const url = "https://c.y.qq.com/soso/fcgi-bin/client_search_cp";
     const query = {w: keyword};
     const headers = {
@@ -51,7 +52,7 @@ async function musicQQ(keyword,plugin:Plugin) {
     return m_ERR_CODE.ERR_404;
 }
 
-async function music163(keyword,plugin:Plugin) {
+async function music163(keyword, plugin: Plugin) {
     const url = "https://music.163.com/api/search/get/";
     const form = {
         s: keyword,
@@ -69,7 +70,7 @@ async function music163(keyword,plugin:Plugin) {
     };
     let jbody;
     try {
-        jbody = await plugin.axios.post(url,body, {headers});
+        jbody = await plugin.axios.post(url, body, {headers});
     } catch (e) {
         return m_ERR_CODE.ERR_API;
     }
@@ -95,39 +96,39 @@ export function install(ctx: Plugin) {
         .command('common/music [keyword:string]', 'message')
         .desc('点歌')
         .shortcut('点歌', {fuzzy: true})
-        .shortcut(/^来一首(\S+)$/, {args:['$1']})
+        .shortcut(/^来一首(\S+)$/, {args: ['$1']})
         .option('platform', '-p <platform:string> 音乐平台', {initial: '163'})
         .action(async ({session, options}, keyword) => {
-            if(!keyword){
-                const input=await session.prompt({
-                    name:'keyword',
-                    type:'text',
-                    message:'点什么歌呀'
+            if (!keyword) {
+                const input = await session.prompt({
+                    name: 'keyword',
+                    type: 'text',
+                    message: '点什么歌呀'
                 })
-                if(!input.keyword)return
-                keyword=input.keyword
+                if (!input.keyword) return
+                keyword = input.keyword
             }
             let musicInfo: string | MusicInfo
             switch (options.platform) {
                 case '163':
-                    musicInfo = await music163(keyword,ctx)
+                    musicInfo = await music163(keyword, ctx)
                     break;
                 case 'qq':
-                    musicInfo = await musicQQ(keyword,ctx)
+                    musicInfo = await musicQQ(keyword, ctx)
                     break;
                 default:
                     musicInfo = m_ERR_CODE.ERR_SRC
                     break;
             }
-            if(typeof musicInfo==='string'){
+            if (typeof musicInfo === 'string') {
                 return m_ERR_MSG[musicInfo]
             }
-            switch (session.message_type){
+            switch (session.message_type) {
                 case 'private':
-                    await session.bot.pickFriend(session.sender.user_id).shareMusic(musicInfo.type,musicInfo.id)
+                    await session.bot.pickFriend(session.sender.user_id).shareMusic(musicInfo.type, musicInfo.id)
                     break;
                 case 'group':
-                    await session.bot.pickGroup(session.group_id).shareMusic(musicInfo.type,musicInfo.id)
+                    await session.bot.pickGroup(session.group_id).shareMusic(musicInfo.type, musicInfo.id)
                     break;
                 default:
                     break;

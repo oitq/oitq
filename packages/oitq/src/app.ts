@@ -1,10 +1,9 @@
-import 'oicq2-cq-enable';
 import {LogLevel, Sendable} from "oicq";
-import {BotList, Bot} from "./bot";
-import {sleep, merge, Dict, readConfig, createIfNotExist} from "@oitq/utils";
+import {sleep, merge, Dict} from "@oitq/utils";
 import {Plugin, PluginManager} from './plugin'
-import {defaultAppConfig, dir} from './static'
-import * as path from "path";
+import {Adapter} from "./adapter";
+import {Bot} from "./bot";
+import {defaultAppConfig} from './static'
 import {Middleware,ChannelId,MsgChannelId} from "./types";
 import {Command} from "./command";
 import ConfigLoader from "@oitq/loader";
@@ -17,7 +16,7 @@ export class App extends Plugin{
     constructor(public config:App.Config) {
         super({install(){},name:'app'});
         this.logger=this.getLogger('app')
-        this.bots=new BotList(this)
+        this.bots=new Adapter.BotList(this)
         this.pluginManager=new PluginManager(this)
     }
 
@@ -28,7 +27,7 @@ export class App extends Plugin{
             await this.bots.get(Number(uin)).sendMsg(`${target_type}:${target_id}` as ChannelId,msg)
         }
     }
-    addBot(config:Bot.Config){
+    addBot(config:any){
         return this.bots.create(config)
     }
     removeBot(uin:number){
@@ -51,7 +50,7 @@ export class App extends Plugin{
 }
 export namespace App{
     export interface Config extends PluginManager.Config{
-        bots?:Bot.Config[]
+        bots:Bot.Config[]
         delay?:Dict<number>
         token?:string
         logLevel?:LogLevel
@@ -60,7 +59,7 @@ export namespace App{
 }
 export function createApp(config?:string|App.Config){
     if(!config || typeof config==='string'){
-        config=new ConfigLoader(config as string).readConfig()
+        config=new ConfigLoader<App.Config>(config as string).readConfig()
     }
     return new App(merge(defaultAppConfig,config))
 }

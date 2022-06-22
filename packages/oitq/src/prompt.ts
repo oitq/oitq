@@ -1,11 +1,10 @@
-import {FaceElem, ImageElem, MessageElem, Sendable, VideoElem} from "oicq";
 import {Dict} from "@oitq/utils";
 export namespace Prompt{
     export interface Options<T extends keyof TypeKV>{
         type:T | Falsy | PrevCaller<T,T|Falsy>,
         name?:string
-        label?:Sendable
-        message?:Sendable
+        label?:string
+        message?:string
         prefix?:string
         action?:string
         validate?:RegExp|((message:string)=>boolean)
@@ -140,7 +139,7 @@ export namespace Prompt{
         }
     }
     export function formatOutput<T extends keyof TypeKV>(prev:any,answer:Dict,options:Options<T>){
-        let result:Sendable[]=[]
+        let result:string[]=[]
         if(!options.name && !options.prefix) throw new Error('name/prefix is required')
         const titleArr=[
             options.message||`${(getPrefix(options.type as keyof TypeKV)+(options.action||'')+options.label||options.name||'')}`,
@@ -167,6 +166,6 @@ export namespace Prompt{
                     '\n输入指定选项前边的索引即可'
                 )
         }
-        return result.flat()
+        return result.flat().join('')
     }
 }

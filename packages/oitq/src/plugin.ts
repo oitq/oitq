@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as fs from 'fs'
 import {getLogger} from 'log4js'
-import {App, Bot, BotList, Middleware, NSession} from "./index";
+import {App, Bot, Adapter, Middleware, NSession} from "./index";
 import {AppEventMap,BeforeEventMap,Dispose} from './types'
 import {Awaitable, createIfNotExist, readConfig, remove, writeConfig,unwrapExports} from "@oitq/utils";
 import {Command} from "./command";
@@ -304,20 +304,6 @@ export class Plugin extends EventThrower {
                 || cmd.shortcuts.some(({name})=>typeof name==='string'?name===argv.name:name.test(argv.source))
         })
     }
-    protected async _editBotPluginCache(bot: Bot, method: "add" | "delete") {
-        const dir = path.join(bot.dir, "plugin")
-        createIfNotExist(dir, [])
-        let set: Set<string>
-        try {
-            const arr = readConfig(dir) as string[]
-            set = new Set(arr)
-        } catch {
-            set = new Set
-        }
-        set[method](this.pkg.name||this.fullpath)
-        return writeConfig(dir, Array.from(set))
-    }
-
     async install(config?: any) {
         if(config)this.config=config
         else config=this.config
@@ -370,11 +356,10 @@ export class Plugin extends EventThrower {
         if (this.binds.has(bot)) {
             throw new PluginError(`这个机器人实例已经启用了${this.type}(${this.pkg.name})`)
         }
-        await this._editBotPluginCache(bot, "add")
         this.binds.add(bot)
         this.parent.emit(`${this.type}-enable`,this)
-        this.log(`已对Bot(${bot.uin})启用${this.type}(${this.pkg.name})`)
-        return `已对Bot(${bot.uin})启用${this.type}(${this.pkg.name})`
+        this.log(`已对Bot(${bot.sid})启用${this.type}(${this.pkg.name})`)
+        return `已对Bot(${bot.sid})启用${this.type}(${this.pkg.name})`
     }
 
     async disable(bot: Bot=null) {
@@ -390,11 +375,10 @@ export class Plugin extends EventThrower {
         if (!this.binds.has(bot)) {
             throw new PluginError(`这个机器人实例尚未启用${this.type}(${this.pkg.name})`)
         }
-        await this._editBotPluginCache(bot, "delete")
         this.binds.delete(bot)
         this.parent.emit(`${this.type}-disable`,this)
-        this.log(`已对Bot(${bot.uin})禁用${this.type}(${this.pkg.name})`)
-        return `已对Bot(${bot.uin})禁用${this.type}(${this.pkg.name})`
+        this.log(`已对Bot(${bot.sid})禁用${this.type}(${this.pkg.name})`)
+        return `已对Bot(${bot.sid})禁用${this.type}(${this.pkg.name})`
     }
 
     destroy(plugin:Plugin=this) {
@@ -448,7 +432,7 @@ export class Plugin extends EventThrower {
 export namespace Plugin{
     export interface Services{
         pluginManager:PluginManager
-        bots:BotList
+        bots:Adapter.BotList
     }
     export const Services: (keyof Services)[] = []
     export function isConstructor(func: Function) {
@@ -704,8 +688,8 @@ export class PluginManager {
      * @param {Bot} bot
      */
     async restore(bot: Bot) {
-        createIfNotExist(path.join(bot.dir, 'plugin'), [])
-        const dir = path.join(bot.dir, "plugin")
+        createIfNotExist(path.join(bot.sid, 'plugin'), [])
+        const dir = path.join(bot.sid, "plugin")
         try {
             const arr = readConfig(dir) as string[]
             for (let name of arr) {
@@ -767,7 +751,9 @@ export abstract class Service {
         })
 
         plugin.on('dispose', async () => {
-            if (plugin[name] === this as never) plugin[name] = null
+            if (plugin[name] === this as never) { // @ts-ignore
+                plugin[name] = null
+            }
             await this.stop()
         })
 

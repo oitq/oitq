@@ -1,4 +1,5 @@
 export * from './app'
+export * from './adapter'
 export * from './bot'
 export * from './plugin'
 export * from './prompt'

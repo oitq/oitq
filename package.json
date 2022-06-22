@@ -68,6 +68,9 @@
     "vitepress": "^0.22.4"
   },
   "dependencies": {
+    "@oitq/cli": "^2.0.2-2",
+    "@oitq/loader": "^2.0.1-alpha",
+    "dotenv": "^16.0.1",
     "oicq": "^2.2.1"
   }
 }

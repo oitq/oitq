@@ -1,5 +1,5 @@
 import {Plugin} from "./plugin";
-import {Bot, BotEventMap} from "./bot";
+import {Bot} from "./bot";
 import {EventMap, MessageRet, Sendable} from "oicq";
 import {Awaitable, Define, Extend} from "@oitq/utils";
 import {Command} from "./command";
@@ -24,7 +24,7 @@ export type Middleware=(session:NSession<any>)=>Awaitable<boolean|Sendable|void>
 export type MsgChannelId=`${number}-${TargetType}:${number}`
 // eventMap
 export type BeforeEventMap = { [E in keyof AppEventMap & string as OmitSubstring<E, 'before-'>]: AppEventMap[E] }
-export interface AppEventMap extends BotEventMap,ServiceEventMap{
+export interface AppEventMap extends Bot.EventMap,ServiceEventMap{
     'ready'():void
     'dispose'():void
     'send'(messageRet:MessageRet,channelId:ChannelId):void

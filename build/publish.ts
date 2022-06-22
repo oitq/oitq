@@ -39,8 +39,7 @@ function getVersion(name: string, isNext = false) {
     function publish(folder: string, name: string, version: string, tag: string) {
         console.log(`publishing ${name}@${version} ...`)
         return spawnAsync([
-            'yarn', 'publish', folder,
-            '--new-version', version,
+            'npm', 'publish', folder,
             '--tag', tag,
             '--access', 'public',
         ])
