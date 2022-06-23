@@ -1,0 +1,30 @@
+{
+  "name": "@oitq/plugin-adapter-wechat",
+  "main": "lib/index.js",
+  "version": "0.0.1-alpha.0",
+  "description": "oitq adapter for wechat",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oitq/oitq.git",
+    "directory": "adapters/wechat"
+  },
+  "keywords": [
+    "wechat",
+    "adapter",
+    "oitq"
+  ],
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
+    "lib/**/LICENSE"
+  ],
+  "author": "凉菜 <admin@liucl.cn>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/oitq/oitq/issues"
+  },
+  "homepage": "https://github.com/oitq/oitq#readme",
+  "dependencies": {
+    "lib-wechat": "^0.0.1-3"
+  }
+}

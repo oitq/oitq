@@ -1,0 +1,31 @@
+{
+  "name": "@oitq/plugin-adapter-oicq",
+  "main": "lib/index.js",
+  "version": "0.0.1",
+  "description": "oitq adapter for oicq",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oitq/oitq.git",
+    "directory": "adapters/oicq"
+  },
+  "keywords": [
+    "oicq",
+    "adapter",
+    "oitq"
+  ],
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
+    "lib/**/LICENSE"
+  ],
+  "author": "lc_cn <admin@liucl.cn>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/oitq/oitq/issues"
+  },
+  "homepage": "https://github.com/oitq/oitq#readme",
+  "dependencies": {
+    "oicq": "^2.3.1",
+    "oicq2-cq-enable": "^1.0.5"
+  }
+}

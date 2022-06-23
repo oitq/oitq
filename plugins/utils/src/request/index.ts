@@ -1,5 +1,5 @@
+import {toCqcode} from "oicq2-cq-enable";
 import {Plugin} from "oitq";
-import {toCqcode} from "@oitq/utils";
 import {segment} from "oicq";
 import path from "path";
 import {} from '@oitq/service-http-server'

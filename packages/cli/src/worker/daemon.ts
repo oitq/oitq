@@ -56,7 +56,7 @@ export function install(plugin: Plugin, config: Config = {}) {
     process.on('message', (data: Message) => {
         if (data.type === 'send') {
             const { channelId, sid, message } = data.body
-            const bot=plugin.app.bots.get(Number(sid))
+            const bot=plugin.app.bots.get(sid)
             if(bot.isOnline()){
                 bot.sendMsg(channelId, message)
             }else{

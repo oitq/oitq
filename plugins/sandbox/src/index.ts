@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import {ChildProcess,fork} from 'child_process'
 import {Client} from "oicq";
-import {Dispose, NSession} from "oitq/lib";
+import {Dispose, NSession} from "oitq";
 const bots:Map<string, Client> = new Map()
 let worker:ChildProcess
 let flag = false

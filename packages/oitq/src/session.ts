@@ -1,6 +1,4 @@
 import {App, Bot,  Prompt} from "./";
-import {EventMap, MessageElem, Sendable} from "oicq";
-import {MessageRet} from "oicq/lib/events";
 import {template, Awaitable, Dict, s} from "@oitq/utils";
 import {Action} from "./argv";
 import {ChannelId, Middleware, NSession} from './types'
@@ -8,7 +6,6 @@ export interface Session {
     self_id?: number
     cqCode?: string
     message_type?: string
-    message?: MessageElem[]
     post_type?: string
     notice_type?: string
     request_type?: string
@@ -16,8 +13,6 @@ export interface Session {
     group_id?: number
     discuss_id?: number
     sub_type?: string
-
-    reply?(content: Sendable, quote?: boolean): Promise<MessageRet>
 }
 
 export type Computed<T> = T | ((session: NSession) => T)
@@ -41,7 +36,7 @@ export class Session {
     argv: Action
     parsed?: Parsed
 
-    constructor(public app: App, public bot: Bot, data: Dict, public event_name: keyof EventMap) {
+    constructor(public app: App, public bot: Bot, data: Dict, public event_name: string) {
         Object.assign(this, data)
     }
 

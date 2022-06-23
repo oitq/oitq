@@ -1,3 +1,4 @@
+import {toCqcode} from "oicq2-cq-enable";
 import {Bot, NSession, Plugin, remove} from "oitq";
 import {DataTypes} from "@oitq/service-database";
 import {Platform, segment} from "oicq";
@@ -22,7 +23,7 @@ async function loginBot(session: NSession, bot: Bot, password): Promise<[boolean
                 const {confirm} = await session.prompt({
                     type: 'confirm',
                     name: 'confirm',
-                    message: ['请扫描登录二维码后回复任意内容继续\n', segment.image(sess.image)]
+                    message: toCqcode({message:['请扫描登录二维码后回复任意内容继续\n', segment.image(sess.image)]})
                 })
                 if (!confirm) return resolve([false, '用户取消登录'])
                 await bot.login()
@@ -115,7 +116,7 @@ export function install(plugin: Plugin,config:ChildConfig={bot_login_type:'qrcod
                 where: {uin: bot.uin},
                 defaults: {
                     config: bot.options,
-                    password:bot.options.password,
+                    password:bot.options['password'],
                     parent:null,
                     children:[]
                 }
@@ -148,9 +149,10 @@ export function install(plugin: Plugin,config:ChildConfig={bot_login_type:'qrcod
                     name: 'password'
                 }
             ])
-            if (plugin.app.bots.get(uin as number)) return `uin(${uin})已存在`
+            if (plugin.app.bots.get(String(uin))) return `uin(${uin})已存在`
             const bot = plugin.app.addBot({
-                uin: Number(uin),
+                platform:'oicq',
+                uin: String(uin),
                 master: session.user_id,
                 config: {platform: options.platform}
             })
@@ -192,7 +194,7 @@ export function install(plugin: Plugin,config:ChildConfig={bot_login_type:'qrcod
             const bot = await plugin.database.model('Bot').findOne({where: {uin}})
             if (!bot) return '为找到bot:' + uin
             const user = await plugin.database.model('User').findOne({where: {user_id}})
-            plugin.app.removeBot(uin)
+            plugin.app.removeBot(String(uin))
             await bot.destroy()
             remove(bots, uin)
             await user.update({bots})

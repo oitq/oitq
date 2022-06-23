@@ -280,7 +280,7 @@ export class Plugin extends EventThrower {
         this.app.emit('command-add',command)
         return command as any
     }
-    async execute(session:NSession,content=session.cqCode||''):Promise<boolean|Sendable|void> {
+    async execute(session:NSession,content=session.cqCode||''):Promise<boolean|string|void> {
         const argv = Action.parse(content)
         argv.bot = session.bot
         argv.session = session

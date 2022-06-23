@@ -8,7 +8,7 @@ declare module 'oitq'{
         oneBot?:OneBot
     }
     namespace Bot{
-        interface Config{
+        interface BaseConfig{
             oneBot?:boolean|OneBotConfig
         }
     }

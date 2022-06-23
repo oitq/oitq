@@ -1,34 +1,34 @@
-import {Client, EventMap, Quotable, Sendable,Config as ClientConfig,MessageRet} from "oicq";
-import {App,Adapter,Bot,ChannelId, Filter, NSession, Session,Plugin} from "oitq";
+import {Client, EventMap,Sendable,Config as ClientConfig,MessageRet} from "lib-wechat";
+import {App,Adapter,Bot,ChannelId,Filter, NSession, Session,Plugin} from "oitq";
 import {merge} from "@oitq/utils";
-export class OicqBot extends Client implements Bot<OicqBot.Config>{
-    options: OicqBot.Config
-    admins:number[]=[]
-    public platform: 'oicq';
+export class WechatBot extends Client implements Bot<WechatBot.Config>{
+    options: WechatBot.Config
+    admins:string[]=[]
+    public platform: 'wechat';
     public plugin: Plugin;
     public sid: string;
-    master:number
+    master:string
     public app:App
-    constructor(public adapter:Adapter, config:OicqBot.Config) {
-        super(config.uin,merge(OicqBot,config).config);
+    constructor(public adapter:Adapter, config:WechatBot.Config) {
+        super(config.wxid,merge(WechatBot,config).config);
         this.app=adapter.app
-        config=merge(OicqBot.DefaultConfig,config)
+        config=merge(WechatBot.DefaultConfig,config)
         this.plugin=adapter.plugin
-        this.sid=String(config.uin)
+        this.sid=config.wxid
         this.options = config
         this.admins=config.admins||[]
         this.master=config.master||null
     }
     start(){
-        this.login(this.options.password)
+        this.login()
     }
     stop(){
         this.logout()
     }
-    isMaster(user_id:number){
+    isMaster(user_id:string){
         return this.options.master===user_id
     }
-    isAdmin(user_id:number){
+    isAdmin(user_id:string){
         return this.options.admins.includes(user_id)
     }
 
@@ -75,19 +75,19 @@ export class OicqBot extends Client implements Bot<OicqBot.Config>{
      */
     getLoginInfo(){
         return {
-            user_id:this.uin,
-            nickname:this.nickname
+            user_id:this.info.wx_id,
+            nickname:this.info.nick_name
         }
     }
     getCredentials(domain:string){
         return {
-            cookies:this.cookies[domain],
-            csrf_token:this.getCsrfToken()
+            cookies:'',
+            csrf_token:''
         }
     }
     getStatus(){
         return {
-            online:this.status===11,
+            online:true,
             good:true
         }
     }
@@ -95,24 +95,20 @@ export class OicqBot extends Client implements Bot<OicqBot.Config>{
      * 发送消息
      * @param channelId 通道id
      * @param content 消息内容，如果为CQ码会自动转换
-     * @param source 引用的消息，为string时代表消息id
      */
-    async sendMsg(channelId: ChannelId, content: Sendable, source?: Quotable | string): Promise<MessageRet> {
-        if (typeof source === 'string') source = await this.getMsg(source) as Quotable
+    async sendMsg(channelId: string, content: Sendable): Promise<MessageRet> {
         const [type, id] = channelId.split(':')
         switch (type) {
-            case "discuss":
-                return this.pickDiscuss(Number(id)).sendMsg(content)
             case 'group':
-                if (!this.gl.get(Number(id))) throw new Error(`我没有加入群:${id}`)
-                return this.pickGroup(Number(id)).sendMsg(content, source)
+                if (!this.gl.get(id)) throw new Error(`我没有加入群:${id}`)
+                return this.pickGroup(id).sendMsg(content)
             case 'private':
-                if (!this.fl.get(Number(id))) throw new Error(`我没有添加用户:${id}`)
-                return this.pickFriend(Number(id)).sendMsg(content, source)
+                if (!this.fl.get(id)) throw new Error(`我没有添加用户:${id}`)
+                return this.pickFriend(id).sendMsg(content)
         }
         throw new Error('无效的通道Id')
     }
-    async broadcast(channelIds:(ChannelId|number)[],message:Sendable){
+    async broadcast(channelIds:(ChannelId|string)[],message:Sendable){
         const result=[]
         for(const channelId of channelIds){
             if(typeof channelId==="number")result.push(await this.sendPrivateMsg(channelId,message))
@@ -123,21 +119,19 @@ export class OicqBot extends Client implements Bot<OicqBot.Config>{
 
 
 }
-export namespace OicqBot{
+export namespace WechatBot{
     export const DefaultConfig:Config={
-        platform: 'oicq',
+        platform: 'wechat',
         admins:[],
         config:{
             data_dir:process.cwd()+'/data',
-        },
-        master:1659488338
+        }
     }
     export interface Config extends Bot.BaseConfig{
-        platform:'oicq'
-        uin?: number
+        platform:'wechat'
+        wxid?: string
         config?: ClientConfig,
-        password?:string
-        master?: number // 当前机器人主人
-        admins?: number[] // 当前机器人管理员
+        master?: string // 当前机器人主人
+        admins?: string[] // 当前机器人管理员
     }
 }

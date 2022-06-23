@@ -1,5 +1,4 @@
-import {LogLevel, Sendable} from "oicq";
-import {sleep, merge, Dict} from "@oitq/utils";
+import {merge, Dict} from "@oitq/utils";
 import {Plugin, PluginManager} from './plugin'
 import {Adapter} from "./adapter";
 import {Bot} from "./bot";
@@ -7,6 +6,7 @@ import {defaultAppConfig} from './static'
 import {Middleware,ChannelId,MsgChannelId} from "./types";
 import {Command} from "./command";
 import ConfigLoader from "@oitq/loader";
+export type LogLevel = "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "mark" | "off";
 export class App extends Plugin{
     public app=this
     public parent=this
@@ -20,17 +20,17 @@ export class App extends Plugin{
         this.pluginManager=new PluginManager(this)
     }
 
-    async broadcast(msgChannelIds:MsgChannelId|MsgChannelId[],msg:Sendable){
+    async broadcast(msgChannelIds:MsgChannelId|MsgChannelId[],msg:string){
         msgChannelIds=[].concat(msgChannelIds)
         for(const msgChannelId of msgChannelIds){
             const [_,uin,target_type,target_id]=/^(\d+)-(\S+):(\d+)$/.exec(msgChannelId)
-            await this.bots.get(Number(uin)).sendMsg(`${target_type}:${target_id}` as ChannelId,msg)
+            await this.bots.get(uin).sendMsg(`${target_type}:${target_id}` as ChannelId,msg)
         }
     }
-    addBot(config:any){
-        return this.bots.create(config)
+    addBot(config:Bot.Config){
+        return this.bots.create(config.platform,config)
     }
-    removeBot(uin:number){
+    removeBot(uin:string){
         return this.bots.remove(uin)
     }
     async start(){
@@ -38,12 +38,9 @@ export class App extends Plugin{
         await this.parallel('before-start')
         if(this.config.bots){
             for(const config of this.config.bots){
-                this.bots.create(config)
+
+                this.bots.create(config.platform,config)
             }
-        }
-        for(const bot of this.bots){
-            await bot.login(bot.options.password)
-            await sleep(3000)//避免同一设备同时多个bot登录异常，做延时
         }
         this.emit('ready')
     }

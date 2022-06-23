@@ -1,4 +1,4 @@
-import {Plugin, template, s, fromCqcode, Dict, sleep, makeArray} from "oitq";
+import {Plugin, template, s, Dict, sleep, makeArray} from "oitq";
 import {Forwardable, OnlineStatus, segment} from "oicq";
 import * as callme from './callme'
 import * as music from './music'
@@ -79,15 +79,15 @@ export function send(plugin: Plugin) {
             }
 
             if (options.user) {
-                await bot.sendPrivateMsg(options.user, fromCqcode(message))
+                await bot.sendPrivateMsg(options.user, message)
                 return true
             }
             if (options.group) {
-                await bot.sendGroupMsg(options.group, fromCqcode(message))
+                await bot.sendGroupMsg(options.group, message)
                 return true
             }
             if (options.discuss) {
-                await bot.sendDiscussMsg(options.discuss, fromCqcode(message))
+                await bot.sendDiscussMsg(options.discuss, message)
                 return true
             }
             await session.sendMsg(message)
@@ -262,7 +262,7 @@ export function install(plugin: Plugin, config: Config) {
                 ])
                 if(!Continue)finished=true
                 messageArr.push({
-                    message:fromCqcode(message as string),
+                    message:String(message),
                     user_id:user_id as number,
                     nickname:(await bot.pickUser(user_id as number)?.getSimpleInfo())?.nickname
                 })

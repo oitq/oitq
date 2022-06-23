@@ -33,7 +33,7 @@
     "@types/yargs-parser": "^21.0.0"
   },
   "dependencies": {
-    "axios": "^0.24.0",
+    "axios": "^0.27.2",
     "cross-spawn": "^7.0.3",
     "kleur": "^4.1.4",
     "prompts": "^2.4.2",

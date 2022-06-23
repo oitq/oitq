@@ -1,6 +1,5 @@
 import {Service, Plugin, Prompt, template, NSession} from "oitq";
 import {TaskStep, Task} from "./model";
-import {options} from "tsconfig-paths/lib/options";
 import {Model} from "sequelize";
 
 interface TaskWithSteps extends Task {

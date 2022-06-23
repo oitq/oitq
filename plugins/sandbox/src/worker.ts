@@ -1,6 +1,6 @@
+import {fromCqcode} from "oicq2-cq-enable";
 import stringify from 'string.ify'
 import {NSession} from "oitq/lib";
-import {fromCqcode} from "@oitq/utils";
 import {Sandbox} from "./sandbox";
 const stringify_config = stringify.configure({
     pure:            true,

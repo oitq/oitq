@@ -6,6 +6,7 @@ import { SpawnOptions } from 'child_process'
 export const cwd = resolve(__dirname, '..')
 
 const categories = [
+    'adapters',
     'packages',
     'plugins',
     'services',

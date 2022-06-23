@@ -30,19 +30,26 @@ export namespace Adapter{
     export type PluginConfig<S = any, R = any> = S & BotConfig<R>
     export function define<T extends Bot.BaseConfig, S>(
         platform: keyof Bot.Platforms,
-        bot: Bot.Constructor<T>,
+        constructor: Bot.Constructor<T>,
         adapter: Constructor<T, S>,
     ): PluginManager.ObjectHook<PluginConfig<S, T>>{
         const name = platform + '-adapter'
-        Bot.library[platform] = bot
+        Bot.library[platform] = constructor
+        Adapter.library[platform]=adapter
         function install(plugin:Plugin,config?){
-
+            plugin.emit('adapter', platform)
+            configMap[platform] = config
+            const bots=plugin.app.config.bots.filter(bot=>bot.platform===platform)
+            if(config&&config.bots)bots.push(...config.bots)
+            for (const options of bots) {
+                plugin.bots.create(platform, options, constructor)
+            }
         }
         return {name,install}
     }
     export class BotList extends Array<Bot> {
         adapters: Record<string,Adapter> = {}
-
+        name:string='bots'
         constructor(private app: App) {
             super()
         }
@@ -51,13 +58,13 @@ export namespace Adapter{
             return this.find(bot => bot.sid === sid)
         }
 
-        create<T extends Bot>(platform: keyof Bot.Platforms, options: any, constructor?: new (adapter: Adapter, config: any) => T): T {
+        create<T extends Bot>(platform: keyof Bot.Platforms, options: Bot.Config, constructor?: new (adapter: Adapter, config: any) => T): T {
             constructor ||= Bot.library[platform] as any
-            const adapter = this.resolve(platform, options)
+            const adapter = this.resolve(platform)
             const bot = new constructor(adapter, options)
             adapter.bots.push(bot)
             this.push(bot)
-            this.app.emit('bot-added', bot)
+            this.app.emit('bot-add', bot)
             this.app.on('dispose', () => {
                 this.remove(bot.sid)
             })
@@ -69,11 +76,11 @@ export namespace Adapter{
             if (index < 0) return
             const [bot] = this.splice(index, 1)
             const exist = remove(bot.adapter.bots, bot)
-            this.app.emit('bot-removed', bot)
+            this.app.emit('bot-remove', bot)
             return exist
         }
 
-        private resolve(platform: keyof Bot.Platforms, config: Bot.BaseConfig): Adapter {
+        private resolve(platform: keyof Bot.Platforms): Adapter {
             if (this.adapters[platform]) return this.adapters[platform]
 
             const constructor = Adapter.library[platform]

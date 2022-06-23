@@ -2,8 +2,8 @@ import {Plugin, Dict, pick, Time, Bot} from "oitq";
 import {DataService} from "@oitq/service-console";
 declare module 'oitq'{
     interface Bot{
-        _messageSent: TickCounter
-        _messageReceived: TickCounter
+        _messageSent?: TickCounter
+        _messageReceived?: TickCounter
     }
 }
 class TickCounter{

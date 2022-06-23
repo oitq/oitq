@@ -1,10 +1,12 @@
 import {Plugin} from "./plugin";
 import {App} from './app'
 import {
+    Awaitable,
     template,
 } from "@oitq/utils";
 import {Adapter} from "./adapter";
-import {ChannelId} from "./types";
+import {ChannelId, NSession} from "./types";
+import {and} from "@vueuse/core";
 
 template.set('bot', {
     system: {
@@ -22,9 +24,12 @@ export interface Bot<T extends Bot.BaseConfig=Bot.BaseConfig>{
     adapter:Adapter
     plugin:Plugin
     platform:keyof Bot.Platforms
-    config:T
+    options:T
     sid:string
     sendMsg(channelId:ChannelId,message:string)
+    start():Awaitable<void>
+    stop():Awaitable<void>
+    [key:string]:any
 }
 export namespace Bot{
     export const library: Record<string, Bot.Constructor> = {}
@@ -35,12 +40,15 @@ export namespace Bot{
         platform:keyof Platforms
     }
     export interface Platforms{
+        [index:string]:Bot
     }
-    export interface Config{
-        platform:keyof Platforms
-    }
+    export type Config<B extends Bot=Bot>= {
+        platform:Bot['platform']
+        [key:string]:any
+    } & B['options']
     export interface EventMap{
         'bot-add'(bot: Bot): void
         'bot-remove'(bot: Bot): void
+        'message'(session: any): void
     }
 }

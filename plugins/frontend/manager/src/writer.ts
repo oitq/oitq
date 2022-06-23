@@ -8,8 +8,8 @@ declare module '@oitq/service-console' {
         'manager/plugin-unload'(name: string, config: any): void
         'manager/bot-update'(config: Bot.Config): void
         'manager/bot-add'(config:Bot.Config):void
-        'manager/bot-login'(uin:number,type:'password'|'slider'|'sms',value?:string):void
-        'manager/bot-remove'(uin: number): void
+        'manager/bot-login'(uin:string,type:'password'|'slider'|'sms',value?:string):void
+        'manager/bot-remove'(uin: string): void
     }
 }
 
@@ -74,7 +74,7 @@ export default class ConfigWriter {
         this.ctx.app.addBot(config)
         this.loader.writeConfig()
     }
-    loginBot(uin:number,type:'password'|'slider'|'sms',value?:string){
+    loginBot(uin:string,type:'password'|'slider'|'sms',value?:string){
         const bot=this.ctx.bots.get(uin)
         if(!bot) throw new Error('未知的bot:'+uin)
         return new Promise((resolve, reject) => {
@@ -147,7 +147,7 @@ export default class ConfigWriter {
         this.loader.writeConfig()
     }
 
-    removeBot(uin: number) {
+    removeBot(uin: string) {
         const bot=this.ctx.bots.get(uin)
         if(!bot)return;
         const index=this.loader.config.bots.findIndex(c=>c.uin===uin)

@@ -15,7 +15,7 @@ export function createBotApi(this:App,router:Router){
         const {uin}=ctx.params
         const {ticket}=ctx.request.body
         if(!ticket) ctx.body=error('请输入需要提交的ticket')
-        const bot=this.bots.get(Number(uin))
+        const bot=this.bots.get(String(uin))
         if(!bot)return ctx.body=error(`bot:${uin}不存在`)
         await bot.submitSlider(ticket)
         ctx.body=success('提交SliderTicket成功')
@@ -26,7 +26,7 @@ export function createBotApi(this:App,router:Router){
         const {uin}=ctx.params
         const {sms}=ctx.request.body
         if(!sms) ctx.body=error('请输入需要提交的短信验证码')
-        const bot=this.bots.get(Number(uin))
+        const bot=this.bots.get(String(uin))
         if(!bot)return ctx.body=error(`bot:${uin}不存在`)
         await bot.submitSmsCode(sms)
         ctx.body=success('提交短信验证码成功')
@@ -36,7 +36,7 @@ export function createBotApi(this:App,router:Router){
     router.post('/login/:uin',async (ctx,next )=>{
         const {uin}=ctx.params
         const {password}=ctx.request.body
-        const bot=this.bots.get(Number(uin))
+        const bot=this.bots.get(String(uin))
         if(!bot)return ctx.body=error(`bot:${uin}不存在`)
         await bot.login(password)
         ctx.body=success('调用登录方法成功')
@@ -45,8 +45,8 @@ export function createBotApi(this:App,router:Router){
     router.get('/remove',async (ctx,next)=>{
         const {uin}=ctx.query
         if(!uin)return  ctx.body=error('请输入uin')
-        this.removeBot(Number(uin))
-        const botOptions=this.config.bots.find(c=>c.uin===Number(uin))
+        this.removeBot(String(uin))
+        const botOptions=this.config.bots.find(c=>c.uin===String(uin))
         remove(this.config.bots,botOptions)
         ctx.body= success('移除成功')
         await next()

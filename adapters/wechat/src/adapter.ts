@@ -1,6 +1,6 @@
 import {Adapter,Plugin,Bot} from "oitq";
-import {OicqBot} from "./bot";
-export class OicqAdapter<S extends OicqBot.Config,T extends OicqAdapter.Config> extends Adapter<S,T>{
+import {WechatBot} from "./bot";
+export class WechatAdapter<S extends WechatBot.Config,T extends WechatAdapter.Config> extends Adapter<S,T>{
     constructor(plugin:Plugin,config:T) {
         super('oicq',plugin,config);
     }
@@ -21,7 +21,7 @@ export class OicqAdapter<S extends OicqBot.Config,T extends OicqAdapter.Config> 
         bot.stop()
     }
 }
-export namespace OicqAdapter{
+export namespace WechatAdapter{
     export interface Config{
 
     }

@@ -1,17 +1,16 @@
 {
   "name": "oitq",
   "main": "lib/index.js",
-  "typings": "lib/node.d.ts",
+  "typings": "lib/index.d.ts",
   "version": "2.0.5-8",
-  "description": "oitq framework for oicq",
+  "description": "a bot dev framework",
   "engines": {
     "node": ">= v14"
   },
   "dependencies": {
     "@oitq/loader": "^2.0.1-alpha",
     "@oitq/utils": "^0.1.4",
-    "oicq": "^2.2.1",
-    "oicq2-cq-enable": "^1.0.3"
+    "oicq": "^2.2.1"
   },
   "repository": {
     "type": "git",

@@ -1,14 +1,15 @@
 import * as fs from 'fs'
+import {fromCqcode,toCqcode,fromSegment,toSegment} from 'oicq2-cq-enable'
 import http from "http"
 import https from "https"
 import {URL} from "url"
 import {WebSocketServer, WebSocket} from "ws"
 import rfdc from "rfdc"
-import {App, Bot} from "oitq";
+import {App} from "oitq";
 import {assert} from "./filter"
+import {OicqBot} from '@oitq/plugin-adapter-oicq'
 import {toHump, transNotice, APIS, ARGS, toBool, BOOLS, genMetaEvent} from "./static"
 import {OneBotConfig, defaultOneBotConfig} from "./config"
-import {fromCqcode, toCqcode, toSegment, fromSegment} from "@oitq/utils";
 
 interface OneBotProtocol {
     action: string,
@@ -26,7 +27,7 @@ class NotFoundError extends Error {
 export class OneBot {
     protected heartbeat?: NodeJS.Timeout
     protected _queue: Array<{
-        method: keyof Bot,
+        method: keyof OicqBot,
         args: any[]
     }> = []
     protected wss?: WebSocketServer //ws服务器
@@ -35,7 +36,7 @@ export class OneBot {
     protected filter: any
     protected timestamp = Date.now()
 
-    constructor(private app: App, protected bot: Bot, protected config: OneBotConfig = defaultOneBotConfig) {
+    constructor(private app: App, protected bot: OicqBot, protected config: OneBotConfig = defaultOneBotConfig) {
     }
 
     /**
@@ -260,7 +261,8 @@ export class OneBot {
             }
             return JSON.stringify(result)
         }
-        const method = toHump(action) as keyof Bot
+        const method = toHump(action) as keyof OicqBot
+        // @ts-ignore
         if (APIS.includes(method)) {
             const args = []
             for (let k of ARGS[method]) {

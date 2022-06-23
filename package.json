@@ -12,16 +12,17 @@
     "compile": "ts-node ./build/compile.ts",
     "clean": "ts-node ./build/clean.ts",
     "dtsc": "ts-node ./build/dtsc.ts",
-    "build": "npm run compile && npm run dtsc && npm run fe",
+    "build": "yarn compile && yarn dtsc && yarn fe",
     "fe": "ts-node ./build/frontend.ts",
-    "dev": "npm run dev -w test",
-    "start": "npm start -w test",
+    "dev": "oitq start . --log-level info --watch",
+    "start": "oitq start --log-level info",
     "bump": "node ./bump.js",
     "pub": "ts-node ./build/publish.ts",
     "deploy-gh": "bash publish.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "workspaces": [
+    "adapters/*",
     "packages/*",
     "plugins/*",
     "plugins/games/*",
@@ -50,17 +51,19 @@
     "@types/prompts": "^2.0.14",
     "@vitejs/plugin-vue": "^2.3.3",
     "@vueuse/core": "^8.5.0",
+    "cac": "^6.7.12",
     "cal": "^0.0.4",
     "dtsc": "^1.1.0",
-    "esbuild": "^0.14.38",
-    "esbuild-register": "^3.3.2",
+    "esbuild": "^0.14.47",
+    "esbuild-register": "^3.3.3",
     "escape-string-regexp": "^5.0.0",
     "fs-extra": "^10.1.0",
     "kleur": "^4.1.4",
-    "latest-version": "^5.1.0",
+    "latest-version": "5.1.0",
     "rollup": "^2.75.0",
     "source-map-support": "^0.5.21",
     "ts-node": "^10.8.0",
+    "semver": "^7.3.7",
     "tsc-alias": "^1.5.0",
     "tsconfig-paths": "^3.12.0",
     "typescript": "^4.5.4",
@@ -68,9 +71,5 @@
     "vitepress": "^0.22.4"
   },
   "dependencies": {
-    "@oitq/cli": "^2.0.2-2",
-    "@oitq/loader": "^2.0.1-alpha",
-    "dotenv": "^16.0.1",
-    "oicq": "^2.2.1"
   }
 }
