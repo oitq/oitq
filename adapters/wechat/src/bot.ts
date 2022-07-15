@@ -44,6 +44,7 @@ export class WechatBot extends Client implements Bot<WechatBot.Config>{
         }else {
             this.adapter.app.emit(`bot.${name}`,session)
         }
+        // @ts-ignore
         this.adapter.app.emit(name,...args)
         return super.emit(name, ...args)
     }

@@ -123,6 +123,7 @@ namespace segment {
     export const at = createFactory('at', 'id')
     export const sharp = createFactory('sharp', 'id')
     export const quote = createFactory('quote', 'id')
+    export const image=createFactory('image','file')
 }
 
 export default segment

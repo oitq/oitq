@@ -2,7 +2,7 @@ import 'oicq2-cq-enable';
 import {EventMap as OicqEventMap} from "oicq";
 import {OicqBot} from "./bot";
 import {OicqAdapter} from "./adapter";
-import {NSession, Adapter, createApp} from "oitq";
+import {NSession, Adapter} from "oitq";
 export * from './adapter'
 export * from './bot'
 
@@ -19,6 +19,5 @@ declare module 'oitq'{
         }
     }
 }
-const app=createApp()
 
 export default Adapter.define('oicq',OicqBot,OicqAdapter)

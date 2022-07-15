@@ -22,6 +22,7 @@ import {} from '@oitq/service-http-server'
 const clone = rfdc()
 
 class NotFoundError extends Error {
+    message='不支持的API'
 }
 
 export class OneBot {

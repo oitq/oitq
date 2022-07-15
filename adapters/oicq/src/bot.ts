@@ -1,6 +1,7 @@
-import {Client, EventMap, Quotable, Sendable,Config as ClientConfig,MessageRet} from "oicq";
-import {App,Adapter,Bot,ChannelId, Filter, NSession, Session,Plugin} from "oitq";
+import {Client, Config as ClientConfig, EventMap, MessageRet, OnlineStatus, Quotable, Sendable} from "oicq";
+import {Adapter, App, Bot, ChannelId, Filter, NSession, Plugin, Session} from "oitq";
 import {merge} from "@oitq/utils";
+
 export class OicqBot extends Client implements Bot<OicqBot.Config>{
     options: OicqBot.Config
     admins:number[]=[]
@@ -20,7 +21,32 @@ export class OicqBot extends Client implements Bot<OicqBot.Config>{
         this.master=config.master||null
     }
     start(){
+        if(this.status===OnlineStatus.Online) return
         this.login(this.options.password)
+        this.on('request.group.add',(data)=>{
+            data.approve()
+        })
+        this.on('system.login.device',()=>{
+            console.log('设备验证：请根据提示前往验证地址通过验证后，按回车继续')
+            process.stdin.once('data',(d)=>{
+                this.login()
+            })
+        })
+        this.on('system.login.qrcode',()=>{
+            console.log('扫码登陆：请根据完成扫码后按回车继续')
+            process.stdin.once('data',(d)=>{
+                this.login()
+            })
+        })
+        this.on('system.login.slider',(t)=>{
+            console.log('滑块验证：请根据提示前往验证地址通过验证后，输入相应ticket后继续')
+            process.stdin.once('data',(d)=>{
+                const ticket=d.toString().trim()
+                console.log(`你输入的ticket是：${ticket}`)
+                this.submitSlider(ticket)
+                this.login()
+            })
+        })
     }
     stop(){
         this.logout()

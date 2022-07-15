@@ -25,6 +25,6 @@
   },
   "homepage": "https://github.com/oitq/oitq#readme",
   "dependencies": {
-    "lib-wechat": "^0.0.1-3"
+    "lib-wechat": "0.0.1-4"
   }
 }

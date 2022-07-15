@@ -1,8 +1,8 @@
 import {Adapter,Plugin,Bot} from "oitq";
 import {WechatBot} from "./bot";
-export class WechatAdapter<S extends WechatBot.Config,T extends WechatAdapter.Config> extends Adapter<S,T>{
+export class WechatAdapter<T extends WechatAdapter.Config> extends Adapter<WechatBot.Config,T>{
     constructor(plugin:Plugin,config:T) {
-        super('oicq',plugin,config);
+        super('wechat',plugin,config);
     }
     start(){
         for(const bot of this.bots){

@@ -25,11 +25,12 @@
   "homepage": "https://github.com/oitq/oitq#readme",
   "devDependencies": {
     "@types/koa": "^2.13.4",
-    "@types/koa__router": "^8.0.11",
     "@types/koa-bodyparser": "^4.3.7",
+    "@types/koa__router": "^8.0.11",
     "@types/ws": "^8.5.3"
   },
   "dependencies": {
+    "puppeteer": "^15.3.0",
     "ws": "^8.6.0"
   }
 }

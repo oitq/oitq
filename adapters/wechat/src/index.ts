@@ -20,4 +20,4 @@ declare module 'oitq'{
 }
 
 
-export default Adapter.define('oicq',WechatBot,WechatAdapter)
+export default Adapter.define('wechat',WechatBot,WechatAdapter)

@@ -36,12 +36,6 @@ export class App extends Plugin{
     async start(){
         await this.pluginManager.init()
         await this.parallel('before-start')
-        if(this.config.bots){
-            for(const config of this.config.bots){
-
-                this.bots.create(config.platform,config)
-            }
-        }
         this.emit('ready')
     }
 }
