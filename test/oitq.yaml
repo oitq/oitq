@@ -1,0 +1,18 @@
+logLevel: info
+plugin_dir: src/plugins
+adapters:
+  oicq:
+    bots:
+      -
+        uin: 210723495
+        protocol:
+          platform: 5
+services:
+  http:
+    port: 8086
+plugins:
+  terminalLogin:
+  print:
+  help:
+  watcher:
+    root: ../

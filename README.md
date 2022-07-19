@@ -5,7 +5,7 @@ ts 开发基础配置环境
 ## Usage
 1.调用模板创建仓库
 ```shell
-点击仓库首页右边绿色按钮(Use This Template)或访问https://github.com/lc-cn/ts-dev-template/generate，根据github提示创建仓库
+点击仓库首页右边绿色按钮(Use This Template)或访问https://github.com/oitq/oitq/generate，根据github提示创建仓库
 ```
 2.拉取你刚刚创建的仓库(`<>`表示括号内描述的内容为必填)
 ```shell
