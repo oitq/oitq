@@ -4,9 +4,11 @@
   "description": "oitq-v3",
   "scripts": {
     "start": "node .",
-    "build": "npm run build --workspaces",
+    "compile": "ts-node ./build/compile.ts",
+    "dtsc": "ts-node ./build/dtsc.ts",
+    "build": "npm run compile && npm run  dtsc",
     "dev": "npm run dev --workspace test",
-    "pub": "npm publish --access public",
+    "pub": "ts-node ./build/publish.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

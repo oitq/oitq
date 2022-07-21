@@ -3,6 +3,10 @@ import {Argv} from "./argv";
 import {Session} from "./session";
 import {App} from "./app";
 import {Command} from "./command";
+import {Service} from "./service";
+import {Plugin} from './plugin'
+import {Adapter} from "./adapter";
+
 export type Filter<K extends keyof BotEventMap=App.MessageEvent>=(session:NSession<BotEventMap, K>)=>boolean
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "mark" | "off";
 export type Awaitable<R extends any=void>=R|Promise<R>
@@ -30,5 +34,12 @@ export interface EventMap extends BotEventMap{
     'start'():void
     'dispose'():void
     'command-add'(command:Command):void
+    'command-remove'(command:Command):void
+    'adapter-start'(adapter:Adapter):void
+    'adapter-dispose'(adapter:Adapter):void
+    'plugin-start'(plugin:Plugin):void
+    'plugin-dispose'(plugin:Plugin):void
+    'service-start'(service:Service):void
+    'service-dispose'(service:Service):void
     'before-command'(argv:Argv):Awaitable<string|boolean|void>
 }

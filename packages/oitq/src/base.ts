@@ -45,10 +45,12 @@ export abstract class Base extends Event {
     on<S extends string>(name: S & Exclude<S, keyof EventMap>, listener: (...args: any[]) => any, prepend?: boolean): Dispose{
         const dispose=super.on(name,listener,prepend)
         this.disposes.push(dispose)
+        this.logger.debug('start listen event:'+name)
         return dispose
     }
     off<K extends keyof EventMap>(name: K, listener: EventMap[K], prepend?: boolean):boolean
     off<S extends string>(name: S & Exclude<S, keyof EventMap>, listener: (...args: any[]) => any, prepend?: boolean):boolean{
+        this.logger.debug('stop listen event:'+name)
         return super.off(name, listener)
     }
     emit<K extends keyof EventMap>(name:K,...args:Parameters<EventMap[K]>)

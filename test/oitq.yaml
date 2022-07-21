@@ -5,6 +5,8 @@ adapters:
     bots:
       -
         uin: 210723495
+        master: 1659488338
+        password: Lcl9623.
         protocol:
           platform: 5
 services:
@@ -14,5 +16,7 @@ plugins:
   terminalLogin:
   print:
   help:
+  daemon:
+    autoRestart: true
   watcher:
     root: ../

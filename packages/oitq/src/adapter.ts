@@ -2,9 +2,8 @@ import {Base} from "./base";
 import {App} from "./app";
 import {OicqAdapter, OicqEventMap} from "./adapters/oicq/";
 import {Bot} from "./bot";
-import {Dict} from "./types";
+import {Dict, EventMap, NSession} from "./types";
 import {remove} from "./utils";
-import {Session} from "./session";
 export interface BotEventMap extends OicqEventMap{
 }
 export class Adapter<I extends Bot=Bot> extends Base{
@@ -33,8 +32,7 @@ export class Adapter<I extends Bot=Bot> extends Base{
         if(!this.Constructor) throw new Error('请先配置实例构造函数')
         return this.bots.create(options)
     }
-    dispatch<K extends keyof BotEventMap>(this:I,event:K,...args:Parameters<BotEventMap[K]>){
-        const session=new Session(this.app,this.adapter,this,event,args)
+    dispatch<K extends keyof BotEventMap>(event:K,session:NSession<BotEventMap, K>){
         if(/^.*message$/.test(event)){
             this.app.emit('message',session)
         }else{
@@ -42,7 +40,7 @@ export class Adapter<I extends Bot=Bot> extends Base{
 
         }
         for(const plugin of Object.values(this.app.plugins)){
-            plugin.emit(event,...[session] as Parameters<BotEventMap[K]>)
+            plugin.emit(event,...[session] as unknown as Parameters<BotEventMap[K]>)
         }
     }
 }

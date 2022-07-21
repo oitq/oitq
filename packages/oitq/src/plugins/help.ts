@@ -1,4 +1,5 @@
 import {App, BotEventMap, Command, NSession, Plugin,template} from "oitq";
+import {Argv} from "../argv";
     template.set('internal', {
     // command
     'low-authority': '权限不足。',
@@ -96,14 +97,14 @@ function formatCommands(path: string, session: NSession<BotEventMap,App.MessageE
 
 
 function getOptions(command: Command, config: HelpOptions) {
-    const options = config.showHidden
+    const options:Command.OptionConfig[] = config.showHidden
         ? Object.values(command.options)
-        : Object.values(command.options).filter(option => option.hidden !== true)
+        : Object.values(command.options).filter((option:Command.OptionConfig) => option.hidden !== true)
     if (!options.length) return []
 
     const output = [template('internal.available-options')]
 
-    options.filter((option, index) => options.findIndex(opt => opt.shortName === option.shortName) === index).forEach((option) => {
+    options.filter((option, index) => options.findIndex((opt) => opt.shortName === option.shortName) === index).forEach((option) => {
         output.push(`${option.shortName},--${option.name}${option.declaration.type === 'boolean' ? '' : option.declaration.required ? ` <${option.name}:${option.declaration.type}>` : ` [${option.name}:${option.declaration.type}]`} ${option.description}`)
     })
 

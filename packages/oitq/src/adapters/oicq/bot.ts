@@ -1,6 +1,18 @@
 import 'oicq2-cq-enable'
 import {Client, Config as Protocol, EventMap} from "oicq";
-import {Adapter, App, Awaitable, Bot, ChannelId, deepClone, deepMerge, TargetType} from 'oitq'
+import {
+    Adapter,
+    App,
+    Awaitable,
+    Bot,
+    BotEventMap,
+    ChannelId,
+    deepClone,
+    deepMerge,
+    NSession,
+    Session,
+    TargetType
+} from 'oitq'
 import {join} from "path";
 export class OicqBot extends Client implements Bot{
     sid: string;
@@ -11,6 +23,8 @@ export class OicqBot extends Client implements Bot{
     constructor(public adapter:Adapter<OicqBot>,options:OicqBot.Options) {
         options=deepMerge(deepClone(OicqBot.defaultOptions),options)
         super(options.uin,options.protocol);
+        this.master=options.master
+        this.admins=options.admins||[]
         this.options=options
         this.app=adapter.app
         this.sid=options.uin.toString()
@@ -22,9 +36,10 @@ export class OicqBot extends Client implements Bot{
         return this.admins.includes(Number(user_id))
     }
     emit<E extends keyof EventMap>(name:E,...args:Parameters<EventMap[E]>){
-        // @ts-ignore
-        this.adapter.dispatch.call(this,...[name,...args])
-        return super.emit(name,...args)
+        const result=super.emit(name,...args);
+        const session=new Session(this.app,this.adapter,this,name,args)
+        this.adapter.dispatch(`oicq.${name}`,session as NSession<BotEventMap, `oicq.${E}`>)
+        return result
     }
 
     sendMsg(channelId: ChannelId, message: string) {

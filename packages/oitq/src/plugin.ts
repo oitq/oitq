@@ -5,6 +5,7 @@ import {remove} from "./utils";
 import {Argv} from "./argv";
 import {Watcher} from "./plugins/watcher";
 import {CommandParser} from "./plugins/commandParser";
+import {App} from "./app";
 
 export class Plugin extends Base{
     public commands:Map<string,Command>=new Map<string, Command>()
@@ -12,6 +13,12 @@ export class Plugin extends Base{
     constructor(public name:string,fullPath:string) {
         super(`plugin`,name,fullPath)
         this.app.plugins[name]=this
+        return new Proxy(this,{
+            get(target: Plugin, p: string | symbol, receiver: any): any {
+                if(target[p]!==undefined) return target[p]
+                return target.app[p]
+            }
+        })
     }
     setTimeout(callback:Function,ms:number,...args):Dispose{
         const timer=setTimeout(callback,ms,...args)
@@ -60,8 +67,10 @@ export class Plugin extends Base{
             remove(this.commandList,command)
             this.commands.delete(name)
             this.app.emit('command-remove',command)
+            this.logger.debug('destroy command:'+name)
             return true
         })
+        this.logger.debug('register command:'+name)
         this.app.emit('command-add',command)
         return command as any
     }
@@ -69,6 +78,7 @@ export class Plugin extends Base{
 
     }
 }
+export interface Plugin extends App.Services{}
 export namespace Plugin{
     export interface Config{
         watcher:Watcher.Config

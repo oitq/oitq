@@ -1,16 +1,20 @@
-import {Plugin} from "oitq";
+import {Plugin, template, noop, Bot} from "oitq";
 
 const plugin = new Plugin('daemon', __filename)
 const config: DaemonConfig = plugin.config || {}
-const {exitCommand, autoRestart = true} = config
+const {exitCommand=true, autoRestart = true} = config
 
 function handleSignal(signal: NodeJS.Signals) {
     plugin.logger.info(`terminated by ${signal}`)
     process.exit()
 }
-
+template.set('daemon', {
+    exiting: '正在关机……',
+    restarting: '正在重启……',
+    restarted: '已成功重启。',
+})
 exitCommand && plugin
-    .command(exitCommand === true ? 'exit' : exitCommand, 'message')
+    .command(exitCommand === true ? 'exit' : exitCommand, 'all')
     .desc('关闭bot')
     .check(async ({session}) => {
         if (!session.bot.isMaster(session.user_id) && !session.bot.isAdmin(session.user_id)) {
@@ -36,14 +40,18 @@ plugin.app.on('start', () => {
     process.on('SIGTERM', handleSignal)
 })
 
+interface Message {
+    type: 'send'
+    body: any
+}
 process.on('message', (data: Message) => {
     if (data.type === 'send') {
         const {channelId, sid, message} = data.body
-        const bot = plugin.app.bots.get(sid)
-        if (bot.isOnline()) {
+        const bot = plugin.app.bots.find(bot=>bot.sid===sid)
+        if (bot && bot.isOnline()) {
             bot.sendMsg(channelId, message)
         } else {
-            const dispose = plugin.on('bot.system.online', (session) => {
+            const dispose = plugin.on('oicq.system.online', (session) => {
                 const bot: Bot = session.bot
                 if (bot.uin !== sid) return
                 bot.sendMsg(channelId, message)
@@ -55,5 +63,5 @@ process.on('message', (data: Message) => {
 
 export interface DaemonConfig {
     autoRestart?: boolean
-    exitCommand?: string
+    exitCommand?: string|boolean
 }

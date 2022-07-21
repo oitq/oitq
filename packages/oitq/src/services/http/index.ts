@@ -8,6 +8,8 @@ const config:HttpService.Config=httpService.config
 const koa=new Koa()
 const router=new Router({prefix:config.path})
 
+httpService.koa=koa
+httpService.router=router
 const oldWs=router.ws
 const server=createServer(koa.callback())
 router.ws=(path:string,s?)=>{

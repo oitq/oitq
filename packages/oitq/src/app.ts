@@ -12,6 +12,8 @@ import {Command} from "./command";
 import {Argv} from "./argv";
 import {ChildProcess, fork} from 'child_process'
 import {join, resolve} from "path";
+import Koa from "koa";
+import {Router} from "./services/http/router";
 
 declare global {
     var __OITQ__: App
@@ -215,6 +217,10 @@ export function defineConfig(config: App.Config) {
 
 export namespace App {
     export type MessageEvent = 'oicq.message'
+    export interface Services{
+        koa?:Koa
+        router?:Router
+    }
     const event=['bot','command','plugin']
         .map(type=>['add','remove']
             .map(event=>`${type}-${event}`))
@@ -297,11 +303,11 @@ export function createWorker(configPath) {
                 buffer = null
             }
         } else if (message.type === 'queue') {
+            console.log(message)
             buffer = message.body
         }
     })
     const closingCode = [0, 130, 137]
-
     cp.on('exit', (code) => {
         if (!config || closingCode.includes(code) || code !== 51 && !config.autoRestart) {
             process.exit(code)

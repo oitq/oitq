@@ -20,9 +20,7 @@ interface TsConfig {
     compilerOptions: ts.CompilerOptions
 }
 
-const coreLibs = [
-    'packages/utils',
-]
+const coreLibs = []
 
 const whitelist = [
 ]
