@@ -7,7 +7,7 @@
     "compile": "ts-node ./build/compile.ts",
     "dtsc": "ts-node ./build/dtsc.ts",
     "build": "npm run compile && npm run  dtsc",
-    "dev": "npm run dev --workspace test",
+    "dev": "npm run dev -w test",
     "pub": "ts-node ./build/publish.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -29,8 +29,6 @@
   "devDependencies": {
     "@types/node": "latest",
     "dtsc": "^1.1.0",
-    "esbuild": "^0.14.47",
-    "esbuild-register": "^3.3.3",
     "fs-extra": "^10.1.0",
     "kleur": "^4.1.4",
     "latest-version": "5.1.0",
@@ -53,6 +51,8 @@
     "/lib/**/LICENSE"
   ],
   "dependencies": {
-    "cac": "^6.7.12"
+    "cac": "^6.7.12",
+    "esbuild": "^0.14.51",
+    "test": "file:test"
   }
 }

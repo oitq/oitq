@@ -33,20 +33,22 @@
   "dependencies": {
     "@koa/router": "^10.1.1",
     "chokidar": "^3.5.3",
+    "cron": "^2.1.0",
+    "esbuild-register": "^3.3.3",
     "js-yaml": "^4.1.0",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-static": "^5.0.0",
     "log4js": "^6.6.0",
     "oicq": "^2.3.1",
-    "cron": "^2.1.0",
     "oicq2-cq-enable": "^1.0.5",
     "throttle-debounce": "^4.0.1",
+    "tsconfig-paths": "^4.0.0",
     "ws": "^8.8.1"
   },
   "devDependencies": {
-    "@types/koa": "^2.13.4",
     "@types/cron": "^2.0.0",
+    "@types/koa": "^2.13.4",
     "@types/koa__router": "^8.0.11",
     "@types/koa-bodyparser": "^4.3.6",
     "@types/ws": "^8.2.2"
