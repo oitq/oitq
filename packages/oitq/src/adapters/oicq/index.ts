@@ -4,6 +4,7 @@ import {EventMap} from "oicq";
 export type OicqEventMap={
     [P in keyof EventMap as `oicq.${P}`]:(session:NSession<EventMap, P>)=>void
 }
+export * from './bot'
 const oicqAdapter=new Adapter<OicqBot>('oicq',__dirname)
 oicqAdapter.Constructor=OicqBot
 for(const bot of oicqAdapter.config.bots){

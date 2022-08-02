@@ -75,7 +75,7 @@ interface Layer {
         const meta: PackageJson = requireSafe(fullpath + '/package.json')
         if (!meta || meta.private) return
         const config: TsConfig = await readJson(fullpath + '/tsconfig.json')
-        const bundle = !!config.compilerOptions.outFile
+        const bundle = true
         nodes[meta.name] = { path, meta, config, bundle, prev: [], next: new Set() }
     }))
 

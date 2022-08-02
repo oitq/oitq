@@ -1,4 +1,4 @@
-import {App, BotEventMap, Command, NSession, Plugin,template} from "oitq";
+import {App, BotEventMap, Command, NSession, OitqPlugin,template} from "oitq";
 import {Argv} from "../argv";
     template.set('internal', {
     // command
@@ -110,26 +110,26 @@ function getOptions(command: Command, config: HelpOptions) {
 
     return output
 }
-const helpPlugin=new Plugin('help',__filename)
-helpPlugin.command('help [command:string]',"all")
+const helpOitqPlugin=new OitqPlugin('help',__filename)
+helpOitqPlugin.command('help [command:string]',"all")
     .desc('显示指令的帮助信息')
     .shortcut('帮助',{fuzzy:true})
     .action(({session,options,argv},target)=>{
         if (!target) {
-            const commands = helpPlugin.app.commandList.filter(cmd => cmd.parent === null)
+            const commands = helpOitqPlugin.app.commandList.filter(cmd => cmd.parent === null)
             const output = formatCommands('internal.global-help-prolog', session, commands, options)
             const epilog = template('internal.global-help-epilog')
             if (epilog) output.push(epilog)
             return output.filter(Boolean).join('\n')
         }
 
-        const command = helpPlugin.app.findCommand({name: target, source: session.cqCode,argv})
+        const command = helpOitqPlugin.app.findCommand({name: target, source: session.cqCode,argv})
         if (!command?.match(session)) {
             return
         }
 
         return showHelp(command, session, options)
     })
-helpPlugin.on('command-add',(command)=>{
+helpOitqPlugin.on('command-add',(command)=>{
     command.option('help','-h 显示帮助信息',{hidden:true})
 })

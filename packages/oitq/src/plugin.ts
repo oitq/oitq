@@ -1,24 +1,17 @@
 import {Base} from "./base";
+import {CronJob,CronCommand} from 'cron'
 import {Dispose, Middleware, TargetType} from "./types";
 import {Command} from "./command";
 import {remove} from "./utils";
 import {Argv} from "./argv";
-import {Watcher} from "./plugins/watcher";
-import {CommandParser} from "./plugins/commandParser";
-import {App} from "./app";
 
-export class Plugin extends Base{
+export class OitqPlugin extends Base{
     public commands:Map<string,Command>=new Map<string, Command>()
     public commandList:Command[]=[]
+    public jobs:CronJob[]=[]
     constructor(public name:string,fullPath:string) {
         super(`plugin`,name,fullPath)
         this.app.plugins[name]=this
-        return new Proxy(this,{
-            get(target: Plugin, p: string | symbol, receiver: any): any {
-                if(target[p]!==undefined) return target[p]
-                return target.app[p]
-            }
-        })
     }
     setTimeout(callback:Function,ms:number,...args):Dispose{
         const timer=setTimeout(callback,ms,...args)
@@ -74,14 +67,17 @@ export class Plugin extends Base{
         this.app.emit('command-add',command)
         return command as any
     }
-    cron(){
-
+    static createCronCommand(command:CronCommand,ctx:object){
+        if(typeof command==="function") return command.bind(ctx)
+        return command
     }
-}
-export interface Plugin extends App.Services{}
-export namespace Plugin{
-    export interface Config{
-        watcher:Watcher.Config
-        commandParser:CommandParser
+    cron(cronTime:string,cronCommand:CronCommand,context:object=this){
+        const job=new CronJob(cronTime,OitqPlugin.createCronCommand(cronCommand,context),null,true)
+        this.jobs.push(job)
+        this.disposes.push(()=>{
+            job.stop();
+            return remove(this.jobs,job)
+        })
+        return this
     }
 }

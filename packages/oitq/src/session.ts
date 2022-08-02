@@ -61,6 +61,3 @@ export class Session{
         return this.bot.sendMsg(channel,content)
     }
 }
-export namespace Session{
-
-}

@@ -1,6 +1,6 @@
-import {Plugin, template, noop, Bot} from "oitq";
+import {OitqPlugin, template, noop, Bot} from "oitq";
 
-const plugin = new Plugin('daemon', __filename)
+const plugin = new OitqPlugin('daemon', __filename)
 const config: DaemonConfig = plugin.config || {}
 const {exitCommand=true, autoRestart = true} = config
 

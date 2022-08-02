@@ -1,11 +1,11 @@
 {
   "name": "oitq",
-  "version": "3.0.0",
+  "version": "3.0.4",
   "typings": "lib/index.d.ts",
   "description": "oitq",
   "main": "lib/index.js",
   "scripts": {
-    "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
+    "build": "tsc --project tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "pub": "npm publish --access public",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -32,7 +32,6 @@
   ],
   "dependencies": {
     "@koa/router": "^10.1.1",
-    "callsite": "^1.0.0",
     "chokidar": "^3.5.3",
     "js-yaml": "^4.1.0",
     "koa": "^2.13.4",
@@ -40,12 +39,14 @@
     "koa-static": "^5.0.0",
     "log4js": "^6.6.0",
     "oicq": "^2.3.1",
+    "cron": "^2.1.0",
     "oicq2-cq-enable": "^1.0.5",
     "throttle-debounce": "^4.0.1",
     "ws": "^8.8.1"
   },
   "devDependencies": {
     "@types/koa": "^2.13.4",
+    "@types/cron": "^2.0.0",
     "@types/koa__router": "^8.0.11",
     "@types/koa-bodyparser": "^4.3.6",
     "@types/ws": "^8.2.2"

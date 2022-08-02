@@ -1,31 +1,43 @@
-# ts-dev-template
-ts 开发基础配置环境
-## Notice
-这是一个模板仓库，可用于初始化Ts开发时的一些推荐配置
-## Usage
-1.调用模板创建仓库
+# oitq
+ 一个优雅的机器人开发框架
+# 快速上手
+- 创建/初始化项目
 ```shell
-点击仓库首页右边绿色按钮(Use This Template)或访问https://github.com/oitq/oitq/generate，根据github提示创建仓库
+mkdir oitq-app && cd oitq-app
+npm init -y
 ```
-2.拉取你刚刚创建的仓库(`<>`表示括号内描述的内容为必填)
+- 安装`oitq`
 ```shell
-git clone <你刚刚创建的仓库地址>
+npm install oitq
 ```
-2.安装依赖
-```shell
-npm install
-# 或 npm i
+- 准备工作
+1. 创建配置文件oitq.yaml
+```yaml
+logLevel: info # 日志等级
+plugin_dir: plugins # 你存放插件的目录地址
+adapters: # 适配器配置
+  oicq: # 该适配器框架已集成，可直接使用
+    bots:
+      -
+        uin: 147258369 # 你的机器人账号
+        master: 1659488338 # 机器人主人账号
+        password: 123456789 # 你的机器人密码
+        protocol: # 传给createClient的config配置
+          platform: 5
+services: # 服务配置
+  http: # 该服务框架已集成，可直接使用
+    port: 8086 # http监听的端口
+plugins:
+  terminalLogin: # 命令行登录插件，启用后可从命令行登录机器人 (该服务框架已集成，可直接使用)
+  print: 
+  help: # 帮助插件，启用后可使用帮助指令 (该服务框架已集成，可直接使用)
+  daemon: # 插件服务监听进程，在服务挂掉时自动重启 (该服务框架已集成，可直接使用)
+    autoRestart: true # 是否开启自动重启
+  watcher: # 插件改动监听插件，变更插件后会自动重启相应插件 (该服务框架已集成，可直接使用)
+    root: . # 监听的根目录路径
 ```
-3.运行开发环境(ts-node-dev运行ts代码)
-```shell
-npm run dev
-```
-4.将ts编译成js(编译代码成普通node可执行的js代码)
-```shell
-npm run build
-```
-5.执行编译后的js(通常生产环境调用)
-```shell
-npm start
-# 或 npm run start
+2. 创建入口文件 index.js，并输入一下内容
+```javascript
+const {start} = require('oitq')
+start('oitq.yaml') // 在配置文件名为oitq.yaml oitq.config.yaml时，参数可缺省
 ```

@@ -3,17 +3,17 @@ import * as fs from 'fs'
 import {Logger, getLogger} from "log4js";
 import {LogLevel, Middleware, NSession} from "./types";
 import ConfigLoader from "./configLoader";
-import {deepClone, deepMerge} from "./utils";
+import {deepClone, deepMerge, wrapExport} from "./utils";
 import {Event} from "./event";
-import {Plugin} from "./plugin";
+import {OitqPlugin} from "./plugin";
 import {Adapter, BotEventMap} from "./adapter";
 import {Service} from "./service";
 import {Command} from "./command";
 import {Argv} from "./argv";
 import {ChildProcess, fork} from 'child_process'
 import {join, resolve} from "path";
-import Koa from "koa";
-import {Router} from "./services/http/router";
+import {Watcher} from "./plugins/watcher";
+import {CommandParser} from "./plugins/commandParser";
 
 declare global {
     var __OITQ__: App
@@ -24,7 +24,7 @@ export class App extends Event {
     public started: boolean
     public services: Record<string, Service>
     public adapters: Record<string, Adapter>
-    public plugins: Record<string, Plugin>
+    public plugins: Record<string, OitqPlugin>
     middlewares: Middleware[] = []
     public logger: Logger
 
@@ -57,7 +57,7 @@ export class App extends Event {
         return Object.values(this.adapters).map(adapter => adapter.bots).flat()
     }
 
-    findPlugin(filter: (plugin: Plugin) => boolean) {
+    findOitqPlugin(filter: (plugin: OitqPlugin) => boolean) {
         return Object.values(this.plugins).find(filter)
     }
 
@@ -100,7 +100,7 @@ export class App extends Event {
     init() {
         this.initServices()
         this.initAdapters()
-        this.initPlugins()
+        this.initOitqPlugins()
     }
 
     private initServices() {
@@ -127,9 +127,13 @@ export class App extends Event {
         }
     }
 
-    private initPlugins() {
+    private initOitqPlugins() {
         for (let name of Object.keys(this.config.plugins)) {
-            this.load(name, 'plugin')
+            const options=this.load(name, 'plugin')
+            if(typeof options.install==='function'){
+                const plugin=new OitqPlugin(name,options.fullPath)
+                options.install(plugin,this.config[name])
+            }
         }
     }
 
@@ -170,7 +174,13 @@ export class App extends Event {
         }
 
         if (!resolved) throw new Error(`未找到${type}(${name})`)
-        require(resolved)
+        const result=wrapExport(resolved)
+        return {
+            install:result.install||result,
+            name:result.name||name,
+            using:result.using||[],
+            fullPath:resolved
+        }
     }
     unload(name: string, type: 'service' | 'plugin' | 'adapter'){
         const item=this[`${type}s`][name]
@@ -217,9 +227,10 @@ export function defineConfig(config: App.Config) {
 
 export namespace App {
     export type MessageEvent = 'oicq.message'
-    export interface Services{
-        koa?:Koa
-        router?:Router
+
+    export interface PluginConfig{
+        watcher:Watcher.Config
+        commandParser:CommandParser
     }
     const event=['bot','command','plugin']
         .map(type=>['add','remove']
@@ -235,9 +246,9 @@ export namespace App {
         return createWorker(configPath)
     }
 
-    export interface Config<S extends keyof Service.Config=keyof Service.Config,P extends keyof Plugin.Config=keyof Plugin.Config,A extends keyof Adapter.Config=keyof Adapter.Config> {
+    export interface Config<S extends keyof Service.Config=keyof Service.Config,P extends keyof PluginConfig=keyof PluginConfig,A extends keyof Adapter.Config=keyof Adapter.Config> {
         services?: Partial<Record<S, Service.Config[S]>>
-        plugins?: Partial<Record<P, Plugin.Config[P]>>
+        plugins?: Partial<Record<P, PluginConfig[P]>>
         adapters?: Partial<Record<A, Adapter.Config[A]>>
         plugin_dir?: string
         service_dir?: string
@@ -303,7 +314,6 @@ export function createWorker(configPath) {
                 buffer = null
             }
         } else if (message.type === 'queue') {
-            console.log(message)
             buffer = message.body
         }
     })

@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "outDir": "lib",
+    "baseUrl":".",
+    "outFile":"lib/index.d.ts",
+    "rootDir": "src",
+    "paths":{
+        "oitq":["src"],
+        "oitq/*":["src/*"]
+    }
+  },
+  "include": [
+    "src"
+  ]
+}

@@ -2,7 +2,7 @@ import {Awaitable, ChannelId, Dict} from "./types";
 import {App} from "./app";
 import {Adapter} from "./adapter";
 
-export type Bot<O extends Dict=Dict>={
+export interface Bot<O extends Dict=Dict>{
     app:App
     adapter:Adapter<Bot>
     options:O

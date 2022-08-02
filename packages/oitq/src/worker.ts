@@ -1,9 +1,8 @@
-import {App} from "./app";
-let app:App
+const {App} = require("./");
 const config=App.readConfig(process.env.configPath)
-app=global.__OITQ__=new App(config)
+const app=global.__OITQ__=new App(config)
 app.start()
-function handleException(error: any) {
+function handleException(error) {
     console.error(error)
     process.exit(1)
 }

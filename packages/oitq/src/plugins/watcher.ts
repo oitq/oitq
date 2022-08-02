@@ -1,5 +1,5 @@
 import {FSWatcher, watch, WatchOptions} from 'chokidar'
-import {App, Base, deepClone, Dict, makeArray, Plugin} from "oitq";
+import {App, Base, deepClone, Dict, makeArray, OitqPlugin} from "oitq";
 import * as path from "path";
 import {join} from 'path';
 import * as fs from "fs";
@@ -39,7 +39,7 @@ function checkChange(oldConfig:Dict,newConfig:Dict,type:'plugin'|'service'|'adap
         if (name.startsWith('~')) continue
         if (deepEqual(oldConfig[name], newConfig[name])) continue
         if (name in newConfig) {
-            let p=plugin.app.findPlugin(p=>p.name===name)
+            let p=plugin.app.findOitqPlugin(p=>p.name===name)
             if (name in oldConfig && p) {
                 reloadDependency(p,p.fullPath)
             } else {
@@ -102,8 +102,17 @@ function reloadDependency(item: Base&{name:string}, fullPath) {
     }
 }
 
-const externals = loadDependencies(__filename, new Set())
-const plugin = new Plugin('watcher', __filename)
+const externals:Set<string> = new Set<string>()
+const plugin = new OitqPlugin('watcher', __filename)
+for(const p of Object.values(plugin.app.plugins)){
+    externals.add(p.fullPath)
+}
+plugin.on('plugin-start',(p)=>{
+    loadDependencies(p.fullPath,externals)
+})
+plugin.on('plugin-dispose',(p)=>{
+    externals.delete(p.fullPath)
+})
 const config: Watcher.Config = plugin.config
 const watcher: FSWatcher = watch(config.root, {
     ...config,
@@ -126,7 +135,7 @@ watcher.on('change', (filename) => {
         const fullPath = join(process.cwd(), filename)
         if (externals.has(fullPath)) {
             const s = plugin.app.findService(s => s.fullPath === fullPath || s.dependencies.includes(fullPath))
-            const p = plugin.app.findPlugin(p => p.fullPath === fullPath || p.dependencies.includes(fullPath))
+            const p = plugin.app.findOitqPlugin(p => p.fullPath === fullPath || p.dependencies.includes(fullPath))
             const a = plugin.app.findAdapter(a => a.fullPath === fullPath || a.dependencies.includes(fullPath))
             if (p) {
                 reloadDependency(p, fullPath)

@@ -4,7 +4,7 @@ import {Session} from "./session";
 import {App} from "./app";
 import {Command} from "./command";
 import {Service} from "./service";
-import {Plugin} from './plugin'
+import {OitqPlugin} from './plugin'
 import {Adapter} from "./adapter";
 
 export type Filter<K extends keyof BotEventMap=App.MessageEvent>=(session:NSession<BotEventMap, K>)=>boolean
@@ -37,8 +37,8 @@ export interface EventMap extends BotEventMap{
     'command-remove'(command:Command):void
     'adapter-start'(adapter:Adapter):void
     'adapter-dispose'(adapter:Adapter):void
-    'plugin-start'(plugin:Plugin):void
-    'plugin-dispose'(plugin:Plugin):void
+    'plugin-start'(plugin:OitqPlugin):void
+    'plugin-dispose'(plugin:OitqPlugin):void
     'service-start'(service:Service):void
     'service-dispose'(service:Service):void
     'before-command'(argv:Argv):Awaitable<string|boolean|void>
