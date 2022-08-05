@@ -1,8 +1,8 @@
 import {Base} from "./base";
 import {App} from "./app";
-import {OicqAdapter, OicqEventMap} from "./adapters/oicq/";
+import {OicqAdapter, OicqEventMap} from "./adapters";
 import {Bot} from "./bot";
-import {Dict, EventMap, NSession} from "./types";
+import {Dict, NSession} from "./types";
 import {remove} from "./utils";
 export interface BotEventMap extends OicqEventMap{
 }
@@ -14,7 +14,6 @@ export class Adapter<I extends Bot=Bot> extends Base{
         super('adapter',name,fullPath)
         this.app.adapters[name]=this
         this.bots=new Adapter.BotList<I>(this)
-        const config=this.config
         this.on('start',()=>{
             for(const bot of this.bots){
                 bot.start()
@@ -31,17 +30,6 @@ export class Adapter<I extends Bot=Bot> extends Base{
     create<O extends Dict>(options:O):I{
         if(!this.Constructor) throw new Error('请先配置实例构造函数')
         return this.bots.create(options)
-    }
-    dispatch<K extends keyof BotEventMap>(event:K,session:NSession<BotEventMap, K>){
-        if(/^.*message$/.test(event)){
-            this.app.emit('message',session)
-        }else{
-            this.app.emit(event,session)
-
-        }
-        for(const plugin of Object.values(this.app.plugins)){
-            plugin.emit(event,...[session] as unknown as Parameters<BotEventMap[K]>)
-        }
     }
 }
 export namespace Adapter{

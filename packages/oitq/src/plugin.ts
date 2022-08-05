@@ -13,23 +13,19 @@ export class OitqPlugin extends Base{
         super(`plugin`,name,fullPath)
         this.app.plugins[name]=this
     }
-    setTimeout(callback:Function,ms:number,...args):Dispose{
-        const timer=setTimeout(callback,ms,...args)
-        const dispose=()=>{clearTimeout(timer);return true}
-        this.disposes.push(dispose)
-        return dispose
-    }
-    setInterval(callback:Function,ms:number,...args):Dispose{
-        const timer=setInterval(callback,ms,...args)
-        const dispose=()=>{clearInterval(timer);return true}
-        this.disposes.push(dispose)
-        return dispose
-    }
     dispose(){
         this.disposes.forEach(callback=>callback())
         this.emit('dispose')
     }
-
+    appendTo(groupName:string){
+        let group=this.app.pluginGroup.get(groupName)
+        if(!group) this.app.pluginGroup.set(groupName,group=[])
+        const defaultGroup=this.app.pluginGroup.get('default')
+        const idx=defaultGroup.indexOf(this)
+        defaultGroup.splice(idx,1)
+        group.push(this)
+        return this
+    }
     middleware(middleware:Middleware,prepend?){
         this.app.use(middleware,prepend)
         return ()=>remove(this.app.middlewares,middleware)

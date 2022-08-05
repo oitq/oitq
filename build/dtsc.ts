@@ -71,10 +71,10 @@ interface Layer {
     // Step 2: initialize nodes
     const nodes: Record<string, Node> = {}
     await Promise.all(folders.map(async (path) => {
-        const fullpath = resolve(cwd, path)
-        const meta: PackageJson = requireSafe(fullpath + '/package.json')
+        const fullPath = resolve(cwd, path)
+        const meta: PackageJson = requireSafe(fullPath + '/package.json')
         if (!meta || meta.private) return
-        const config: TsConfig = await readJson(fullpath + '/tsconfig.json')
+        const config: TsConfig = await readJson(fullPath + '/tsconfig.json')
         const bundle = true
         nodes[meta.name] = { path, meta, config, bundle, prev: [], next: new Set() }
     }))

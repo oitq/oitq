@@ -30,7 +30,7 @@ export interface Message{
     raw_message?:string
     cqCode?:string
 }
-export interface EventMap extends BotEventMap{
+export interface OitqEventMap extends BotEventMap{
     'start'():void
     'dispose'():void
     'command-add'(command:Command):void

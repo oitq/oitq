@@ -1,4 +1,5 @@
 import { build, BuildFailure, BuildOptions, Message, Platform, Plugin } from 'esbuild'
+import {spawnSync} from 'child_process'
 import { resolve } from 'path'
 import { cyan, red, yellow } from 'kleur'
 import { existsSync, readdir } from 'fs-extra'
@@ -48,6 +49,12 @@ async function compile(name: string) {
     const meta: PackageJson = requireSafe(`../${name}/package.json`)
     if (!meta || meta.private) return
 
+
+    const base = root + name
+    if(name==='packages/oitq'){
+        return
+    }
+    const entryPoints = [base + '/src/index.ts']
     const filter = /^[@/\w-]+$/
     const externalPlugin: Plugin = {
         name: 'external library',
@@ -55,9 +62,6 @@ async function compile(name: string) {
             build.onResolve({ filter }, () => ({ external: true }))
         },
     }
-
-    const base = root + name
-    const entryPoints = [base + '/src/index.ts']
     const options: BuildOptions = {
         entryPoints,
         bundle: true,

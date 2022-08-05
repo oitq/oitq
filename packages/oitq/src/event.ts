@@ -1,14 +1,26 @@
-import {Awaitable} from "./types";
+import {Awaitable, OitqEventMap} from "./types";
 import {remove} from "./utils";
-
-export type EventName=string
-export type EventListener=(...args:any[])=>Awaitable<any>
+type Dispose=()=>boolean
+export interface Event{
+    parallel<K extends keyof OitqEventMap>(name: K, ...args: Parameters<OitqEventMap[K]>): Promise<void>
+    parallel<S extends string>(name:S & Exclude<S, keyof OitqEventMap>,...args:any[]):Promise<void>
+    emit<K extends keyof OitqEventMap>(name: K, ...args: Parameters<OitqEventMap[K]>): void
+    emit<S extends string>(name:S & Exclude<S, keyof OitqEventMap>,...args:any[]):void
+    bail<K extends keyof OitqEventMap>(name: K, ...args: Parameters<OitqEventMap[K]>): Promise<any|void>
+    bail<S extends string>(name:S & Exclude<S, keyof OitqEventMap>,...args:any[]):Promise<any|void>
+    on<K extends keyof OitqEventMap>(name:K,listener:OitqEventMap[K],prepend?:boolean):Dispose
+    on<S extends string>(name:S & Exclude<S, keyof OitqEventMap>,listener:Function,prepend?:boolean):Dispose
+    before<K extends keyof OitqEventMap>(name:K,listener:OitqEventMap[K],append?:boolean):Dispose
+    before<S extends string>(name:S & Exclude<S, keyof OitqEventMap>,listener:Function,append?:boolean):Dispose
+    off<K extends keyof OitqEventMap>(name:K,listener:OitqEventMap[K]):boolean
+    off<S extends string>(name:S & Exclude<S, keyof OitqEventMap>,listener:Function):boolean
+}
 export class Event {
-    private _events:Record<EventName, EventListener[]>={}
+    private _events:Record<string, Function[]>={}
     private static metaWords='./-'.split('')
     private _maxListenerCount:number=15
     constructor() {}
-    private getListeners(name:EventName){
+    private getListeners(name:string){
         return Object.keys(this._events)
             .filter(key=>{
                 return Event.createRegStr(name).test(key) || Event.createRegStr(key).test(name)
@@ -29,7 +41,7 @@ export class Event {
         }
         return new RegExp(name.replace('*','.*'))
     }
-    async parallel(name: string, ...args: any[]): Promise<void>{
+    async parallel(name,...args){
         const tasks: Promise<any>[] = []
         const listeners=this.getListeners(name)
         for (let listener of listeners) {
@@ -39,10 +51,10 @@ export class Event {
         }
         await Promise.all(tasks)
     }
-    emit(name: string, ...args: any[]): void {
+    emit(name,...args){
         this.parallel(name,...args)
     }
-    async bail(name:string,...args:any[]):Promise<string|boolean|void>{
+    async bail(name,...args){
         const listeners=this.getListeners(name)
         try{
             for(const listener of listeners){
@@ -53,7 +65,7 @@ export class Event {
             return e.message
         }
     }
-    on(name: string, listener: (...args:any[])=>void, prepend?: boolean): () => boolean{
+    on(name, listener, prepend?: boolean): () => boolean{
         const method = prepend ? 'unshift' : 'push'
         const listeners = this._events[name]||=[]
         if (listeners.length >= this.maxListener) {
@@ -68,11 +80,11 @@ export class Event {
             return this.off(name, listener)
         }
     }
-    before(name: string, listener: (...args:any)=>void, append = false) {
+    before(name, listener, append = false) {
         return this.on(`before-${name}`, listener, !append)
     }
 
-    off(name: string, listener: (...args:any[])=>void) {
+    off(name, listener) {
         return remove(this._events[name]||[],listener)
     }
 }

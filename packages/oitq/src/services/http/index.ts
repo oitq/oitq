@@ -1,6 +1,6 @@
 import {getIpAddress, Service} from "oitq";
 import Koa from 'koa'
-import {createServer} from "http";
+import {createServer,Server} from "http";
 import KoaBodyParser from "koa-bodyparser";
 import {Router} from "./router";
 const httpService=new Service('http',__dirname)
@@ -8,9 +8,9 @@ const config:HttpService.Config=httpService.config
 const koa=new Koa()
 const router=new Router({prefix:config.path})
 const server=createServer(koa.callback())
-httpService.koa=koa
-httpService.router=router
-httpService.server=server
+httpService.app.koa=koa
+httpService.app.router=router
+httpService.app.server=server
 const oldWs=router.ws
 router.ws=(path:string,s?)=>{
     if(!s)s=server

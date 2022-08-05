@@ -1,5 +1,4 @@
 import {App, BotEventMap, Command, NSession, OitqPlugin,template} from "oitq";
-import {Argv} from "../argv";
     template.set('internal', {
     // command
     'low-authority': '权限不足。',
@@ -111,6 +110,7 @@ function getOptions(command: Command, config: HelpOptions) {
     return output
 }
 const helpOitqPlugin=new OitqPlugin('help',__filename)
+helpOitqPlugin.appendTo('builtin')
 helpOitqPlugin.command('help [command:string]',"all")
     .desc('显示指令的帮助信息')
     .shortcut('帮助',{fuzzy:true})

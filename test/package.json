@@ -26,5 +26,8 @@
   "bugs": {
     "url": "https://github.com/oitq/oitq/issues"
   },
-  "homepage": "https://github.com/oitq/oitq#readme"
+  "homepage": "https://github.com/oitq/oitq#readme",
+  "dependencies": {
+    "mysql2": "^2.3.3"
+  }
 }

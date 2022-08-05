@@ -1,5 +1,6 @@
 import {OitqPlugin} from "oitq";
 const commandParser=new OitqPlugin('commandParser',__filename)
+commandParser.appendTo('builtin')
 const config:CommandParser=commandParser.config
 if(config){
     if(typeof config==="boolean" ||config.enable){

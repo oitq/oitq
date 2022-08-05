@@ -14,6 +14,9 @@ import {ChildProcess, fork} from 'child_process'
 import {join, resolve} from "path";
 import {Watcher} from "./plugins/watcher";
 import {CommandParser} from "./plugins/commandParser";
+import Koa from "koa";
+import {Router} from "./services/http/router";
+import {Server} from "http";
 
 declare global {
     var __OITQ__: App
@@ -25,6 +28,7 @@ export class App extends Event {
     public services: Record<string, Service>
     public adapters: Record<string, Adapter>
     public plugins: Record<string, OitqPlugin>
+    pluginGroup:Map<string,OitqPlugin[]>=new Map<string, OitqPlugin[]>()
     middlewares: Middleware[] = []
     public logger: Logger
 
@@ -33,10 +37,12 @@ export class App extends Event {
         this.plugins = {}
         this.services = {}
         this.adapters = {}
+        this.pluginGroup.set('default',[])
         this.config = deepMerge(deepClone(App.defaultConfig), config)
         this.logger = getLogger(`[Oitq]`)
         this.logger.level = this.config.logLevel;
         this.on('message', async (session: NSession<BotEventMap, App.MessageEvent>) => {
+            await this.parallel('attach',session)
             for (const middleware of this.middlewares) {
                 let result = await middleware(session)
                 if (result) {
@@ -210,7 +216,9 @@ export class App extends Event {
             this.logger.info(`plugin(${name}) 已启动`)
         }
         this.started = true
-        this.emit('start')
+        await this.parallel('before-start')
+        await this.parallel('start')
+        await this.parallel('ready')
     }
 }
 
@@ -224,10 +232,16 @@ export function start(config: App.Config | string = path.join(process.cwd(), 'oi
 export function defineConfig(config: App.Config) {
     return config
 }
+export interface App extends App.Services{
 
+}
 export namespace App {
     export type MessageEvent = 'oicq.message'
-
+    export interface Services{
+        koa:Koa
+        router:Router
+        server:Server
+    }
     export interface PluginConfig{
         watcher:Watcher.Config
         commandParser:CommandParser

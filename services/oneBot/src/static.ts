@@ -1,12 +1,10 @@
-import {OicqBot} from "@oitq/plugin-adapter-oicq"
 import {Client} from "oicq";
 
 const besides=['constructor','online_status','log_level','bkn','stat','login','logout','em','emit']
-export const APIS=Reflect.ownKeys(OicqBot.prototype).filter(key=>typeof key==='string' && !besides.includes(key)&& !key.startsWith('_')).concat(
-    Reflect.ownKeys(Client.prototype).filter(key=>typeof key==='string' && !besides.includes(key)&& !key.startsWith('_'))
+export const APIS=Reflect.ownKeys(Client.prototype).filter(key=>typeof key==='string' && !besides.includes(key)&& !key.startsWith('_')
 )
 export const ARGS: { [key:string|symbol]:string[] }=Object.fromEntries(APIS.map(key=>{
-    const str=Reflect.get(OicqBot.prototype,key)? String(Reflect.get(OicqBot.prototype,key)):String(Reflect.get(Client.prototype,key))
+    const str=String(Reflect.get(Client.prototype,key))
     return [key,str
         .match(/\(.*\)/)?.[0]
         .replace("(","")

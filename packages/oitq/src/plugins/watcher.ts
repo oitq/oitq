@@ -1,7 +1,6 @@
 import {FSWatcher, watch, WatchOptions} from 'chokidar'
-import {App, Base, deepClone, Dict, makeArray, OitqPlugin} from "oitq";
+import {App, Base, deepClone, Dict, makeArray,Service,Adapter, OitqPlugin} from "oitq";
 import * as path from "path";
-import {join} from 'path';
 import * as fs from "fs";
 
 export function loadDependencies(filename: string, ignored: Set<string>) {
@@ -104,23 +103,42 @@ function reloadDependency(item: Base&{name:string}, fullPath) {
 
 const externals:Set<string> = new Set<string>()
 const plugin = new OitqPlugin('watcher', __filename)
-for(const p of Object.values(plugin.app.plugins)){
+plugin.appendTo('builtin')
+for(const p of Object.values(plugin.app.plugins) as OitqPlugin[]){
     externals.add(p.fullPath)
 }
+for(const s of Object.values(plugin.app.services) as Service[]){
+    externals.add(s.fullPath)
+}
+for(const a of Object.values(plugin.app.adapters) as Adapter[]){
+    externals.add(a.fullPath)
+}
+const config: Watcher.Config = plugin.config||{}
+const watchPath=path.resolve(process.cwd(),config.root||'.')
+const watcher: FSWatcher = watch(watchPath, {
+    ...config,
+    ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', '**/.idea/**', ...makeArray(config.ignored)]
+})
+plugin.on('plugin-start',(p)=>{
+    loadDependencies(p.fullPath,externals)
+})
+plugin.on('service-dispose',(s)=>{
+    externals.delete(s.fullPath)
+})
+plugin.on('dispose',()=>{
+    watcher.close()
+})
 plugin.on('plugin-start',(p)=>{
     loadDependencies(p.fullPath,externals)
 })
 plugin.on('plugin-dispose',(p)=>{
     externals.delete(p.fullPath)
 })
-const config: Watcher.Config = plugin.config
-const watcher: FSWatcher = watch(config.root, {
-    ...config,
-    ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', '**/.idea/**', ...makeArray(config.ignored)]
+plugin.on('adapter-start',(a)=>{
+    loadDependencies(a.fullPath,externals)
 })
-plugin.disposes.push(() => {
-    watcher.close()
-    return true
+plugin.on('adapter-dispose',(a)=>{
+    externals.delete(a.fullPath)
 })
 watcher.on('change', (filename) => {
     const entryFilename=path.resolve(process.cwd(),filename)
@@ -132,17 +150,16 @@ watcher.on('change', (filename) => {
             triggerEntryReload()
         }
     } else {
-        const fullPath = join(process.cwd(), filename)
-        if (externals.has(fullPath)) {
-            const s = plugin.app.findService(s => s.fullPath === fullPath || s.dependencies.includes(fullPath))
-            const p = plugin.app.findOitqPlugin(p => p.fullPath === fullPath || p.dependencies.includes(fullPath))
-            const a = plugin.app.findAdapter(a => a.fullPath === fullPath || a.dependencies.includes(fullPath))
+        if (externals.has(entryFilename)) {
+            const s = plugin.app.findService(s => s.fullPath === entryFilename || s.dependencies.includes(entryFilename))
+            const p = plugin.app.findOitqPlugin(p => p.fullPath === entryFilename || p.dependencies.includes(entryFilename))
+            const a = plugin.app.findAdapter(a => a.fullPath === entryFilename || a.dependencies.includes(entryFilename))
             if (p) {
-                reloadDependency(p, fullPath)
+                reloadDependency(p, entryFilename)
             } else if (s) {
-                reloadDependency(s, fullPath)
+                reloadDependency(s, entryFilename)
             } else if (a) {
-                reloadDependency(a, fullPath)
+                reloadDependency(a, entryFilename)
 
             } else {
                 fullReload()

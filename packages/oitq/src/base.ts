@@ -1,14 +1,14 @@
 import {Event} from "./event";
 import {App} from "./app";
 import {Logger} from "log4js";
-import {EventMap,Dispose} from "./types";
+import {OitqEventMap, Dispose, NSession} from "./types";
 import * as path from 'path'
 import * as fs from "fs";
+import {BotEventMap} from "./adapter";
 function loadDependencies(filePath:string){
     const dependencies=[filePath]
     if(fs.statSync(filePath).isFile()) return dependencies
     else dependencies.pop()
-    const dirPath=path.dirname(filePath)
     function loadDirDependencies(dir){
         fs.readdirSync(dir,{withFileTypes:true}).forEach(state=>{
             if(state.isFile()){
@@ -18,7 +18,7 @@ function loadDependencies(filePath:string){
             }
         })
     }
-    loadDirDependencies(dirPath)
+    loadDirDependencies(filePath)
     return dependencies
 }
 export abstract class Base extends Event {
@@ -35,41 +35,75 @@ export abstract class Base extends Event {
         this.logger = __OITQ__.getLogger(`${type}-${name}`)
         this.config=__OITQ__.config[`${type}s`][name]
         this.on('start',()=>{
-            this.app.emit(`${type}.start`,this)
+            this.dispatch(`${type}.start`,this)
         })
         this.on('dispose',()=>{
-            this.app.emit(`${type}.dispose`,this)
+            this.dispatch(`${type}.dispose`,this)
         })
     }
-    on<K extends keyof EventMap>(name: K, listener: EventMap[K], prepend?: boolean): Dispose
-    on<S extends string>(name: S & Exclude<S, keyof EventMap>, listener: (...args: any[]) => any, prepend?: boolean): Dispose{
+    on(name, listener, prepend?: boolean): Dispose{
         const dispose=super.on(name,listener,prepend)
         this.disposes.push(dispose)
         this.logger.debug('start listen event:'+name)
         return dispose
     }
-    off<K extends keyof EventMap>(name: K, listener: EventMap[K], prepend?: boolean):boolean
-    off<S extends string>(name: S & Exclude<S, keyof EventMap>, listener: (...args: any[]) => any, prepend?: boolean):boolean{
-        this.logger.debug('stop listen event:'+name)
-        return super.off(name, listener)
-    }
-    emit<K extends keyof EventMap>(name:K,...args:Parameters<EventMap[K]>)
-    emit<S extends string>(name:S & Exclude<S, keyof EventMap>,...args:any[]){
-        return super.emit(name,...args)
-    }
-    async parallel<K extends keyof EventMap>(name:K,...args:Parameters<EventMap[K]>):Promise<void>
-    async parallel<S extends string>(name:S & Exclude<S, keyof EventMap>,...args:any[]):Promise<void>{
-        return await super.parallel(name,...args)
-    }
-    async bail<K extends keyof EventMap>(name:K,...args:Parameters<EventMap[K]>):Promise<string|boolean|void>
-    async bail<S extends string>(name:S & Exclude<S, keyof EventMap>,...args:any[]):Promise<string|boolean|void>{
-        return await super.bail(name,...args)
-    }
-    before<K extends keyof EventMap>(name: K, listener: EventMap[K], append?: boolean):Dispose
-    before<S extends string>(name: S & Exclude<S, keyof EventMap>, listener: (...args: any[]) => any, append?: boolean):Dispose{
+    before(name, listener, append?: boolean){
         const dispose=super.before(name,listener,append)
         this.disposes.push(dispose)
         return dispose
+    }
+
+    dispatch(event:string,...args:any[]){
+        this.app.emit(event,...args)
+        for(const service of Object.values(this.app.services)){
+            service.emit(event as any,...args)
+        }
+        for(const plugin of Object.values(this.app.plugins)){
+            plugin.emit(event as any,...args)
+        }
+        for(const adapter of Object.values(this.app.adapters)){
+            adapter.emit(event as any,...args)
+        }
+    }
+    using(type:'plugin'|'service'|'adapter',...items:string[]):this{
+        const proxy=(item)=>{
+            const _this=item
+            return new Proxy(item,{
+                get(target: typeof _this, p: string | symbol, receiver: any): any {
+                    const old=Reflect.get(target,p,receiver)
+                    if(old && typeof old==='object') return proxy(old)
+                    if(typeof old!=="function") return old
+                    return (...args:any[])=>{
+                        const callback=()=>{
+                            if(items.every(s=>Object.keys(__OITQ__[`${type}s`]).includes(s))){
+                                dispose()
+                                return old.apply(_this,args)
+                            }
+                        }
+                        const dispose=__OITQ__.on(`${type}.start`,callback)
+                        callback()
+                    }
+                }
+            })
+        }
+        return proxy(this)
+    }
+    setTimeout(callback:Function,ms:number,...args):Dispose{
+        const timer=setTimeout(callback,ms,...args)
+        const dispose=()=>{clearTimeout(timer);return true}
+        this.disposes.push(dispose)
+        return dispose
+    }
+    setInterval(callback:Function,ms:number,...args):Dispose{
+        const timer=setInterval(callback,ms,...args)
+        const dispose=()=>{clearInterval(timer);return true}
+        this.disposes.push(dispose)
+        return dispose
+    }
+    async sleep(ms:number){
+        return new Promise(resolve => {
+            this.setTimeout(resolve,ms)
+        })
     }
     dispose(){}
 }
