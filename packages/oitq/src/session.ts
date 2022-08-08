@@ -57,6 +57,13 @@ export class Session{
         if(result && typeof result!=="boolean")return result
         return template
     }
+    toJSON(...ignoreKeys:string[]){
+        return Object.fromEntries(Object.keys(this)
+            .filter(key=>typeof this[key] !=="function" && !['adapter','bot','app'].includes(key))
+            .map(key=>{
+            return [key,this[key]]
+        }))
+    }
     sendMsg(content:string,channel:ChannelId=this.channelId){
         return this.bot.sendMsg(channel,content)
     }
