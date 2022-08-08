@@ -1,19 +1,18 @@
 import * as path from "path";
 import * as fs from 'fs'
+import {default as Yaml} from 'js-yaml'
 import {Logger, getLogger} from "log4js";
 import {LogLevel, Middleware, NSession} from "./types";
 import ConfigLoader from "./configLoader";
 import {deepClone, deepMerge, wrapExport} from "./utils";
 import {Event} from "./event";
-import {OitqPlugin} from "./plugin";
+import {Plugin} from "./plugin";
 import {Adapter, BotEventMap} from "./adapter";
 import {Service} from "./service";
 import {Command} from "./command";
 import {Argv} from "./argv";
 import {ChildProcess, fork} from 'child_process'
 import {join, resolve} from "path";
-import {Watcher} from "./plugins/watcher";
-import {CommandParser} from "./plugins/commandParser";
 import Koa from "koa";
 import {Router} from "./services/http/router";
 import {Server} from "http";
@@ -27,8 +26,8 @@ export class App extends Event {
     public started: boolean
     public services: Record<string, Service>
     public adapters: Record<string, Adapter>
-    public plugins: Record<string, OitqPlugin>
-    pluginGroup:Map<string,OitqPlugin[]>=new Map<string, OitqPlugin[]>()
+    public plugins: Record<string, Plugin>
+    pluginGroup:Map<string,Plugin[]>=new Map<string, Plugin[]>()
     middlewares: Middleware[] = []
     public logger: Logger
 
@@ -41,7 +40,7 @@ export class App extends Event {
         this.config = deepMerge(deepClone(App.defaultConfig), config)
         this.logger = getLogger(`[Oitq]`)
         this.logger.level = this.config.logLevel;
-        this.on('message', async (session: NSession<BotEventMap, App.MessageEvent>) => {
+        this.on('*.message', async (session: NSession<BotEventMap, App.MessageEvent>) => {
             await this.parallel('attach',session)
             for (const middleware of this.middlewares) {
                 let result = await middleware(session)
@@ -63,7 +62,7 @@ export class App extends Event {
         return Object.values(this.adapters).map(adapter => adapter.bots).flat()
     }
 
-    findOitqPlugin(filter: (plugin: OitqPlugin) => boolean) {
+    findPlugin(filter: (plugin: Plugin) => boolean) {
         return Object.values(this.plugins).find(filter)
     }
 
@@ -106,7 +105,7 @@ export class App extends Event {
     init() {
         this.initServices()
         this.initAdapters()
-        this.initOitqPlugins()
+        this.initPlugins()
     }
 
     private initServices() {
@@ -133,11 +132,11 @@ export class App extends Event {
         }
     }
 
-    private initOitqPlugins() {
+    private initPlugins() {
         for (let name of Object.keys(this.config.plugins)) {
             const options=this.load(name, 'plugin')
             if(typeof options.install==='function'){
-                const plugin=new OitqPlugin(name,options.fullPath)
+                const plugin=new Plugin(name,options.fullPath)
                 options.install(plugin,this.config[name])
             }
         }
@@ -242,10 +241,6 @@ export namespace App {
         router:Router
         server:Server
     }
-    export interface PluginConfig{
-        watcher:Watcher.Config
-        commandParser:CommandParser
-    }
     const event=['bot','command','plugin']
         .map(type=>['add','remove']
             .map(event=>`${type}-${event}`))
@@ -260,9 +255,9 @@ export namespace App {
         return createWorker(configPath)
     }
 
-    export interface Config<S extends keyof Service.Config=keyof Service.Config,P extends keyof PluginConfig=keyof PluginConfig,A extends keyof Adapter.Config=keyof Adapter.Config> {
+    export interface Config<S extends keyof Service.Config=keyof Service.Config,P extends keyof Plugin.Config=keyof Plugin.Config,A extends keyof Adapter.Config=keyof Adapter.Config> {
         services?: Partial<Record<S, Service.Config[S]>>
-        plugins?: Partial<Record<P, PluginConfig[P]>>
+        plugins?: Partial<Record<P, Plugin.Config[P]>>
         adapters?: Partial<Record<A, Adapter.Config[A]>>
         plugin_dir?: string
         service_dir?: string
@@ -281,7 +276,7 @@ export namespace App {
 
     export function readConfig(dir = join(process.cwd(), 'oitq.yaml')) {
         if (!fs.existsSync(dir)) {
-            fs.writeFileSync(dir, JSON.stringify(defaultConfig), 'utf-8')
+            fs.writeFileSync(dir, dir.endsWith('ml')?Yaml.dump(defaultConfig):JSON.stringify(defaultConfig), 'utf-8')
             console.log('未找到配置文件，已创建默认配置文件，请修改后重新启动')
             process.exit()
         }
@@ -289,7 +284,7 @@ export namespace App {
     }
 
     export function writeConfig(config: App.Config, dir = join(process.cwd(), 'oitq.yaml')) {
-        fs.writeFileSync(dir, JSON.stringify(config), 'utf-8')
+        fs.writeFileSync(dir, dir.endsWith('ml')?Yaml.dump(config):JSON.stringify(config), 'utf-8')
         return dir
     }
 }

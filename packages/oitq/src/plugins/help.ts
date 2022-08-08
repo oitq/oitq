@@ -1,4 +1,4 @@
-import {App, BotEventMap, Command, NSession, OitqPlugin,template} from "oitq";
+import {App, BotEventMap, Command, NSession, Plugin,template} from "oitq";
     template.set('internal', {
     // command
     'low-authority': '权限不足。',
@@ -109,7 +109,7 @@ function getOptions(command: Command, config: HelpOptions) {
 
     return output
 }
-const helpOitqPlugin=new OitqPlugin('help',__filename)
+const helpOitqPlugin=new Plugin('help',__filename)
 helpOitqPlugin.appendTo('builtin')
 helpOitqPlugin.command('help [command:string]',"all")
     .desc('显示指令的帮助信息')

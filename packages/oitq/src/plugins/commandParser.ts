@@ -1,5 +1,5 @@
-import {OitqPlugin} from "oitq";
-const commandParser=new OitqPlugin('commandParser',__filename)
+import {Plugin} from "oitq";
+const commandParser=new Plugin('commandParser',__filename)
 commandParser.appendTo('builtin')
 const config:CommandParser=commandParser.config
 if(config){

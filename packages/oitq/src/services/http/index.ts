@@ -1,6 +1,6 @@
 import {getIpAddress, Service} from "oitq";
 import Koa from 'koa'
-import {createServer,Server} from "http";
+import {createServer} from "http";
 import KoaBodyParser from "koa-bodyparser";
 import {Router} from "./router";
 const httpService=new Service('http',__dirname)

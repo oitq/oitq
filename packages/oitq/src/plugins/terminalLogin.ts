@@ -1,5 +1,5 @@
-import {OitqPlugin} from "oitq";
-const terminalLogin=new OitqPlugin('terminalLogin',__filename)
+import {Plugin} from "oitq";
+const terminalLogin=new Plugin('terminalLogin',__filename)
 terminalLogin.appendTo('builtin')
 terminalLogin.on('oicq.system.login.device',session=>{
     console.log('请输入该账号绑定的手机号收到的验证码后回车继续：')

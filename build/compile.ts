@@ -51,9 +51,6 @@ async function compile(name: string) {
 
 
     const base = root + name
-    if(name==='packages/oitq'){
-        return
-    }
     const entryPoints = [base + '/src/index.ts']
     const filter = /^[@/\w-]+$/
     const externalPlugin: Plugin = {

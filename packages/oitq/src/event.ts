@@ -1,19 +1,18 @@
-import {Awaitable, OitqEventMap} from "./types";
+import {Awaitable, Dispose, OitqEventMap} from "./types";
 import {remove} from "./utils";
-type Dispose=()=>boolean
 export interface Event{
     parallel<K extends keyof OitqEventMap>(name: K, ...args: Parameters<OitqEventMap[K]>): Promise<void>
-    parallel<S extends string>(name:S & Exclude<S, keyof OitqEventMap>,...args:any[]):Promise<void>
+    parallel<S extends string|symbol>(name:S & Exclude<S, keyof OitqEventMap>,...args:any[]):Promise<void>
     emit<K extends keyof OitqEventMap>(name: K, ...args: Parameters<OitqEventMap[K]>): void
-    emit<S extends string>(name:S & Exclude<S, keyof OitqEventMap>,...args:any[]):void
-    bail<K extends keyof OitqEventMap>(name: K, ...args: Parameters<OitqEventMap[K]>): Promise<any|void>
-    bail<S extends string>(name:S & Exclude<S, keyof OitqEventMap>,...args:any[]):Promise<any|void>
+    emit<S extends string|symbol>(name:S & Exclude<S, keyof OitqEventMap>,...args:any[]):void
+    bail<K extends keyof OitqEventMap>(name: K, ...args: Parameters<OitqEventMap[K]>): Awaitable<any|void>
+    bail<S extends string|symbol>(name:S & Exclude<S, keyof OitqEventMap>,...args:any[]):Awaitable<any|void>
     on<K extends keyof OitqEventMap>(name:K,listener:OitqEventMap[K],prepend?:boolean):Dispose
-    on<S extends string>(name:S & Exclude<S, keyof OitqEventMap>,listener:Function,prepend?:boolean):Dispose
+    on<S extends string|symbol>(name:S & Exclude<S, keyof OitqEventMap>,listener:Function,prepend?:boolean):Dispose
     before<K extends keyof OitqEventMap>(name:K,listener:OitqEventMap[K],append?:boolean):Dispose
-    before<S extends string>(name:S & Exclude<S, keyof OitqEventMap>,listener:Function,append?:boolean):Dispose
+    before<S extends string|symbol>(name:S & Exclude<S, keyof OitqEventMap>,listener:Function,append?:boolean):Dispose
     off<K extends keyof OitqEventMap>(name:K,listener:OitqEventMap[K]):boolean
-    off<S extends string>(name:S & Exclude<S, keyof OitqEventMap>,listener:Function):boolean
+    off<S extends string|symbol>(name:S & Exclude<S, keyof OitqEventMap>,listener:Function):boolean
 }
 export class Event {
     private _events:Record<string, Function[]>={}

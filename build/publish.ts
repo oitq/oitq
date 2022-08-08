@@ -39,10 +39,10 @@ function getVersion(name: string, isNext = false) {
     function publish(folder: string, name: string, version: string, tag: string) {
         console.log(`publishing ${name}@${version} ...`)
         return spawnAsync([
-            'npm', 'publish', folder,
+            'npm', 'publish',
             '--tag', tag,
             '--access', 'public',
-        ])
+        ],{cwd:folder})
     }
 
     if (Object.keys(bumpMap).length) {

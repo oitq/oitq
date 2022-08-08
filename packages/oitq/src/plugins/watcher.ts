@@ -1,5 +1,5 @@
 import {FSWatcher, watch, WatchOptions} from 'chokidar'
-import {App, Base, deepClone, Dict, makeArray,Service,Adapter, OitqPlugin} from "oitq";
+import {App, Base, deepClone, Dict, makeArray,Service,Adapter, Plugin} from "oitq";
 import * as path from "path";
 import * as fs from "fs";
 
@@ -38,7 +38,7 @@ function checkChange(oldConfig:Dict,newConfig:Dict,type:'plugin'|'service'|'adap
         if (name.startsWith('~')) continue
         if (deepEqual(oldConfig[name], newConfig[name])) continue
         if (name in newConfig) {
-            let p=plugin.app.findOitqPlugin(p=>p.name===name)
+            let p=plugin.app.findPlugin(p=>p.name===name)
             if (name in oldConfig && p) {
                 reloadDependency(p,p.fullPath)
             } else {
@@ -102,9 +102,9 @@ function reloadDependency(item: Base&{name:string}, fullPath) {
 }
 
 const externals:Set<string> = new Set<string>()
-const plugin = new OitqPlugin('watcher', __filename)
+const plugin = new Plugin('watcher', __filename)
 plugin.appendTo('builtin')
-for(const p of Object.values(plugin.app.plugins) as OitqPlugin[]){
+for(const p of Object.values(plugin.app.plugins) as Plugin[]){
     externals.add(p.fullPath)
 }
 for(const s of Object.values(plugin.app.services) as Service[]){
@@ -152,7 +152,7 @@ watcher.on('change', (filename) => {
     } else {
         if (externals.has(entryFilename)) {
             const s = plugin.app.findService(s => s.fullPath === entryFilename || s.dependencies.includes(entryFilename))
-            const p = plugin.app.findOitqPlugin(p => p.fullPath === entryFilename || p.dependencies.includes(entryFilename))
+            const p = plugin.app.findPlugin(p => p.fullPath === entryFilename || p.dependencies.includes(entryFilename))
             const a = plugin.app.findAdapter(a => a.fullPath === entryFilename || a.dependencies.includes(entryFilename))
             if (p) {
                 reloadDependency(p, entryFilename)

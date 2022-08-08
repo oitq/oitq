@@ -28,7 +28,6 @@
   "homepage": "https://github.com/oitq/oitq#readme",
   "devDependencies": {
     "@types/node": "latest",
-    "dtsc": "^1.1.0",
     "fs-extra": "^10.1.0",
     "kleur": "^4.1.4",
     "latest-version": "5.1.0",
@@ -52,6 +51,8 @@
   ],
   "dependencies": {
     "cac": "^6.7.12",
+    "cross-spawn": "^7.0.3",
+    "dtsc": "^2.1.1",
     "esbuild": "^0.14.51",
     "test": "file:test"
   }

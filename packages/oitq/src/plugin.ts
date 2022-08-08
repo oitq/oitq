@@ -1,11 +1,14 @@
 import {Base} from "./base";
 import {CronJob,CronCommand} from 'cron'
-import {Dispose, Middleware, TargetType} from "./types";
+import { Middleware, TargetType} from "./types";
 import {Command} from "./command";
 import {remove} from "./utils";
 import {Argv} from "./argv";
+import {Watcher} from "./plugins/watcher";
+import {DaemonConfig} from './plugins/daemon'
+import {CommandParser} from "./plugins/commandParser";
 
-export class OitqPlugin extends Base{
+export class Plugin extends Base{
     public commands:Map<string,Command>=new Map<string, Command>()
     public commandList:Command[]=[]
     public jobs:CronJob[]=[]
@@ -68,12 +71,21 @@ export class OitqPlugin extends Base{
         return command
     }
     cron(cronTime:string,cronCommand:CronCommand,context:object=this){
-        const job=new CronJob(cronTime,OitqPlugin.createCronCommand(cronCommand,context),null,true)
+        const job=new CronJob(cronTime,Plugin.createCronCommand(cronCommand,context),null,true)
         this.jobs.push(job)
         this.disposes.push(()=>{
             job.stop();
             return remove(this.jobs,job)
         })
         return this
+    }
+}
+export namespace Plugin {
+    export interface Config{
+        watcher:Watcher.Config
+        commandParser:CommandParser
+        help:null
+        terminalLogin:null
+        daemon:DaemonConfig
     }
 }

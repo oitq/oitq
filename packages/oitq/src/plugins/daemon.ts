@@ -1,14 +1,7 @@
-import {OitqPlugin, template, noop, Bot} from "oitq";
+import {Plugin, template, noop, Bot} from "oitq";
 
-const plugin = new OitqPlugin('daemon', __filename)
+const plugin = new Plugin('daemon', __filename)
 plugin.appendTo('builtin')
-plugin
-    .using("plugin",'watcher')
-    .app.on('oicq.message',(a)=>{
-        console.log(a.cqCode)
-    })
-plugin.appendTo('builtin')
-console.log(plugin.app.pluginGroup)
 const config: DaemonConfig = plugin.config || {}
 const {exitCommand=true, autoRestart = true} = config
 

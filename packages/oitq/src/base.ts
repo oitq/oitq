@@ -1,10 +1,9 @@
 import {Event} from "./event";
 import {App} from "./app";
 import {Logger} from "log4js";
-import {OitqEventMap, Dispose, NSession} from "./types";
+import {OitqEventMap, Dispose} from "./types";
 import * as path from 'path'
 import * as fs from "fs";
-import {BotEventMap} from "./adapter";
 function loadDependencies(filePath:string){
     const dependencies=[filePath]
     if(fs.statSync(filePath).isFile()) return dependencies
@@ -41,10 +40,9 @@ export abstract class Base extends Event {
             this.dispatch(`${type}.dispose`,this)
         })
     }
-    on(name, listener, prepend?: boolean): Dispose{
+    on(name, listener, prepend?: boolean){
         const dispose=super.on(name,listener,prepend)
         this.disposes.push(dispose)
-        this.logger.debug('start listen event:'+name)
         return dispose
     }
     before(name, listener, append?: boolean){
@@ -52,7 +50,6 @@ export abstract class Base extends Event {
         this.disposes.push(dispose)
         return dispose
     }
-
     dispatch(event:string,...args:any[]){
         this.app.emit(event,...args)
         for(const service of Object.values(this.app.services)){
@@ -67,9 +64,8 @@ export abstract class Base extends Event {
     }
     using(type:'plugin'|'service'|'adapter',...items:string[]):this{
         const proxy=(item)=>{
-            const _this=item
             return new Proxy(item,{
-                get(target: typeof _this, p: string | symbol, receiver: any): any {
+                get(target: typeof item, p: string | symbol, receiver: any): any {
                     const old=Reflect.get(target,p,receiver)
                     if(old && typeof old==='object') return proxy(old)
                     if(typeof old!=="function") return old
@@ -77,7 +73,7 @@ export abstract class Base extends Event {
                         const callback=()=>{
                             if(items.every(s=>Object.keys(__OITQ__[`${type}s`]).includes(s))){
                                 dispose()
-                                return old.apply(_this,args)
+                                return old.apply(target,args)
                             }
                         }
                         const dispose=__OITQ__.on(`${type}.start`,callback)
@@ -108,5 +104,9 @@ export abstract class Base extends Event {
     dispose(){}
 }
 
-export interface Base {
+export interface Base extends Event{
+    on<K extends keyof OitqEventMap>(name:K,listener:OitqEventMap[K],prepend?:boolean):Dispose
+    on<S extends string|symbol>(name:S & Exclude<S, keyof OitqEventMap>,listener:Function,prepend?:boolean):Dispose
+    before<K extends keyof OitqEventMap>(name:K,listener:OitqEventMap[K],append?:boolean):Dispose
+    before<S extends string|symbol>(name:S & Exclude<S, keyof OitqEventMap>,listener:Function,append?:boolean):Dispose
 }

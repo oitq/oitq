@@ -1,12 +1,14 @@
 {
   "name": "oitq",
-  "version": "3.0.4",
+  "version": "3.0.9",
   "typings": "lib/index.d.ts",
   "description": "oitq",
   "main": "lib/index.js",
+  "bin": {
+    "oitq": "bin.js"
+  },
   "scripts": {
     "build": "tsc --project tsconfig.build.json && tsc-alias -p tsconfig.build.json",
-    "pub": "npm publish --access public",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -28,10 +30,12 @@
   "files": [
     "/lib/**/*.js",
     "/lib/**/*.d.ts",
-    "/lib/**/LICENSE"
+    "/lib/**/LICENSE",
+    "bin.js"
   ],
   "dependencies": {
     "@koa/router": "^10.1.1",
+    "cac": "^6.7.12",
     "chokidar": "^3.5.3",
     "cron": "^2.1.0",
     "esbuild-register": "^3.3.3",

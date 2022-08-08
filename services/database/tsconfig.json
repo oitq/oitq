@@ -1,18 +1,10 @@
 {
+  "extends": "../../tsconfig.base",
   "compilerOptions": {
-    "target":"es2019",
-    "outDir": "lib",
-    "baseUrl":".",
-    "esModuleInterop":true,
-    "moduleResolution":"node",
-    "outFile":"lib/index.d.ts",
     "rootDir": "src",
-    "paths":{
-        "oitq":["../../packages/oitq/src"],
-        "oitq/*":["../../packages/oitq/src/*"]
-    }
+    "outDir": "lib",
   },
   "include": [
-    "src"
-  ]
+    "src",
+  ],
 }

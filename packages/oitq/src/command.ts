@@ -1,4 +1,4 @@
-import {OitqPlugin} from "./plugin";
+import {Plugin} from "./plugin";
 import {Argv} from "./argv";
 import {Awaitable, Define, NSession, TargetType} from './types'
 import {BotEventMap} from "./adapter";
@@ -17,7 +17,7 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
     public examples:string[]=[]
     public aliasNames:string[]=[]
     public options:Record<string, Command.OptionConfig>={}
-    constructor(declaration:string,public plugin:OitqPlugin,public triggerEvent:TargetType|'all') {
+    constructor(declaration:string,public plugin:Plugin,public triggerEvent:TargetType|'all') {
         this.name=Command.removeDeclarationArgs(declaration)
         this.args=Command.findDeclarationArgs(declaration)
     }
