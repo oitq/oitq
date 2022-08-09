@@ -15,17 +15,29 @@ export interface Event{
     off<S extends string|symbol>(name:S & Exclude<S, keyof OitqEventMap>,listener:Function):boolean
 }
 export class Event {
-    private _events:Record<string, Function[]>={}
+    private _events:Record<string|symbol, Function[]>={}
     private static metaWords='./-'.split('')
     private _maxListenerCount:number=15
     constructor() {}
-    private getListeners(name:string){
-        return Object.keys(this._events)
-            .filter(key=>{
-                return Event.createRegStr(name).test(key) || Event.createRegStr(key).test(name)
-            })
-            .map(key=>this._events[key])
-            .flat()
+    private getListeners(name:string|symbol){
+        const result:Function[]=[]
+        const getListenersReal=(eventName:string|symbol)=>{
+            if(typeof eventName==='symbol') return this._events[eventName]
+            return Object.keys(this._events)
+                .filter(key=>{
+                    return Event.createRegStr(eventName).test(key) || Event.createRegStr(key).test(eventName)
+                })
+                .map(key=>this._events[key])
+                .flat()
+        }
+        if(typeof name==="string" && !name.startsWith('before-') && !name.startsWith('after-')){
+            result.push(...getListenersReal('before-'+name))
+        }
+        result.push(...getListenersReal(name))
+        if(typeof name==="string" && !name.startsWith('before-') && !name.startsWith('after-')){
+            result.push(...getListenersReal('after-'+name))
+        }
+        return result
     }
     get maxListener(){
         return this._maxListenerCount
@@ -82,7 +94,9 @@ export class Event {
     before(name, listener, append = false) {
         return this.on(`before-${name}`, listener, !append)
     }
-
+    after(name,listener,prepend=false){
+        return this.on(`after-${name}`, listener, prepend)
+    }
     off(name, listener) {
         return remove(this._events[name]||[],listener)
     }

@@ -7,7 +7,7 @@ import {Argv} from "./argv";
 import {Watcher} from "./plugins/watcher";
 import {DaemonConfig} from './plugins/daemon'
 import {CommandParser} from "./plugins/commandParser";
-
+export type PluginMiddleware=(plugin:Plugin)=>void
 export class Plugin extends Base{
     public commands:Map<string,Command>=new Map<string, Command>()
     public commandList:Command[]=[]
@@ -32,6 +32,10 @@ export class Plugin extends Base{
     middleware(middleware:Middleware,prepend?){
         this.app.use(middleware,prepend)
         return ()=>remove(this.app.middlewares,middleware)
+    }
+    use(middleware:PluginMiddleware){
+        middleware(this)
+        return this
     }
     command<D extends string>(def: D,triggerEvent:TargetType|'all'): Command<Argv.ArgumentType<D>>{
         const namePath = def.split(' ', 1)[0]

@@ -39,6 +39,7 @@ export class OicqBot extends Client implements Bot{
         const result=super.emit(name,...args);
         const session=new Session(this.app,this.adapter,this,name,args)
         this.adapter.dispatch(`oicq.${name}`,session as NSession<BotEventMap, `oicq.${E}`>)
+        if(name==='message') this.adapter.dispatch('message',session)
         return result
     }
 

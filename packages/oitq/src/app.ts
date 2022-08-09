@@ -2,7 +2,7 @@ import * as path from "path";
 import * as fs from 'fs'
 import {default as Yaml} from 'js-yaml'
 import {Logger, getLogger} from "log4js";
-import {LogLevel, Middleware, NSession} from "./types";
+import {Awaitable, LogLevel, Middleware, NSession, OitqEventMap} from "./types";
 import ConfigLoader from "./configLoader";
 import {deepClone, deepMerge, wrapExport} from "./utils";
 import {Event} from "./event";
@@ -40,7 +40,7 @@ export class App extends Event {
         this.config = deepMerge(deepClone(App.defaultConfig), config)
         this.logger = getLogger(`[Oitq]`)
         this.logger.level = this.config.logLevel;
-        this.on('*.message', async (session: NSession<BotEventMap, App.MessageEvent>) => {
+        this.on('message', async (session: NSession<BotEventMap, App.MessageEvent>) => {
             await this.parallel('attach',session)
             for (const middleware of this.middlewares) {
                 let result = await middleware(session)
@@ -103,8 +103,8 @@ export class App extends Event {
     }
 
     init() {
-        this.initServices()
         this.initAdapters()
+        this.initServices()
         this.initPlugins()
     }
 
@@ -113,16 +113,33 @@ export class App extends Event {
             this.load(name, 'service')
         }
     }
+    public async bail<K extends keyof OitqEventMap>(name: K, ...args){
+        let result=await super.bail(name,...args)
+        if(result) return result
+        for(const adapter of Object.values(this.adapters)){
+            result=await adapter.bail(name,...args)
+            if(result) return result
+        }
+        for(const service of Object.values(this.services)){
+            result=await service.bail(name,...args)
+            if(result) return result
+        }
+        for(const plugin of Object.values(this.plugins)){
+            result=await plugin.bail(name,...args)
+            if(result) return result
+        }
 
-    public dispatch(event, ...args: any[]) {
-        for (const service of Object.values(this.services)) {
-            service.emit(event, ...args)
+    }
+    public async parallel<K extends keyof OitqEventMap>(name: K, ...args): Promise<void> {
+        await super.parallel(name,...args)
+        for(const adapter of Object.values(this.adapters)){
+            await adapter.parallel(name,...args)
         }
-        for (const plugin of Object.values(this.plugins)) {
-            plugin.emit(event, ...args)
+        for(const service of Object.values(this.services)){
+            await service.parallel(name,...args)
         }
-        for (const adapter of Object.values(this.adapters)) {
-            adapter.emit(event, ...args)
+        for(const plugin of Object.values(this.plugins)){
+            await plugin.parallel(name,...args)
         }
     }
 
@@ -180,6 +197,7 @@ export class App extends Event {
 
         if (!resolved) throw new Error(`未找到${type}(${name})`)
         const result=wrapExport(resolved)
+        this.logger.info(`${type}(${name}) 已加载`)
         return {
             install:result.install||result,
             name:result.name||name,
@@ -199,21 +217,6 @@ export class App extends Event {
     }
     async start() {
         this.init()
-        App.metaEvent.forEach(metaEvent => {
-            this.on(metaEvent, (...args) => this.dispatch(metaEvent, ...args))
-        })
-        for (const [name, service] of Object.entries(this.services)) {
-            service.emit('start')
-            this.logger.info(`service(${name}) 已启动`)
-        }
-        for (const [name, adapter] of Object.entries(this.adapters)) {
-            adapter.emit('start')
-            this.logger.info(`adapter(${name}) 已启动`)
-        }
-        for (const [name, plugin] of Object.entries(this.plugins)) {
-            plugin.emit('start')
-            this.logger.info(`plugin(${name}) 已启动`)
-        }
         this.started = true
         await this.parallel('before-start')
         await this.parallel('start')

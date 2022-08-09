@@ -35,7 +35,7 @@ class Database{
         }else{
             this.service.app.before('start', this.start.bind(this))
         }
-        this.service.app.before('attach', async (session) => {
+        this.service.before('attach', async (session) => {
             const {sender: {nickname, user_id}, user} = session
             if (user) return
             const [userInfo] = await this.models.User.findOrCreate({

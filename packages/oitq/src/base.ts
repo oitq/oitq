@@ -52,15 +52,6 @@ export abstract class Base extends Event {
     }
     dispatch(event:string,...args:any[]){
         this.app.emit(event,...args)
-        for(const service of Object.values(this.app.services)){
-            service.emit(event as any,...args)
-        }
-        for(const plugin of Object.values(this.app.plugins)){
-            plugin.emit(event as any,...args)
-        }
-        for(const adapter of Object.values(this.app.adapters)){
-            adapter.emit(event as any,...args)
-        }
     }
     using(type:'plugin'|'service'|'adapter',...items:string[]):this{
         const proxy=(item)=>{

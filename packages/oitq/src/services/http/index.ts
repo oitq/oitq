@@ -20,6 +20,7 @@ koa.use(KoaBodyParser())
     .use(router.routes())
     .use(router.allowedMethods())
 httpService.on('start',()=>{
+
     server.listen(config.port)
     httpService.logger.info(`server listen at http://${getIpAddress()}:${config.port}`)
 })

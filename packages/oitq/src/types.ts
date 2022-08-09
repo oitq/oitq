@@ -30,9 +30,11 @@ export interface Message{
     raw_message?:string
     cqCode?:string
 }
-export interface OitqEventMap extends BotEventMap{
+interface OitqLifeCycle{
     'start'():void
     'dispose'():void
+    'ready'():void
+    'attach'(session:NSession<OitqEventMap, App.MessageEvent>)
     'command-add'(command:Command):void
     'command-remove'(command:Command):void
     'adapter-start'(adapter:Adapter):void
@@ -41,5 +43,13 @@ export interface OitqEventMap extends BotEventMap{
     'plugin-dispose'(plugin:Plugin):void
     'service-start'(service:Service):void
     'service-dispose'(service:Service):void
-    'before-command'(argv:Argv):Awaitable<string|boolean|void>
+    'command'(argv:Argv):Awaitable<string|boolean|void>
+}
+type BeforeBaseEventMap={
+    [P in keyof OitqLifeCycle as `before-${P}`]:OitqLifeCycle[P]
+}
+type AfterBaseEventMap={
+    [P in keyof OitqLifeCycle as `after-${P}`]:OitqLifeCycle[P]
+}
+export interface OitqEventMap extends BotEventMap,OitqLifeCycle,BeforeBaseEventMap,AfterBaseEventMap{
 }

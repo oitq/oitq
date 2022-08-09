@@ -1,5 +1,5 @@
-import {OitqPlugin} from "oitq";
-const plugin=new OitqPlugin('admin',__dirname)
+import {Plugin} from "oitq";
+const plugin=new Plugin('admin',__dirname)
 plugin
     .command('oitq <varName:string> [newVal:string]','all')
     .desc('打印当前配置文件变量')
