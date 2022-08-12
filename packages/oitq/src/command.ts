@@ -274,5 +274,8 @@ export namespace Command{
         }
         return res;
     }
-
+    export interface DefineOptions<D extends string>{
+        def:D
+        trigger
+    }
 }

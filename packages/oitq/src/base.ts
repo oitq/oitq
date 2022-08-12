@@ -53,28 +53,6 @@ export abstract class Base extends Event {
     dispatch(event:string,...args:any[]){
         this.app.emit(event,...args)
     }
-    using(type:'plugin'|'service'|'adapter',...items:string[]):this{
-        const proxy=(item)=>{
-            return new Proxy(item,{
-                get(target: typeof item, p: string | symbol, receiver: any): any {
-                    const old=Reflect.get(target,p,receiver)
-                    if(old && typeof old==='object') return proxy(old)
-                    if(typeof old!=="function") return old
-                    return (...args:any[])=>{
-                        const callback=()=>{
-                            if(items.every(s=>Object.keys(__OITQ__[`${type}s`]).includes(s))){
-                                dispose()
-                                return old.apply(target,args)
-                            }
-                        }
-                        const dispose=__OITQ__.on(`${type}.start`,callback)
-                        callback()
-                    }
-                }
-            })
-        }
-        return proxy(this)
-    }
     setTimeout(callback:Function,ms:number,...args):Dispose{
         const timer=setTimeout(callback,ms,...args)
         const dispose=()=>{clearTimeout(timer);return true}

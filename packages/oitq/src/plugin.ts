@@ -1,13 +1,19 @@
 import {Base} from "./base";
 import {CronJob,CronCommand} from 'cron'
-import { Middleware, TargetType} from "./types";
+import {Event} from "./event";
+import {Middleware, OitqEventMap, TargetType} from "./types";
 import {Command} from "./command";
-import {remove} from "./utils";
+import {deepClone, deepMerge, remove} from "./utils";
 import {Argv} from "./argv";
 import {Watcher} from "./plugins/watcher";
 import {DaemonConfig} from './plugins/daemon'
 import {CommandParser} from "./plugins/commandParser";
+import ts from "typescript/lib/tsserverlibrary";
 export type PluginMiddleware=(plugin:Plugin)=>void
+export interface pluginModule{
+    apply(plugin:Plugin):void
+    using?:string[]
+}
 export class Plugin extends Base{
     public commands:Map<string,Command>=new Map<string, Command>()
     public commandList:Command[]=[]
@@ -33,9 +39,24 @@ export class Plugin extends Base{
         this.app.use(middleware,prepend)
         return ()=>remove(this.app.middlewares,middleware)
     }
-    use(middleware:PluginMiddleware){
-        middleware(this)
-        return this
+    plugin(apply:PluginMiddleware,using?:string[])
+    plugin(plugin:string,using?:string[])
+    plugin(module:pluginModule)
+    plugin(entry:PluginMiddleware|pluginModule|string,using:string[]=typeof entry==='object'?entry['using']||[]:[]){
+        const callback=()=>{
+            if(using.every(s=>Object.keys(this.app.services).includes(s))){
+                dispose()
+                if(typeof entry==='string') this.app.load(entry,'plugin')
+                else if(typeof entry==='function')entry(this)
+                else entry.apply(this)
+            }
+            return this
+        }
+        const dispose=__OITQ__.on(`service-start`,callback)
+        return callback()
+    }
+    using(using:string[],apply:PluginMiddleware){
+        return this.plugin(apply,using)
     }
     command<D extends string>(def: D,triggerEvent:TargetType|'all'): Command<Argv.ArgumentType<D>>{
         const namePath = def.split(' ', 1)[0]
@@ -84,6 +105,20 @@ export class Plugin extends Base{
         return this
     }
 }
+export function definePlugin(options:Plugin.DefineOptions):Plugin{
+    options=deepClone(deepMerge(Plugin.defaultDefineOptions,options))
+    const plugin=new Plugin(options.name,options.watchPath)
+    Object.keys(options.listeners).forEach(key=>{
+        const listeners=[].concat(options.listeners[key])
+        listeners.forEach(listener=>{
+            plugin.on(key,listener.bind(plugin))
+        })
+    })
+    if(options.onLoad)options.onLoad.apply(plugin)
+    if(options.onStart) plugin.on('start',options.onStart.bind(plugin))
+    if(options.onDispose) plugin.on('dispose',options.onDispose.bind(plugin))
+    return plugin
+}
 export namespace Plugin {
     export interface Config{
         watcher:Watcher.Config
@@ -91,5 +126,24 @@ export namespace Plugin {
         help:null
         terminalLogin:null
         daemon:DaemonConfig
+    }
+    type EventOptions={
+        [K in keyof OitqEventMap]?:OitqEventMap[K]
+    }
+    export const defaultDefineOptions:Partial<DefineOptions>={
+        commands:[],
+        listeners:{},
+        onLoad() {},
+        onStart() {},
+        onDispose() {}
+    }
+    export interface DefineOptions{
+        name:string
+        watchPath:string
+        commands?:Command.DefineOptions[]
+        listeners?:EventOptions
+        onLoad?(this:Plugin):void
+        onStart?(this:Plugin):void
+        onDispose?(this:Plugin):void
     }
 }

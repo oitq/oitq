@@ -2,7 +2,7 @@
   "name": "@oitq/service-web",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "oitq web frontend",
   "repository": {
     "type": "git",

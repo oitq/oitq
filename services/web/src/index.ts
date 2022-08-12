@@ -27,6 +27,5 @@ async function createMiddleware():Promise<Middleware>{
 }
 (async ()=>{
     webService
-        .using('service','http')
         .app.koa.use(await createMiddleware())
 })()

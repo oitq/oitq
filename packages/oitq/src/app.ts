@@ -4,7 +4,7 @@ import {default as Yaml} from 'js-yaml'
 import {Logger, getLogger} from "log4js";
 import {Awaitable, LogLevel, Middleware, NSession, OitqEventMap} from "./types";
 import ConfigLoader from "./configLoader";
-import {deepClone, deepMerge, wrapExport} from "./utils";
+import {deepClone, deepMerge, remove, wrapExport} from "./utils";
 import {Event} from "./event";
 import {Plugin} from "./plugin";
 import {Adapter, BotEventMap} from "./adapter";
@@ -73,7 +73,13 @@ export class App extends Event {
     findService(filter: (plugin: Service) => boolean) {
         return Object.values(this.services).find(filter)
     }
-
+    middleware(middleware:Middleware,prepend?:boolean){
+        const method=prepend?'push':'unshift'
+        this.middlewares[method](middleware)
+        return ()=>{
+            remove(this.middlewares,middleware)
+        }
+    }
     dispose() {
         this.emit('dispose')
         for (const plugin of Object.values(this.plugins)) {
@@ -97,8 +103,7 @@ export class App extends Event {
     }
 
     use(middleware: Middleware, prepend?: boolean): this {
-        const method = prepend ? 'shift' : 'push'
-        this.middlewares[method](middleware)
+        this.middleware(middleware,prepend)
         return this
     }
 
@@ -201,7 +206,6 @@ export class App extends Event {
         return {
             install:result.install||result,
             name:result.name||name,
-            using:result.using||[],
             fullPath:resolved
         }
     }
@@ -262,6 +266,7 @@ export namespace App {
         services?: Partial<Record<S, Service.Config[S]>>
         plugins?: Partial<Record<P, Plugin.Config[P]>>
         adapters?: Partial<Record<A, Adapter.Config[A]>>
+        delay?:Record<string, number>
         plugin_dir?: string
         service_dir?: string
         adapter_dir?: string
@@ -271,6 +276,9 @@ export namespace App {
     export const defaultConfig: Config = {
         logLevel: 'info',
         services: {},
+        delay:{
+            prompt:60000
+        },
         plugins: {
             commandParser: true,
         },

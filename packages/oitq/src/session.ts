@@ -3,6 +3,7 @@ import {ChannelId, Dict, Filter, NSession} from "./types";
 import {Bot} from "./bot";
 import {Argv} from "./argv";
 import {Adapter, BotEventMap} from "./adapter";
+import {Prompt} from "./prompt";
 
 export class Session{
     message_type?:string
@@ -13,7 +14,7 @@ export class Session{
     constructor(public app:App,public adapter:Adapter,public bot:Bot,public event:string,args:any[]) {
         const obj:Dict=(args[0] && typeof args[0]==='object')?args.shift():{}
         obj.args=args
-        Object.assign(this,obj)
+        Object.assign(this as unknown as ObjectConstructor,obj)
     }
     async waitMessage(filter:Filter){
 
@@ -39,6 +40,61 @@ export class Session{
             }
             if (result) return result
         }
+    }
+
+    private promptReal<T extends keyof Prompt.TypeKV>(prev: any, answer: Dict, options: Prompt.Options<T>): Promise<Prompt.ValueType<T> | void> {
+        if (typeof options.type === 'function') options.type = options.type(prev, answer, options)
+        if (!options.type) return
+        if (['select', 'multipleSelect'].includes(options.type as keyof Prompt.TypeKV) && !options.choices) throw new Error('choices is required')
+        return new Promise<Prompt.ValueType<T> | void>(resolve => {
+            this.sendMsg(Prompt.formatOutput(prev, answer, options))
+            const dispose = this.app.middleware((session) => {
+                const cb = () => {
+                    let result = Prompt.formatValue(prev, answer, options, session.cqCode)
+                    dispose()
+                    resolve(result)
+                    clearTimeout(timer)
+                }
+                if (!options.validate) {
+                    cb()
+                } else {
+                    if (typeof options.validate !== "function") {
+                        options.validate = (str: string) => (options.validate as RegExp).test(str)
+                    }
+                    try {
+                        let result = options.validate(session.cqCode)
+                        if (result && typeof result === "boolean") cb()
+                        else this.sendMsg(options.errorMsg)
+                    } catch (e) {
+                        this.sendMsg(e.message)
+                    }
+                }
+            })
+            const timer = setTimeout(() => {
+                dispose()
+                resolve()
+            }, options.timeout || this.app.config.delay.prompt)
+        })
+    }
+
+    async prompt<T extends keyof Prompt.TypeKV>(options: Prompt.Options<T> | Array<Prompt.Options<T>>) {
+        options = [].concat(options)
+        let answer: Dict = {}
+        let prev: any = undefined
+        try {
+            if (options.length === 0) return
+            for (const option of options) {
+                if (typeof option.type === 'function') option.type = option.type(prev, answer, option)
+                if (!option.type) continue
+                if (!option.name) throw new Error('name is required')
+                prev = await this.promptReal(prev, answer, option)
+                answer[option.name] = prev
+            }
+        } catch (e) {
+            this.sendMsg(e.message)
+            return
+        }
+        return answer as Prompt.Answers<Prompt.ValueType<T>>
     }
     async executeTemplate(template: string) {
         const session: NSession<BotEventMap,App.MessageEvent> = this as any
