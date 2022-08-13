@@ -1,6 +1,6 @@
 {
   "name": "oitq",
-  "version": "3.0.22",
+  "version": "3.0.23",
   "typings": "lib/index.d.ts",
   "description": "oitq",
   "main": "lib/index.js",
@@ -10,7 +10,7 @@
   "scripts": {
     "compile": "tsc --project tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "build": "npm run compile && dtsc --project tsconfig.json",
-    "pub": "npm publist --access public",
+    "pub": "npm publish --access public",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

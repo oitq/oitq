@@ -1,6 +1,7 @@
 # oitq
  一个优雅的机器人开发框架
 # [template](https://github.com/oitq/app/tree/v3)
+# [插件仓库](https://github.com/oitq/packages)
 # 快速上手
 - 创建/初始化项目
 ```shell
