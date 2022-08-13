@@ -1,14 +1,16 @@
 {
-  "name": "oitq-workspace",
-  "version": "1.0.0",
-  "description": "oitq-v3",
+  "name": "oitq",
+  "version": "3.0.22",
+  "typings": "lib/index.d.ts",
+  "description": "oitq",
+  "main": "lib/index.js",
+  "bin": {
+    "oitq": "bin.js"
+  },
   "scripts": {
-    "start": "node .",
-    "compile": "ts-node ./build/compile.ts",
-    "dtsc": "ts-node ./build/dtsc.ts",
-    "build": "npm run build -w oitq && npm run compile && npm run dtsc",
-    "dev": "npm run dev -w test",
-    "pub": "ts-node ./build/publish.ts",
+    "compile": "tsc --project tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "build": "npm run compile && dtsc --project tsconfig.json",
+    "pub": "npm publist --access public",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -16,9 +18,9 @@
     "url": "git+https://github.com/oitq/oitq.git"
   },
   "keywords": [
-    "ts",
-    "dev",
-    "template"
+    "bot",
+    "cqhttp",
+    "oitq"
   ],
   "author": "凉菜",
   "license": "MIT",
@@ -26,34 +28,35 @@
     "url": "https://github.com/oitq/oitq/issues"
   },
   "homepage": "https://github.com/oitq/oitq#readme",
-  "devDependencies": {
-    "@types/node": "latest",
-    "fs-extra": "^10.1.0",
-    "kleur": "^4.1.4",
-    "latest-version": "5.1.0",
-    "semver": "^7.3.7",
-    "ts-node-dev": "latest",
-    "tsc-alias": "latest",
-    "tsconfig-paths": "latest",
-    "typescript": "latest"
-  },
-  "workspaces": [
-    "packages/*",
-    "adapters/*",
-    "plugins/*",
-    "services/*",
-    "test"
-  ],
   "files": [
     "/lib/**/*.js",
     "/lib/**/*.d.ts",
-    "/lib/**/LICENSE"
+    "/lib/**/LICENSE",
+    "bin.js"
   ],
   "dependencies": {
+    "@koa/router": "^10.1.1",
     "cac": "^6.7.12",
-    "cross-spawn": "^7.0.3",
-    "dtsc": "^2.1.1",
-    "esbuild": "^0.14.51",
-    "test": "file:test"
+    "chokidar": "^3.5.3",
+    "cron": "^2.1.0",
+    "esbuild-register": "^3.3.3",
+    "js-yaml": "^4.1.0",
+    "koa": "^2.13.4",
+    "koa-bodyparser": "^4.3.0",
+    "koa-static": "^5.0.0",
+    "log4js": "^6.6.0",
+    "oicq": "^2.3.1",
+    "oicq2-cq-enable": "^1.0.5",
+    "throttle-debounce": "^4.0.1",
+    "tsconfig-paths": "^4.0.0",
+    "ws": "^8.8.1"
+  },
+  "devDependencies": {
+    "@types/cron": "^2.0.0",
+    "@types/koa": "^2.13.4",
+    "@types/koa__router": "^8.0.11",
+    "@types/koa-bodyparser": "^4.3.6",
+    "@types/ws": "^8.2.2",
+    "dtsc": "^2.2.2"
   }
 }
