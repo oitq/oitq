@@ -1,8 +1,6 @@
 # oitq
  一个优雅的机器人开发框架
-# [template](https://github.com/oitq/app/tree/v3)
-# [插件仓库](https://github.com/oitq/packages)
-# 快速上手
+# [template](https://github.com/oitq/app/tree/v3) [插件仓库](https://github.com/oitq/packages)
 - 创建/初始化项目
 ```shell
 mkdir oitq-app && cd oitq-app
@@ -30,11 +28,11 @@ services: # 服务配置
   http: # 该服务框架已集成，可直接使用
     port: 8086 # http监听的端口
 plugins:
-  terminalLogin: # 命令行登录插件，启用后可从命令行登录机器人 (该服务框架已集成，可直接使用)
-  help: # 帮助插件，启用后可使用帮助指令 (该服务框架已集成，可直接使用)
-  daemon: # 插件服务监听进程，在服务挂掉时自动重启 (该服务框架已集成，可直接使用)
+  terminalLogin: # 命令行登录插件，启用后可从命令行登录机器人 (该插件框架已集成，可直接使用)
+  help: # 帮助插件，启用后可使用帮助指令 (该插件框架已集成，可直接使用)
+  daemon: # 插件服务监听进程，在服务挂掉时自动重启 (该插件框架已集成，可直接使用)
     autoRestart: true # 是否开启自动重启
-  watcher: # 插件改动监听插件，变更插件后会自动重启相应插件 (该服务框架已集成，可直接使用)
+  watcher: # 插件改动监听插件，变更插件后会自动重启相应插件 (该插件框架已集成，可直接使用)
     root: . # 监听的根目录路径
 ```
 2. 创建入口文件 index.js，并输入一下内容
