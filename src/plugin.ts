@@ -8,16 +8,16 @@ import {Watcher} from "./plugins/watcher";
 import {DaemonConfig} from './plugins/daemon'
 import {CommandParser} from "./plugins/commandParser";
 export type PluginMiddleware=(plugin:Plugin)=>void
-export interface pluginModule{
-    apply(plugin:Plugin):void
+export interface PluginModule{
+    install(plugin:Plugin):void
     using?:string[]
 }
 export class Plugin extends Base{
     public commands:Map<string,Command>=new Map<string, Command>()
     public commandList:Command[]=[]
     public jobs:CronJob[]=[]
-    constructor(public name:string,fullPath:string) {
-        super(`plugin`,name,fullPath)
+    constructor(public name:string,listenDir:string) {
+        super(`plugin`,name,listenDir)
         this.app.plugins[name]=this
     }
     dispose(){
@@ -39,13 +39,13 @@ export class Plugin extends Base{
     }
     plugin(apply:PluginMiddleware,using?:string[])
     plugin(plugin:string,using?:string[])
-    plugin(module:pluginModule)
-    plugin(entry:PluginMiddleware|pluginModule|string,using:string[]=typeof entry==='object'?entry['using']||[]:[]){
+    plugin(module:PluginModule)
+    plugin(entry:PluginMiddleware|PluginModule|string,using:string[]=typeof entry==='object'?entry['using']||[]:[]){
         const callback=()=>{
             const applyMiddleware=()=>{
                 if(typeof entry==='string') this.app.load(entry,'plugin')
                 else if(typeof entry==='function')entry(this)
-                else entry.apply(this)
+                else entry.install(this)
                 return this
             }
             if(!using || !using.length) return applyMiddleware()

@@ -20,6 +20,7 @@ export class OicqBot extends Client implements Bot{
     public master:number
     public admins:number[]=[]
     public options:OicqBot.Options
+    // @ts-ignore
     constructor(public adapter:Adapter<OicqBot>,options:OicqBot.Options) {
         options=deepMerge(deepClone(OicqBot.defaultOptions),options)
         super(options.uin,options.protocol);

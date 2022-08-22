@@ -43,7 +43,7 @@ export class Command<A extends any[] = any[], O extends {} = {}>{
     }
     match(session:NSession<BotEventMap, App.MessageEvent>){
         return this.triggerEvent==='all'
-            || `message.${session.message_type}`===this.triggerEvent
+            || session.message_type===this.triggerEvent
     }
     // 定义别名
     alias(...name:string[]){

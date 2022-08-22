@@ -146,7 +146,7 @@ export class App extends Event {
         for (let name of Object.keys(this.config.adapters)) {
             const options=this.load(name, 'adapter')
             if(typeof options.install==='function'){
-                const adapter=new Adapter(name,options.fullPath)
+                const adapter=new Adapter(name,options.listenDir)
                 options.install(adapter,this.config.adapters[name])
             }
         }
@@ -157,7 +157,7 @@ export class App extends Event {
         for (let name of Object.keys(this.config.services)) {
             const options=this.load(name, 'service')
             if(typeof options.install==='function'){
-                const service=new Service(name,options.fullPath)
+                const service=new Service(name,options.listenDir)
                 options.install(service,this.config.services[name])
             }
         }
@@ -166,20 +166,19 @@ export class App extends Event {
         for (let name of Object.keys(this.config.plugins)) {
             const options=this.load(name, 'plugin')
             if(typeof options.install==='function'){
-                const plugin=new Plugin(name,options.fullPath)
+                const plugin=new Plugin(name,options.listenDir)
                 options.install(plugin,this.config.plugins[name])
             }
         }
     }
 
     public load(name: string, type: 'service' | 'plugin' | 'adapter') {
-        function getFullPath(tempPath:string){
-            const extensions=['ts','js','mjs','cjs']
-            for(const extension of extensions){
-                const realPath=`${tempPath}.${extension}`
-                if(fs.existsSync(realPath)) return realPath
+        function getListenDir(modulePath:string){
+            if(modulePath.endsWith('/index')) return modulePath.replace('/index','')
+            for(const extension of ['ts','js','cjs','mjs']){
+                if (fs.existsSync(`${modulePath}.${extension}`)) return `${modulePath}.${extension}`
             }
-            return tempPath
+            return modulePath
         }
         let resolved
         const orgModule = `@oitq/${type}-${name}`
@@ -222,7 +221,7 @@ export class App extends Event {
         return {
             install:result.install||result,
             name:result.name||name,
-            fullPath:getFullPath(resolved)
+            listenDir:getListenDir(resolved)
         }
     }
     unload(name: string, type: 'service' | 'plugin' | 'adapter'){
@@ -237,10 +236,8 @@ export class App extends Event {
     }
     async start() {
         this.init()
-        this.started = true
-        await this.parallel('before-start')
         await this.parallel('start')
-        await this.parallel('ready')
+        this.started = true
     }
 }
 

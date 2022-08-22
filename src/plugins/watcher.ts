@@ -40,7 +40,7 @@ export function install(plugin:Plugin,config:Watcher.Config={}){
             if (name in newConfig) {
                 let p=plugin.app.findPlugin(p=>p.name===name)
                 if (name in oldConfig && p) {
-                    reloadDependency(p,p.fullPath)
+                    reloadDependency(p,p.listenDir)
                 } else {
                     loadDependency(name,type)
                 }
@@ -88,9 +88,9 @@ export function install(plugin:Plugin,config:Watcher.Config={}){
             item!.emit('dispose')
             delete require.cache[fullPath]
             require(fullPath)
-            if (fs.statSync(item.fullPath).isDirectory()) {
+            if (fs.statSync(item.listenDir).isDirectory()) {
                 const realPath = item.dependencies.find((temp) =>{
-                    return temp.startsWith(path.resolve(item.fullPath, 'index'))
+                    return temp.startsWith(path.resolve(item.listenDir, 'index'))
                 }) || item.dependencies[0]
                 delete require.cache[realPath]
                 require(realPath)
@@ -104,13 +104,13 @@ export function install(plugin:Plugin,config:Watcher.Config={}){
     const externals:Set<string> = new Set<string>()
     plugin.appendTo('builtin')
     for(const p of Object.values(plugin.app.plugins) as Plugin[]){
-        externals.add(p.fullPath)
+        externals.add(p.listenDir)
     }
     for(const s of Object.values(plugin.app.services) as Service[]){
-        externals.add(s.fullPath)
+        externals.add(s.listenDir)
     }
     for(const a of Object.values(plugin.app.adapters) as Adapter[]){
-        externals.add(a.fullPath)
+        externals.add(a.listenDir)
     }
     const watchPath=path.resolve(process.cwd(),config.root||'.')
     const watcher: FSWatcher = watch(watchPath, {
@@ -118,25 +118,25 @@ export function install(plugin:Plugin,config:Watcher.Config={}){
         ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', '**/.idea/**', ...makeArray(config.ignored)]
     })
     plugin.on('plugin-start',(p)=>{
-        loadDependencies(p.fullPath,externals)
+        loadDependencies(p.listenDir,externals)
     })
     plugin.on('service-dispose',(s)=>{
-        externals.delete(s.fullPath)
+        externals.delete(s.listenDir)
     })
     plugin.on('dispose',()=>{
         watcher.close()
     })
     plugin.on('plugin-start',(p)=>{
-        loadDependencies(p.fullPath,externals)
+        loadDependencies(p.listenDir,externals)
     })
     plugin.on('plugin-dispose',(p)=>{
-        externals.delete(p.fullPath)
+        externals.delete(p.listenDir)
     })
     plugin.on('adapter-start',(a)=>{
-        loadDependencies(a.fullPath,externals)
+        loadDependencies(a.listenDir,externals)
     })
     plugin.on('adapter-dispose',(a)=>{
-        externals.delete(a.fullPath)
+        externals.delete(a.listenDir)
     })
     watcher.on('change', (filename) => {
         const entryFilename=path.resolve(process.cwd(),filename)
@@ -149,9 +149,9 @@ export function install(plugin:Plugin,config:Watcher.Config={}){
             }
         } else {
             if (externals.has(entryFilename)) {
-                const s = plugin.app.findService(s => s.fullPath === entryFilename || s.dependencies.includes(entryFilename))
-                const p = plugin.app.findPlugin(p => p.fullPath === entryFilename || p.dependencies.includes(entryFilename))
-                const a = plugin.app.findAdapter(a => a.fullPath === entryFilename || a.dependencies.includes(entryFilename))
+                const s = plugin.app.findService(s => s.listenDir === entryFilename || s.dependencies.includes(entryFilename))
+                const p = plugin.app.findPlugin(p => p.listenDir === entryFilename || p.dependencies.includes(entryFilename))
+                const a = plugin.app.findAdapter(a => a.listenDir === entryFilename || a.dependencies.includes(entryFilename))
                 if (p) {
                     reloadDependency(p, entryFilename)
                 } else if (s) {

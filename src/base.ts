@@ -26,9 +26,9 @@ export abstract class Base extends Event {
     public app:App
     public config:any
     public dependencies:string[]
-    protected constructor(public type:'plugin'|'adapter'|'service', name: string,public fullPath:string) {
+    protected constructor(public type:'plugin'|'adapter'|'service', name: string,public listenDir:string) {
         super();
-        this.dependencies=loadDependencies(this.fullPath)
+        this.dependencies=loadDependencies(this.listenDir)
         if(!__OITQ__) throw new Error('请先使用createApp创建全局App')
         this.app=__OITQ__
         this.logger = __OITQ__.getLogger(`${type}-${name}`)

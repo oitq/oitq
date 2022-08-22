@@ -8,8 +8,8 @@ export interface BotEventMap extends OicqEventMap{
 export class Adapter<I extends Bot=Bot> extends Base{
     bots:Adapter.BotList<I>
     Constructor:new (adapter:Adapter<I>,options:Dict)=>I
-    constructor(public name:string,fullPath:string) {
-        super('adapter',name,fullPath)
+    constructor(public name:string,listenDir:string) {
+        super('adapter',name,listenDir)
         this.app.adapters[name]=this
         this.bots=new Adapter.BotList<I>(this)
         this.on('start',()=>{

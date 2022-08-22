@@ -1,6 +1,6 @@
 {
   "name": "oitq",
-  "version": "3.0.23",
+  "version": "3.0.26",
   "typings": "lib/index.d.ts",
   "description": "oitq",
   "main": "lib/index.js",
